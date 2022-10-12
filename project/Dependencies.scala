@@ -96,7 +96,7 @@ object Dependencies {
         "javax.inject"                                              % "javax.inject" % "1",
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
-  val nettyVersion = "4.1.81.Final"
+  val nettyVersion = "4.1.82.Final"
 
   val netty = Seq(
     "com.typesafe.netty" % "netty-reactive-streams-http" % "2.0.6",
