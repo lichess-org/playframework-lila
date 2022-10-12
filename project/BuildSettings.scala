@@ -19,7 +19,7 @@ import scala.util.control.NonFatal
 
 object BuildSettings {
 
-  val playVersion = "2.8.16-lila_1.13"
+  val playVersion = "2.8.16-lila_1.14"
 
   /** File header settings.  */
   private def fileUriRegexFilter(pattern: String): FileFilter = new FileFilter {
@@ -45,7 +45,7 @@ object BuildSettings {
   def playCommonSettings: Seq[Setting[_]] = Def.settings(
     ivyLoggingLevel := UpdateLogging.DownloadOnly,
     resolvers ++= Seq(
-      Resolver.sonatypeRepo("releases"), // sync ScriptedTools.scala
+      Resolver.sonatypeOssRepo("releases"), // sync ScriptedTools.scala
       Resolver.typesafeRepo("releases"),
       Resolver.typesafeIvyRepo("releases"),
       Resolver.sbtPluginRepo("releases"), // weird sbt-pgp/play docs/vegemite issue
@@ -54,7 +54,7 @@ object BuildSettings {
     ivyConfigurations ++= Seq(SourcesApplication),
     javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation"),
     (Compile / doc / scalacOptions) := {
-      // disable the new scaladoc feature for scala 2.12.0, might be removed in 2.12.0-1 (https://github.com/scala/scala-dev/issues/249)
+      // disable the new scaladoc feature for scala 2.12+ (https://github.com/scala/scala-dev/issues/249 and https://github.com/scala/bug/issues/11340)
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, v)) if v >= 12 => Seq("-no-java-comments")
         case _                       => Seq()
@@ -133,7 +133,7 @@ object BuildSettings {
       .settings(
         autoScalaLibrary := false,
         crossPaths := false,
-        crossScalaVersions := Seq(scala213)
+        crossScalaVersions := Seq("2.13.10")
       )
   }
 
@@ -152,6 +152,9 @@ object BuildSettings {
     Project(name, file(dir))
       .enablePlugins(PlayLibrary, AkkaSnapshotRepositories)
       .settings(playRuntimeSettings: _*)
+      .settings(
+        scalacOptions += "-release:11"
+      )
   }
 
   def playScriptedSettings: Seq[Setting[_]] = Seq(
@@ -173,17 +176,8 @@ object BuildSettings {
   )
 
   def disablePublishing = Def.settings(
-    disableNonLocalPublishing,
-    // This setting will work for sbt 1, but not 0.13. For 0.13 it only affects
-    // `compile` and `update` tasks.
     (publish / skip) := true,
     publishLocal := {},
-  )
-  def disableNonLocalPublishing = Def.settings(
-    // For sbt 0.13 this is what we need to avoid publishing. These settings can
-    // be removed when we move to sbt 1.
-    PgpKeys.publishSigned := {},
-    publish := {},
   )
 
   /** A project that runs in the sbt runtime. */

@@ -12,9 +12,9 @@ object Dependencies {
 
   val playJsonVersion = "2.10.0-RC6"
 
-  val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.4.1"
 
-  val specs2Version = "4.15.0"
+  val specs2Version = "4.17.0"
   val specs2CoreDeps = Seq(
     "specs2-core",
     "specs2-junit"
@@ -30,7 +30,7 @@ object Dependencies {
     "org.scalacheck" %% "scalacheck"        % "1.16.0"      % Test
   )
 
-  val jacksonVersion  = "2.13.3"
+  val jacksonVersion  = "2.13.4"
   val jacksonDatabind = Seq("com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion)
   val jacksons = Seq(
     "com.fasterxml.jackson.core"     % "jackson-core",
@@ -50,13 +50,13 @@ object Dependencies {
 
   val playJson = "com.typesafe.play" %% "play-json" % playJsonVersion
 
-  val slf4jVersion = "1.7.36"
+  val slf4jVersion = "2.0.0"
   val slf4j        = Seq("slf4j-api", "jul-to-slf4j", "jcl-over-slf4j").map("org.slf4j" % _ % slf4jVersion)
   val slf4jSimple  = "org.slf4j" % "slf4j-simple" % slf4jVersion
 
   val guava      = "com.google.guava"         % "guava"        % "31.1-jre"
   val findBugs   = "com.google.code.findbugs" % "jsr305"       % "3.0.2" // Needed by guava
-  val mockitoAll = "org.mockito"              % "mockito-core" % "4.6.1"
+  val mockitoAll = "org.mockito"              % "mockito-core" % "4.8.0"
 
   def scalaParserCombinators(scalaVersion: String) =
     Seq("org.scala-lang.modules" %% "scala-parser-combinators" % {
@@ -66,10 +66,10 @@ object Dependencies {
       }
     })
 
-  val springFrameworkVersion = "5.3.19"
+  val springFrameworkVersion = "5.3.22"
 
   val joda = Seq(
-    "joda-time" % "joda-time"    % "2.11.1",
+    "joda-time" % "joda-time"    % "2.11.2",
     "org.joda"  % "joda-convert" % "2.2.2"
   )
 
@@ -96,7 +96,7 @@ object Dependencies {
         "javax.inject"                                              % "javax.inject" % "1",
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
-  val nettyVersion = "4.1.82.Final"
+  val nettyVersion = "4.1.81.Final"
 
   val netty = Seq(
     "com.typesafe.netty" % "netty-reactive-streams-http" % "2.0.6",
@@ -148,13 +148,13 @@ object Dependencies {
     logback % Test
   )
 
-  val caffeineVersion = "2.9.3"
+  val caffeineVersion = "3.0.1"
   val playCaffeineDeps = Seq(
     "com.github.ben-manes.caffeine" % "caffeine" % caffeineVersion,
     "com.github.ben-manes.caffeine" % "jcache"   % caffeineVersion
   )
 
-  val playWsStandaloneVersion = "2.2.0-M1"
+  val playWsStandaloneVersion = "2.2.0-M2"
   val playWsDeps = Seq(
     "com.typesafe.play" %% "play-ws-standalone"      % playWsStandaloneVersion,
     "com.typesafe.play" %% "play-ws-standalone-xml"  % playWsStandaloneVersion,
