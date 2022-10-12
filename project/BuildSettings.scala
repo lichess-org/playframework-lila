@@ -45,7 +45,7 @@ object BuildSettings {
   def playCommonSettings: Seq[Setting[_]] = Def.settings(
     ivyLoggingLevel := UpdateLogging.DownloadOnly,
     resolvers ++= Seq(
-      Resolver.sonatypeOssRepo("releases"), // sync ScriptedTools.scala
+      Resolver.sonatypeRepo("releases"), // sync ScriptedTools.scala
       Resolver.typesafeRepo("releases"),
       Resolver.typesafeIvyRepo("releases"),
       Resolver.sbtPluginRepo("releases"), // weird sbt-pgp/play docs/vegemite issue
