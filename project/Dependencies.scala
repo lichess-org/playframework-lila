@@ -10,7 +10,7 @@ object Dependencies {
   val akkaVersion: String = sys.props.getOrElse("akka.version", "2.6.20")
   val akkaHttpVersion     = sys.props.getOrElse("akka.http.version", "10.2.7")
 
-  val playJsonVersion = "2.10.0-RC6"
+  val playJsonVersion = "2.10.0-RC7"
 
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.1"
 
@@ -69,7 +69,7 @@ object Dependencies {
   val springFrameworkVersion = "5.3.22"
 
   val joda = Seq(
-    "joda-time" % "joda-time"    % "2.11.2",
+    "joda-time" % "joda-time"    % "2.12.0",
     "org.joda"  % "joda-convert" % "2.2.2"
   )
 
@@ -96,7 +96,7 @@ object Dependencies {
         "javax.inject"                                              % "javax.inject" % "1",
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
-  val nettyVersion = "4.1.82.Final"
+  val nettyVersion = "4.1.84.Final"
 
   val netty = Seq(
     "com.typesafe.netty" % "netty-reactive-streams-http" % "2.0.6",
