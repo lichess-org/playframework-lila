@@ -30,8 +30,6 @@ object PlayImport {
 
   val jodaForms = component("play-joda-forms")
 
-  val guice = component("play-guice")
-
   val ws = component("play-ahc-ws")
 
   object PlayKeys {

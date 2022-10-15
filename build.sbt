@@ -60,7 +60,6 @@ lazy val PlayServerProject = PlayCrossBuiltProject("Play-Server", "transport/ser
   .settings(libraryDependencies ++= playServerDependencies)
   .dependsOn(
     PlayProject,
-    PlayGuiceProject % "test"
   )
 
 lazy val PlayNettyServerProject = PlayCrossBuiltProject("Play-Netty-Server", "transport/server/play-netty-server")
@@ -70,17 +69,10 @@ lazy val PlayNettyServerProject = PlayCrossBuiltProject("Play-Netty-Server", "tr
 lazy val PlayAkkaHttpServerProject =
   PlayCrossBuiltProject("Play-Akka-Http-Server", "transport/server/play-akka-http-server")
     .dependsOn(PlayServerProject, StreamsProject)
-    .dependsOn(PlayGuiceProject % "test")
     .settings(
       libraryDependencies ++= specs2Deps.map(_ % "test"),
       libraryDependencies += akkaHttp
     )
-
-lazy val PlayGuiceProject = PlayCrossBuiltProject("Play-Guice", "core/play-guice")
-  .settings(libraryDependencies ++= guiceDeps ++ specs2Deps.map(_ % "test"))
-  .dependsOn(
-    PlayProject % "compile;test->test"
-  )
 
 lazy val SbtPluginProject = PlaySbtPluginProject("Sbt-Plugin", "dev-mode/sbt-plugin")
   .enablePlugins(SbtPlugin)
@@ -116,7 +108,6 @@ lazy val PlayLogback = PlayCrossBuiltProject("Play-Logback", "core/play-logback"
 // Keep in mind that specific configurations (like skip in publish) will be respected.
 lazy val userProjects = Seq[ProjectReference](
   PlayProject,
-  PlayGuiceProject,
   RoutesCompilerProject,
   PlayAkkaHttpServerProject,
   PlayJodaFormsProject,
