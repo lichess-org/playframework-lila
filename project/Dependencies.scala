@@ -76,12 +76,6 @@ object Dependencies {
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
   val junit          = "junit"          % "junit"           % "4.13.2"
 
-  val guiceVersion = "5.1.0"
-  val guiceDeps = Seq(
-    "com.google.inject"            % "guice"                % guiceVersion,
-    "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion
-  )
-
   def runtime(scalaVersion: String) =
     slf4j ++
       Seq("akka-actor", "akka-actor-typed", "akka-slf4j", "akka-serialization-jackson")
