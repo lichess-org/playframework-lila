@@ -60,9 +60,10 @@ case include @ Include(path, router) => {
   )
 
   val routes: PartialFunction[RequestHeader, Handler] =
-    @if(pathRules.isEmpty) { Map.empty } else { 
+    @if(pathRules.isEmpty) { Map.empty } else {@ob 
+      val emptyPathRouter = pathRouters get ""
       Function unlift @ob (req: RequestHeader) =>
-        pathRouters.get(req.path.drop(1).takeWhile(_ != '/')).orElse(pathRouters get "").flatMap(_ lift req)
+        pathRouters.get(req.path.drop(1).takeWhile(_ != '/')).orElse(emptyPathRouter).flatMap(_ lift req)
       @cb
-    }
+    @cb}
 @cb

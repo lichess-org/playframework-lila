@@ -152,19 +152,16 @@ object InjectedRoutesGenerator extends RoutesGenerator {
     }
 
     val pathRulesWithDeps: Seq[(String, Seq[Dependency[Rule]])] =
-      rulesWithDeps
-        .groupBy { dep =>
-          dep.rule match {
-            case inc: Include => inc.prefix
-            case route: Route =>
-              route.path.parts.headOption match {
-                case Some(StaticPart(value)) => s"${value.takeWhile('/' != _)}"
-                case _                       => ""
-              }
-          }
+      rulesWithDeps.groupBy { dep =>
+        dep.rule match {
+          case inc: Include => inc.prefix
+          case route: Route =>
+            route.path.parts.headOption match {
+              case Some(StaticPart(value)) => s"${value.takeWhile('/' != _)}"
+              case _                       => ""
+            }
         }
-        .toSeq
-        .sortBy(-_._1.size)
+      }.toSeq
 
     inject.twirl
       .forwardsRouter(
