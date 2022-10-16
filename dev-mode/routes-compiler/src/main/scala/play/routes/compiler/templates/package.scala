@@ -33,7 +33,7 @@ package object templates {
    */
   def routeIdentifier(route: Route, index: Int): String = baseIdentifier(route, index) + "_route"
   def routeIdentifier(route: Route, pathIndex: Int, index: Int): String =
-    routeIdentifier(route, pathIndex * 1000 + index) + "_route"
+    routeIdentifier(route, pathIndex * 1000 + index)
 
   /**
    * Generate a invoker object identifier for the given route
