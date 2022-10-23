@@ -94,7 +94,8 @@ object Dependencies {
 
   val netty = Seq(
     "com.typesafe.netty" % "netty-reactive-streams-http" % "2.0.7",
-    ("io.netty" % "netty-transport-native-epoll" % nettyVersion).classifier("linux-x86_64")
+    ("io.netty" % "netty-transport-native-epoll" % nettyVersion).classifier("linux-x86_64"),
+    ("io.netty" % "netty-transport-native-kqueue" % nettyVersion).classifier("osx-aarch_64")
   ) ++ specs2Deps.map(_ % Test)
 
   val akkaHttp = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
