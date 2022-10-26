@@ -90,12 +90,13 @@ object Dependencies {
         "javax.inject"                                              % "javax.inject" % "1",
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
-  val nettyVersion = "4.1.84.Final"
+  val nettyVersion = "4.1.82.Final"
 
   val netty = Seq(
     "com.typesafe.netty" % "netty-reactive-streams-http" % "2.0.7",
-    ("io.netty" % "netty-transport-native-epoll" % nettyVersion).classifier("linux-x86_64"),
-    ("io.netty" % "netty-transport-native-kqueue" % nettyVersion).classifier("osx-aarch_64")
+    "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
+    "io.netty" % "netty-transport-native-kqueue" % nettyVersion classifier "osx-aarch_64",
+    "io.netty" % "netty-transport-native-kqueue" % nettyVersion classifier "osx-x86_64"
   ) ++ specs2Deps.map(_ % Test)
 
   val akkaHttp = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
