@@ -91,11 +91,6 @@ trait QueryStringBindable[A] {
   def unbind(key: String, value: A): String
 
   /**
-   * Javascript function to unbind in the Javascript router.
-   */
-  def javascriptUnbind: String = """function(k,v) {return encodeURIComponent(k)+'='+encodeURIComponent(v)}"""
-
-  /**
    * Transform this QueryStringBindable[A] to QueryStringBindable[B]
    */
   def transform[B](toB: A => B, toA: B => A) = new QueryStringBindable[B] {
@@ -103,7 +98,6 @@ trait QueryStringBindable[A] {
       self.bind(key, params).map(_.map(toB))
     }
     def unbind(key: String, value: B): String = self.unbind(key, toA(value))
-    override def javascriptUnbind: String     = self.javascriptUnbind
   }
 }
 
@@ -173,11 +167,6 @@ trait PathBindable[A] {
   def unbind(key: String, value: A): String
 
   /**
-   * Javascript function to unbind in the Javascript router.
-   */
-  def javascriptUnbind: String = """function(k,v) {return v}"""
-
-  /**
    * Transform this PathBinding[A] to PathBinding[B]
    */
   def transform[B](toB: A => B, toA: B => A) = new PathBindable[B] {
@@ -190,7 +179,6 @@ trait PathBindable[A] {
  * Default binders for Query String
  */
 object QueryStringBindable {
-  import play.api.mvc.macros.BinderMacros
   import scala.language.experimental.macros
 
   /**
@@ -265,32 +253,16 @@ object QueryStringBindable {
       extends Parsing[Int](_.toInt, _.toString, (s, e) => s"Cannot parse parameter $s as Int: ${e.getMessage}")
 
   /**
-   * QueryString binder for Integer.
-   */
-  implicit def bindableJavaInteger: QueryStringBindable[java.lang.Integer] = bindableInt.transform(Int.box, Int.unbox)
-
-  /**
    * QueryString binder for Long.
    */
   implicit object bindableLong
       extends Parsing[Long](_.toLong, _.toString, (s, e) => s"Cannot parse parameter $s as Long: ${e.getMessage}")
 
   /**
-   * QueryString binder for Java Long.
-   */
-  implicit def bindableJavaLong: QueryStringBindable[java.lang.Long] =
-    bindableLong.transform(Long.box, Long.unbox)
-
-  /**
    * QueryString binder for Short.
    */
   implicit object bindableShort
       extends Parsing[Short](_.toShort, _.toString, (s, e) => s"Cannot parse parameter $s as Short: ${e.getMessage}")
-
-  /**
-   * QueryString binder for Java Short.
-   */
-  implicit def bindableJavaShort: QueryStringBindable[java.lang.Short] = bindableShort.transform(Short.box, Short.unbox)
 
   /**
    * QueryString binder for Double.
@@ -303,22 +275,10 @@ object QueryStringBindable {
       )
 
   /**
-   * QueryString binder for Java Double.
-   */
-  implicit def bindableJavaDouble: QueryStringBindable[java.lang.Double] =
-    bindableDouble.transform(Double.box, Double.unbox)
-
-  /**
    * QueryString binder for Float.
    */
   implicit object bindableFloat
       extends Parsing[Float](_.toFloat, _.toString, (a, e) => s"Cannot parse parameter $a as Float: ${e.getMessage}")
-
-  /**
-   * QueryString binder for Java Float.
-   */
-  implicit def bindableJavaFloat: QueryStringBindable[java.lang.Float] =
-    bindableFloat.transform(Float.box, Float.unbox)
 
   /**
    * QueryString binder for Boolean.
@@ -331,15 +291,7 @@ object QueryStringBindable {
         },
         _.toString,
         (s, _) => s"Cannot parse parameter $s as Boolean: should be true, false, 0 or 1"
-      ) {
-    override def javascriptUnbind = """function(k,v){return k+'='+(!!v)}"""
-  }
-
-  /**
-   * QueryString binder for Java Boolean.
-   */
-  implicit def bindableJavaBoolean: QueryStringBindable[java.lang.Boolean] =
-    bindableBoolean.transform(Boolean.box, Boolean.unbox)
+      ) {}
 
   /**
    * QueryString binder for java.util.UUID.
@@ -366,29 +318,7 @@ object QueryStringBindable {
       }
       def unbind(key: String, value: Option[T]) =
         value.map(implicitly[QueryStringBindable[T]].unbind(key, _)).getOrElse("")
-      override def javascriptUnbind = javascriptUnbindOption(implicitly[QueryStringBindable[T]].javascriptUnbind)
     }
-
-  /**
-   * QueryString binder for Java Optional.
-   */
-  implicit def bindableJavaOption[T: QueryStringBindable]: QueryStringBindable[Optional[T]] =
-    new QueryStringBindable[Optional[T]] {
-      def bind(key: String, params: Map[String, Seq[String]]) = {
-        Some(
-          implicitly[QueryStringBindable[T]]
-            .bind(key, params)
-            .map(_.map(Optional.ofNullable[T]))
-            .getOrElse(Right(Optional.empty[T]))
-        )
-      }
-      def unbind(key: String, value: Optional[T]) = {
-        value.toScala.map(implicitly[QueryStringBindable[T]].unbind(key, _)).getOrElse("")
-      }
-      override def javascriptUnbind = javascriptUnbindOption(implicitly[QueryStringBindable[T]].javascriptUnbind)
-    }
-
-  private def javascriptUnbindOption(jsUnbindT: String) = "function(k,v){return v!=null?(" + jsUnbindT + ")(k,v):''}"
 
   /**
    * QueryString binder for Seq
@@ -396,7 +326,6 @@ object QueryStringBindable {
   implicit def bindableSeq[T: QueryStringBindable]: QueryStringBindable[Seq[T]] = new QueryStringBindable[Seq[T]] {
     def bind(key: String, params: Map[String, Seq[String]]) = bindSeq[T](key, params)
     def unbind(key: String, values: Seq[T])                 = unbindSeq(key, values)
-    override def javascriptUnbind                           = javascriptUnbindSeq(implicitly[QueryStringBindable[T]].javascriptUnbind)
   }
 
   /**
@@ -404,16 +333,6 @@ object QueryStringBindable {
    */
   implicit def bindableList[T: QueryStringBindable]: QueryStringBindable[List[T]] =
     bindableSeq[T].transform(_.toList, _.toSeq)
-
-  /**
-   * QueryString binder for java.util.List
-   */
-  implicit def bindableJavaList[T: QueryStringBindable]: QueryStringBindable[java.util.List[T]] =
-    new QueryStringBindable[java.util.List[T]] {
-      def bind(key: String, params: Map[String, Seq[String]]) = bindSeq[T](key, params).map(_.map(_.asJava))
-      def unbind(key: String, values: java.util.List[T])      = unbindSeq(key, values.asScala)
-      override def javascriptUnbind                           = javascriptUnbindSeq(implicitly[QueryStringBindable[T]].javascriptUnbind)
-    }
 
   private def bindSeq[T: QueryStringBindable](
       key: String,
@@ -455,19 +374,12 @@ object QueryStringBindable {
       implicitly[QueryStringBindable[T]].unbind(key, value)
     }).mkString("&")
   }
-
-  private def javascriptUnbindSeq(jsUnbindT: String) =
-    "function(k,vs){var l=vs&&vs.length,r=[],i=0;for(;i<l;i++){r[i]=(" + jsUnbindT + ")(k,vs[i])}return r.join('&')}"
-
-  implicit def anyValQueryStringBindable[T <: AnyVal]: QueryStringBindable[T] =
-    macro BinderMacros.anyValQueryStringBindable[T]
 }
 
 /**
  * Default binders for URL path part.
  */
 object PathBindable {
-  import play.api.mvc.macros.BinderMacros
   import scala.language.experimental.macros
 
   /**
@@ -529,20 +441,10 @@ object PathBindable {
       extends Parsing[Int](_.toInt, _.toString, (s, e) => s"Cannot parse parameter $s as Int: ${e.getMessage}")
 
   /**
-   * Path binder for Java Integer.
-   */
-  implicit def bindableJavaInteger: PathBindable[java.lang.Integer] = bindableInt.transform(Int.box, Int.unbox)
-
-  /**
    * Path binder for Long.
    */
   implicit object bindableLong
       extends Parsing[Long](_.toLong, _.toString, (s, e) => s"Cannot parse parameter $s as Long: ${e.getMessage}")
-
-  /**
-   * Path binder for Java Long.
-   */
-  implicit def bindableJavaLong: PathBindable[java.lang.Long] = bindableLong.transform(Long.box, Long.unbox)
 
   /**
    * Path binder for Double.
@@ -555,20 +457,10 @@ object PathBindable {
       )
 
   /**
-   * Path binder for Java Double.
-   */
-  implicit def bindableJavaDouble: PathBindable[java.lang.Double] = bindableDouble.transform(Double.box, Double.unbox)
-
-  /**
    * Path binder for Float.
    */
   implicit object bindableFloat
       extends Parsing[Float](_.toFloat, _.toString, (s, e) => s"Cannot parse parameter $s as Float: ${e.getMessage}")
-
-  /**
-   * Path binder for Java Float.
-   */
-  implicit def bindableJavaFloat: PathBindable[java.lang.Float] = bindableFloat.transform(Float.box, Float.unbox)
 
   /**
    * Path binder for Boolean.
@@ -581,20 +473,7 @@ object PathBindable {
         },
         _.toString,
         (key: String, e: Exception) => "Cannot parse parameter %s as Boolean: should be true, false, 0 or 1".format(key)
-      ) {
-    override def javascriptUnbind = """function(k,v){return !!v}"""
-  }
-
-  /**
-   * Path binder for AnyVal
-   */
-  implicit def anyValPathBindable[T <: AnyVal]: PathBindable[T] = macro BinderMacros.anyValPathBindable[T]
-
-  /**
-   * Path binder for Java Boolean.
-   */
-  implicit def bindableJavaBoolean: PathBindable[java.lang.Boolean] =
-    bindableBoolean.transform(Boolean.box, Boolean.unbox)
+      )
 
   /**
    * Path binder for java.util.UUID.
@@ -614,11 +493,6 @@ object PathBindable {
     def register[T](implicit pb: PathBindable[T], ct: ClassTag[T]) = ct.runtimeClass -> pb
     Map(
       register[String],
-      register[java.lang.Integer],
-      register[java.lang.Long],
-      register[java.lang.Double],
-      register[java.lang.Float],
-      register[java.lang.Boolean],
       register[UUID]
     )
   }
