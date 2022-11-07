@@ -20,9 +20,7 @@ object Dependencies {
     "specs2-core",
     "specs2-junit"
   ).map("org.specs2" %% _ % specs2Version)
-  val specs2Deps = specs2CoreDeps ++ Seq(
-    "specs2-mock"
-  ).map("org.specs2" %% _ % specs2Version)
+  val specs2Deps = specs2CoreDeps
 
   val specsMatcherExtra = "org.specs2" %% "specs2-matcher-extra" % specs2Version
 

@@ -18,18 +18,7 @@ import scala.util.control.NonFatal
 
 object BuildSettings {
 
-  val playVersion = "2.8.16-lila_1.17"
-
-  /** File header settings.  */
-  private def fileUriRegexFilter(pattern: String): FileFilter = new FileFilter {
-    val compiledPattern = Pattern.compile(pattern)
-    override def accept(pathname: File): Boolean = {
-      val uriString = pathname.toURI.toString
-      compiledPattern.matcher(uriString).matches()
-    }
-  }
-
-  private val VersionPattern = """^(\d+).(\d+).(\d+)(-.*)?""".r
+  val playVersion = "2.8.18-lila_3.0"
 
   def evictionSettings: Seq[Setting[_]] = Seq(
     // This avoids a lot of dependency resolution warnings to be showed.
@@ -42,6 +31,7 @@ object BuildSettings {
 
   /** These settings are used by all projects. */
   def playCommonSettings: Seq[Setting[_]] = Def.settings(
+    scalaVersion := "3.2.0",
     ivyLoggingLevel := UpdateLogging.DownloadOnly,
     resolvers ++= Resolver.sonatypeOssRepos("releases"), // sync ScriptedTools.scala
     resolvers ++= Seq(
@@ -132,7 +122,6 @@ object BuildSettings {
       .settings(
         autoScalaLibrary := false,
         crossPaths := false,
-        crossScalaVersions := Seq("2.13.10")
       )
   }
 
@@ -152,7 +141,10 @@ object BuildSettings {
       .enablePlugins(PlayLibrary, AkkaSnapshotRepositories)
       .settings(playRuntimeSettings: _*)
       .settings(
-        scalacOptions += "-release:11"
+        scalacOptions ++= Seq(
+          "-source:3.0-migration",
+          "-rewrite"
+        )
       )
   }
 
