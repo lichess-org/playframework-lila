@@ -101,13 +101,6 @@ sealed trait Accumulator[-E, +A] {
    * Convert this accumulator to a Sink that gets materialised to a Future.
    */
   def toSink: Sink[E, Future[A]]
-
-  /**
-   * Convert this accumulator to a Java Accumulator.
-   *
-   * @return The Java accumulator.
-   */
-  def asJava: play.libs.streams.Accumulator[E @uV, A @uV]
 }
 
 /**
@@ -140,10 +133,6 @@ private class SinkAccumulator[-E, +A](wrappedSink: => Sink[E, Future[A]]) extend
   def run(elem: E)(implicit materializer: Materializer): Future[A]              = run(Source.single(elem))
 
   def toSink: Sink[E, Future[A]] = sink
-
-  def asJava: play.libs.streams.Accumulator[E @uV, A @uV] = {
-    play.libs.streams.Accumulator.fromSink(sink.mapMaterializedValue(_.asJava).asJava)
-  }
 }
 
 private class StrictAccumulator[-E, +A](handler: Option[E] => Future[A], val toSink: Sink[E, Future[A]])
@@ -197,12 +186,6 @@ private class StrictAccumulator[-E, +A](handler: Option[E] => Future[A], val toS
   override def run(source: Source[E, _])(implicit materializer: Materializer): Future[A] = source.runWith(toSink)
   override def run()(implicit materializer: Materializer): Future[A]                     = handler(None)
   override def run(elem: E)(implicit materializer: Materializer): Future[A]              = handler(Some(elem))
-
-  override def asJava: play.libs.streams.Accumulator[E @uV, A @uV] =
-    play.libs.streams.Accumulator.strict(
-      (t: Optional[E]) => handler(t.toScala).asJava,
-      toSink.mapMaterializedValue(_.asJava).asJava
-    )
 }
 
 private class FlattenedAccumulator[-E, +A](future: Future[Accumulator[E, A]])(implicit materializer: Materializer)

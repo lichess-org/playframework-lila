@@ -65,14 +65,6 @@ lazy val PlayNettyServerProject = PlayCrossBuiltProject("Play-Netty-Server", "tr
   .settings(libraryDependencies ++= netty)
   .dependsOn(PlayServerProject)
 
-lazy val PlayAkkaHttpServerProject =
-  PlayCrossBuiltProject("Play-Akka-Http-Server", "transport/server/play-akka-http-server")
-    .dependsOn(PlayServerProject, StreamsProject)
-    .settings(
-      libraryDependencies ++= specs2Deps.map(_ % "test"),
-      libraryDependencies += akkaHttp
-    )
-
 lazy val SbtPluginProject = PlaySbtPluginProject("Sbt-Plugin", "dev-mode/sbt-plugin")
   .enablePlugins(SbtPlugin)
   .settings(
@@ -108,7 +100,6 @@ lazy val PlayLogback = PlayCrossBuiltProject("Play-Logback", "core/play-logback"
 lazy val userProjects = Seq[ProjectReference](
   PlayProject,
   RoutesCompilerProject,
-  PlayAkkaHttpServerProject,
   PlayJodaFormsProject,
   PlayNettyServerProject,
   PlayServerProject,
