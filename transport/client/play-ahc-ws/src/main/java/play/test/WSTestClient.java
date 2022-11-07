@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.test;
@@ -7,6 +7,8 @@ package play.test;
 import akka.actor.ActorSystem;
 import akka.actor.Terminated;
 import akka.stream.Materializer;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSRequest;
 import play.libs.ws.ahc.AhcWSClient;
@@ -17,9 +19,6 @@ import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class WSTestClient {
 

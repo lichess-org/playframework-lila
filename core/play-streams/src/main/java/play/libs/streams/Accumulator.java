@@ -1,29 +1,27 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.libs.streams;
 
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscription;
-import org.reactivestreams.Subscriber;
-
 import akka.stream.Materializer;
 import akka.stream.javadsl.*;
-import play.api.libs.streams.Accumulator$;
-import scala.Option;
-import scala.jdk.javaapi.FutureConverters;
-import scala.jdk.javaapi.OptionConverters;
-import scala.concurrent.Future;
-import scala.runtime.AbstractFunction1;
-
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import play.api.libs.streams.Accumulator$;
+import scala.Option;
+import scala.concurrent.Future;
+import scala.jdk.javaapi.FutureConverters;
+import scala.jdk.javaapi.OptionConverters;
+import scala.runtime.AbstractFunction1;
 
 /**
  * Accumulates inputs asynchronously into an output value.

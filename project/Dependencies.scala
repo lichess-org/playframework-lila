@@ -1,6 +1,7 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
+
 import sbt._
 import Keys._
 
@@ -8,11 +9,11 @@ import buildinfo.BuildInfo
 
 object Dependencies {
   val akkaVersion: String = sys.props.getOrElse("akka.version", "2.6.20")
-  val akkaHttpVersion     = sys.props.getOrElse("akka.http.version", "10.2.7")
+  val akkaHttpVersion     = sys.props.getOrElse("akka.http.version", "10.2.10")
 
   val playJsonVersion = "2.10.0-RC7"
 
-  val logback = "ch.qos.logback" % "logback-classic" % "1.4.1"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.4.4"
 
   val specs2Version = "4.17.0"
   val specs2CoreDeps = Seq(
@@ -27,11 +28,11 @@ object Dependencies {
 
   val scalacheckDependencies = Seq(
     "org.specs2"     %% "specs2-scalacheck" % specs2Version % Test,
-    "org.scalacheck" %% "scalacheck"        % "1.16.0"      % Test
+    "org.scalacheck" %% "scalacheck"        % "1.17.0"      % Test
   )
 
   val jacksonVersion  = "2.13.4"
-  val jacksonDatabind = Seq("com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion)
+  val jacksonDatabind = Seq("com.fasterxml.jackson.core" % "jackson-databind" % "2.13.4.2")
   val jacksons = Seq(
     "com.fasterxml.jackson.core"     % "jackson-core",
     "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -50,7 +51,7 @@ object Dependencies {
 
   val playJson = "com.typesafe.play" %% "play-json" % playJsonVersion
 
-  val slf4jVersion = "2.0.0"
+  val slf4jVersion = "2.0.3"
   val slf4j        = Seq("slf4j-api", "jul-to-slf4j", "jcl-over-slf4j").map("org.slf4j" % _ % slf4jVersion)
   val slf4jSimple  = "org.slf4j" % "slf4j-simple" % slf4jVersion
 
@@ -66,10 +67,10 @@ object Dependencies {
       }
     })
 
-  val springFrameworkVersion = "5.3.22"
+  val springFrameworkVersion = "5.3.23"
 
   val joda = Seq(
-    "joda-time" % "joda-time"    % "2.12.0",
+    "joda-time" % "joda-time"    % "2.11.2",
     "org.joda"  % "joda-convert" % "2.2.2"
   )
 
@@ -142,7 +143,7 @@ object Dependencies {
     logback % Test
   )
 
-  val caffeineVersion = "3.0.1"
+  val caffeineVersion = "3.0.6"
   val playCaffeineDeps = Seq(
     "com.github.ben-manes.caffeine" % "caffeine" % caffeineVersion,
     "com.github.ben-manes.caffeine" % "jcache"   % caffeineVersion

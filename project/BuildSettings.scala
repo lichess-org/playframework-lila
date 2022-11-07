@@ -1,8 +1,7 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 import java.util.regex.Pattern
-import com.jsuereth.sbtpgp.PgpKeys
 import com.typesafe.tools.mima.core.ProblemFilters
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaKeys._
@@ -19,7 +18,7 @@ import scala.util.control.NonFatal
 
 object BuildSettings {
 
-  val playVersion = "2.8.16-lila_1.15"
+  val playVersion = "2.8.16-lila_1.16"
 
   /** File header settings.  */
   private def fileUriRegexFilter(pattern: String): FileFilter = new FileFilter {
@@ -44,8 +43,8 @@ object BuildSettings {
   /** These settings are used by all projects. */
   def playCommonSettings: Seq[Setting[_]] = Def.settings(
     ivyLoggingLevel := UpdateLogging.DownloadOnly,
+    resolvers ++= Resolver.sonatypeOssRepos("releases"), // sync ScriptedTools.scala
     resolvers ++= Seq(
-      Resolver.sonatypeRepo("releases"), // sync ScriptedTools.scala
       Resolver.typesafeRepo("releases"),
       Resolver.typesafeIvyRepo("releases"),
       Resolver.sbtPluginRepo("releases"), // weird sbt-pgp/play docs/vegemite issue

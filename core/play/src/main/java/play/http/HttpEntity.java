@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.http;
@@ -8,13 +8,12 @@ import akka.japi.pf.PFBuilder;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import play.api.http.HttpChunk;
 import play.twirl.api.Content;
 import play.twirl.api.Xml;
 import scala.jdk.javaapi.OptionConverters;
-
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 /** An HTTP entity */
 public abstract class HttpEntity {

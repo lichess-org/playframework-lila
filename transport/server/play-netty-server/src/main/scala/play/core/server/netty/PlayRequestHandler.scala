@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.server.netty
@@ -17,6 +17,7 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import play.api.Application
 import play.api.Logger
+import play.api.Mode
 import play.core.server.NettyServer
 import play.core.server.Server
 import play.core.server.common.ReloadCache

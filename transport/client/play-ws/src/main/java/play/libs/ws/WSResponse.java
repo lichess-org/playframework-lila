@@ -1,18 +1,17 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.libs.ws;
 
-import akka.util.ByteString;
 import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.w3c.dom.Document;
-
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.w3c.dom.Document;
 
 /** This is the WS response from the server. */
 public interface WSResponse extends StandaloneWSResponse {
