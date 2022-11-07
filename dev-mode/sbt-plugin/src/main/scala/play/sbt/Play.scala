@@ -56,12 +56,3 @@ object PlayNettyServer extends AutoPlugin {
     libraryDependencies ++= (if (PlayKeys.playPlugin.value) Nil else Seq(PlayImport.nettyServer))
   )
 }
-
-/**
- * This plugin enables the Play akka http server
- */
-object PlayAkkaHttpServer extends AutoPlugin {
-  override def requires        = PlayService
-  override def trigger         = allRequirements
-  override def projectSettings = Seq(libraryDependencies += PlayImport.akkaHttpServer)
-}
