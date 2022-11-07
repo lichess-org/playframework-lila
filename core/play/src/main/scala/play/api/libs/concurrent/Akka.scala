@@ -55,39 +55,6 @@ object Akka {
    */
   def providerOf[T <: Actor: ClassTag](name: String, props: Props => Props = identity): Provider[ActorRef] =
     new ActorRefProvider(name, props)
-
-  /**
-   * Create a binding for an actor implemented by the given class, with the given name.
-   *
-   * This will instantiate the actor using Play's injector, allowing it to be dependency injected itself.  The returned
-   * binding will provide the ActorRef for the actor, qualified with the given name, allowing it to be injected into
-   * other components.
-   *
-   * Example usage from a Play module:
-   * {{{
-   * def bindings = Seq(
-   *   Akka.bindingOf[MyActor]("myActor"),
-   *   ...
-   * )
-   * }}}
-   *
-   * Then to use the above actor in your application, add a qualified injected dependency, like so:
-   * {{{
-   *   class MyController @Inject() (@Named("myActor") myActor: ActorRef,
-   *      val controllerComponents: ControllerComponents) extends BaseController {
-   *     ...
-   *   }
-   * }}}
-   *
-   * @param name  The name of the actor.
-   * @param props A function to provide props for the actor. The props passed in will just describe how to create the
-   *              actor, this function can be used to provide additional configuration such as router and dispatcher
-   *              configuration.
-   * @tparam T The class that implements the actor.
-   * @return A binding for the actor.
-   */
-  def bindingOf[T <: Actor: ClassTag](name: String, props: Props => Props = identity): Binding[ActorRef] =
-    bind[ActorRef].qualifiedWith(name).to(providerOf[T](name, props)).eagerly()
 }
 
 /**
