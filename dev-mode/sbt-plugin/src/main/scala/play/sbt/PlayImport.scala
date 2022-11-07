@@ -24,13 +24,7 @@ object PlayImport {
 
   val nettyServer = component("play-netty-server")
 
-  val akkaHttpServer = component("play-akka-http-server")
-
   val logback = component("play-logback")
-
-  val jodaForms = component("play-joda-forms")
-
-  val ws = component("play-ahc-ws")
 
   object PlayKeys {
     val playDefaultPort    = SettingKey[Int]("playDefaultPort", "The default port that Play runs on")
