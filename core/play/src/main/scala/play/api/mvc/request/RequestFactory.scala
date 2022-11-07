@@ -10,7 +10,6 @@ import play.api.http.HttpConfiguration
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc._
-import play.core.system.RequestIdProvider
 
 /**
  * A `RequestFactory` provides logic for creating requests.
@@ -109,7 +108,6 @@ class DefaultRequestFactory @Inject() (
       headers: Headers,
       attrs: TypedMap
   ): RequestHeader = {
-    val requestId: Long = RequestIdProvider.freshId()
     val cookieCell = new LazyCell[Cookies] {
       protected override def emptyMarker: Cookies = null
       protected override def create: Cookies =
@@ -125,7 +123,6 @@ class DefaultRequestFactory @Inject() (
       protected override def create: Flash      = flashBaker.decodeFromCookie(cookieCell.value.get(flashBaker.COOKIE_NAME))
     }
     val updatedAttrMap = attrs + (
-      RequestAttrKey.Id      -> requestId,
       RequestAttrKey.Cookies -> cookieCell,
       RequestAttrKey.Session -> sessionCell,
       RequestAttrKey.Flash   -> flashCell
