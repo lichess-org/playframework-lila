@@ -124,9 +124,7 @@ object Dependencies {
     Seq(
       typesafeConfig,
       slf4jSimple,
-      sbtDep("com.typesafe.play" % "sbt-twirl"           % BuildInfo.sbtTwirlVersion),
-      sbtDep("com.github.sbt"    % "sbt-native-packager" % BuildInfo.sbtNativePackagerVersion),
-      sbtDep("com.typesafe.sbt"  % "sbt-web"             % "1.4.4"),
+      sbtDep("com.typesafe.play" % "sbt-twirl" % BuildInfo.sbtTwirlVersion),
       logback             % Test
     ) ++ specs2Deps.map(_ % Test)
   }

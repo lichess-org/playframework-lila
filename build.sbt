@@ -68,7 +68,8 @@ lazy val PlayNettyServerProject = PlayCrossBuiltProject("Play-Netty-Server", "tr
 lazy val SbtPluginProject = PlaySbtPluginProject("Sbt-Plugin", "dev-mode/sbt-plugin")
   .enablePlugins(SbtPlugin)
   .settings(
-    libraryDependencies ++= sbtDependencies((pluginCrossBuild / sbtVersion).value, scalaVersion.value),
+    scalaVersion := "2.12.17",
+    libraryDependencies ++= sbtDependencies((pluginCrossBuild / sbtVersion).value, "2.12.17"),
     (Compile / sourceGenerators) += Def.task {
       PlayVersion(
         version.value,
