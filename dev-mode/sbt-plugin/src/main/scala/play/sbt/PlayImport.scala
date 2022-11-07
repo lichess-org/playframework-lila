@@ -28,8 +28,6 @@ object PlayImport {
 
   val logback = component("play-logback")
 
-  val jodaForms = component("play-joda-forms")
-
   val ws = component("play-ahc-ws")
 
   object PlayKeys {
