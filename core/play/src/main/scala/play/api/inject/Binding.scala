@@ -151,28 +151,6 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
     qualifiedWith(implicitly[ClassTag[A]].runtimeClass.asInstanceOf[Class[A]])
 
   /**
-   * Qualify this binding key with the given name.
-   *
-   * For example, you may have both a cached implementation, and a direct implementation of a service. To differentiate
-   * between them, you may decide to name the cached one:
-   *
-   * {{{
-   *   bind[Foo].qualifiedWith("cached").to[FooCached],
-   *   bind[Foo].to[FooImpl]
-   *
-   *   ...
-   *
-   *   class MyController @Inject() (@Named("cached") foo: Foo) {
-   *     ...
-   *   }
-   * }}}
-   *
-   * In the above example, the controller will get the cached `Foo` service.
-   */
-  def qualifiedWith(name: String): BindingKey[T] =
-    qualifiedWith(new play.inject.NamedImpl(name))
-
-  /**
    * Bind this binding key to the given implementation class.
    *
    * This class will be instantiated and injected by the injection framework.
@@ -273,38 +251,33 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
  *
  * @see The [[Module]] class for information on how to provide bindings.
  */
-sealed trait BindingTarget[T] {
-}
+sealed trait BindingTarget[T] {}
 
 /**
  * A binding target that is provided by a provider instance.
  *
  * @see The [[Module]] class for information on how to provide bindings.
  */
-final case class ProviderTarget[T](provider: Provider[_ <: T]) extends BindingTarget[T] {
-}
+final case class ProviderTarget[T](provider: Provider[_ <: T]) extends BindingTarget[T] {}
 
 /**
  * A binding target that is provided by a provider class.
  *
  * @see The [[Module]] class for information on how to provide bindings.
  */
-final case class ProviderConstructionTarget[T](provider: Class[_ <: Provider[_ <: T]]) extends BindingTarget[T] {
-}
+final case class ProviderConstructionTarget[T](provider: Class[_ <: Provider[_ <: T]]) extends BindingTarget[T] {}
 
 /**
  * A binding target that is provided by a class.
  *
  * @see The [[play.api.inject.Module]] class for information on how to provide bindings.
  */
-final case class ConstructionTarget[T](implementation: Class[_ <: T]) extends BindingTarget[T] {
-}
+final case class ConstructionTarget[T](implementation: Class[_ <: T]) extends BindingTarget[T] {}
 
 /**
  * A binding target that is provided by another key - essentially an alias.
  */
-final case class BindingKeyTarget[T](key: BindingKey[_ <: T]) extends BindingTarget[T] {
-}
+final case class BindingKeyTarget[T](key: BindingKey[_ <: T]) extends BindingTarget[T] {}
 
 /**
  * A qualifier annotation.
@@ -314,24 +287,21 @@ final case class BindingKeyTarget[T](key: BindingKey[_ <: T]) extends BindingTar
  *
  * @see The [[Module]] class for information on how to provide bindings.
  */
-sealed trait QualifierAnnotation {
-}
+sealed trait QualifierAnnotation {}
 
 /**
  * A qualifier annotation instance.
  *
  * @see The [[Module]] class for information on how to provide bindings.
  */
-final case class QualifierInstance[T <: Annotation](instance: T) extends QualifierAnnotation {
-}
+final case class QualifierInstance[T <: Annotation](instance: T) extends QualifierAnnotation {}
 
 /**
  * A qualifier annotation class.
  *
  * @see The [[Module]] class for information on how to provide bindings.
  */
-final case class QualifierClass[T <: Annotation](clazz: Class[T]) extends QualifierAnnotation {
-}
+final case class QualifierClass[T <: Annotation](clazz: Class[T]) extends QualifierAnnotation {}
 
 private object SourceLocator {
   val provider =
