@@ -204,21 +204,6 @@ class AccumulatorSpec extends Specification {
           await(Accumulator.flatten(Future(sum)).run(errorSource)) must throwA[RuntimeException]("error")
         }
       }
-
-      "be compatible with Java accumulator" in {
-        "Java asScala" in withMaterializer { implicit m =>
-          await(
-            play.libs.streams.Accumulator
-              .fromSink(sum.toSink.mapMaterializedValue(_.asJava).asJava[Int])
-              .asScala()
-              .run(source)
-          ) must_== 6
-        }
-
-        "Scala asJava" in withMaterializer { implicit m =>
-          await(sum.asJava.run(source.asJava, m).asScala) must_== 6
-        }
-      }
     }
 
     "run with a single element" in {
@@ -263,21 +248,6 @@ class AccumulatorSpec extends Specification {
       "be flattenable from a future of itself" in {
         "for a successful future" in withMaterializer { implicit m =>
           await(Accumulator.flatten(Future(sum)).run(6)) must_== 6
-        }
-      }
-
-      "be compatible with Java accumulator" in {
-        "Java asScala" in withMaterializer { implicit m =>
-          await(
-            play.libs.streams.Accumulator
-              .fromSink(sum.toSink.mapMaterializedValue(_.asJava).asJava[Int])
-              .asScala()
-              .run(6)
-          ) must_== 6
-        }
-
-        "Scala asJava" in withMaterializer { implicit m =>
-          await(sum.asJava.run(6, m).asScala) must_== 6
         }
       }
     }
