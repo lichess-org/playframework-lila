@@ -9,6 +9,13 @@ import sbt._
 import sbt.io.Path._
 import org.scalafmt.sbt.ScalafmtPlugin
 
+scalacOptions ++= Seq(
+  "nowarn", // migration
+  "-source:future-migration",
+  "-rewrite",
+  "-Xtarget:12"
+)
+
 lazy val RoutesCompilerProject = PlayDevelopmentProject("Routes-Compiler", "dev-mode/routes-compiler")
   .enablePlugins(SbtTwirl)
   .settings(

@@ -4,32 +4,32 @@
 
 package play.api.mvc
 
-import java.io._
-import java.nio.charset.StandardCharsets._
-import java.nio.charset._
+import java.io.*
+import java.nio.charset.StandardCharsets.*
+import java.nio.charset.*
 import java.nio.file.Files
 import java.util.Locale
 
 import javax.inject.Inject
 import akka.actor.ActorSystem
-import akka.stream._
+import akka.stream.*
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.StreamConverters
-import akka.stream.stage._
+import akka.stream.stage.*
 import akka.util.ByteString
-import play.api._
+import play.api.*
 import play.api.data.DefaultFormBinding
 import play.api.data.Form
 import play.api.data.FormBinding
-import play.api.http.Status._
-import play.api.http._
+import play.api.http.Status.*
+import play.api.http.*
 import play.api.libs.Files.SingletonTemporaryFileCreator
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.Files.TemporaryFileCreator
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc.MultipartFormData._
+import play.api.mvc.MultipartFormData.*
 import play.core.Execution
 import play.core.parsers.Multipart
 import play.utils.PlayIO
@@ -42,7 +42,7 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.control.Exception.catching
 import scala.util.control.NonFatal
-import scala.xml._
+import scala.xml.*
 
 /**
  * A request body that adapts automatically according the request Content-Type.
@@ -224,7 +224,7 @@ case class RawBuffer(
     temporaryFileCreator: TemporaryFileCreator,
     initialData: ByteString = ByteString.empty
 ) {
-  import play.api.libs.Files._
+  import play.api.libs.Files.*
 
   @volatile private var inMemory: ByteString                 = initialData
   @volatile private var backedByTemporaryFile: TemporaryFile = _
@@ -799,7 +799,7 @@ trait PlayBodyParsers extends BodyParserUtils {
   def tolerantFormUrlEncoded(maxLength: Long): BodyParser[Map[String, Seq[String]]] =
     tolerantBodyParser("formUrlEncoded", maxLength, "Error parsing application/x-www-form-urlencoded") {
       (request, bytes) =>
-        import play.core.parsers._
+        import play.core.parsers.*
         val charset          = request.charset.getOrElse("UTF-8")
         val urlEncodedString = bytes.decodeString("UTF-8")
         FormUrlEncodedParser.parse(urlEncodedString, charset)

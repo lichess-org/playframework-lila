@@ -12,14 +12,14 @@ import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 
-import scala.annotation.unchecked.{ uncheckedVariance => uV }
+import scala.annotation.unchecked.{ uncheckedVariance as uV }
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.jdk.FutureConverters._
+import scala.jdk.FutureConverters.*
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import scala.jdk.OptionConverters._
+import scala.jdk.OptionConverters.*
 
 /**
  * An accumulator of elements into a future of a result.
@@ -54,7 +54,7 @@ sealed trait Accumulator[-E, +A] {
   /**
    * Return a new accumulator that first feeds the input through the given flow before it goes through this accumulator.
    */
-  def through[F](flow: Flow[F, E, _]): Accumulator[F, A]
+  def through[F](flow: Flow[F, E, ?]): Accumulator[F, A]
 
   /**
    * Right associative operator alias for through.
@@ -67,12 +67,12 @@ sealed trait Accumulator[-E, +A] {
    *   val stringAccumulator = toInt ~>: intAccumulator
    * }}}
    */
-  def ~>:[F](flow: Flow[F, E, _]): Accumulator[F, A] = through(flow)
+  def ~>:[F](flow: Flow[F, E, ?]): Accumulator[F, A] = through(flow)
 
   /**
    * Run this accumulator by feeding in the given source.
    */
-  def run(source: Source[E, _])(implicit materializer: Materializer): Future[A]
+  def run(source: Source[E, ?])(implicit materializer: Materializer): Future[A]
 
   /**
    * Run this accumulator by feeding nothing into it.
@@ -95,7 +95,7 @@ sealed trait Accumulator[-E, +A] {
    *   val intFuture = source ~>: intAccumulator
    * }}}
    */
-  def ~>:(source: Source[E, _])(implicit materializer: Materializer): Future[A] = run(source)
+  def ~>:(source: Source[E, ?])(implicit materializer: Materializer): Future[A] = run(source)
 
   /**
    * Convert this accumulator to a Sink that gets materialised to a Future.
@@ -126,9 +126,9 @@ private class SinkAccumulator[-E, +A](wrappedSink: => Sink[E, Future[A]]) extend
   )(implicit executor: ExecutionContext): Accumulator[E, B] =
     new SinkAccumulator(sink.mapMaterializedValue(_.recoverWith(pf)))
 
-  def through[F](flow: Flow[F, E, _]): Accumulator[F, A] = new SinkAccumulator(flow.toMat(sink)(Keep.right))
+  def through[F](flow: Flow[F, E, ?]): Accumulator[F, A] = new SinkAccumulator(flow.toMat(sink)(Keep.right))
 
-  def run(source: Source[E, _])(implicit materializer: Materializer): Future[A] = source.toMat(sink)(Keep.right).run()
+  def run(source: Source[E, ?])(implicit materializer: Materializer): Future[A] = source.toMat(sink)(Keep.right).run()
   def run()(implicit materializer: Materializer): Future[A]                     = run(Source.empty)
   def run(elem: E)(implicit materializer: Materializer): Future[A]              = run(Source.single(elem))
 
@@ -179,18 +179,18 @@ private class StrictAccumulator[-E, +A](handler: Option[E] => Future[A], val toS
       }
     }
 
-  override def through[F](flow: Flow[F, E, _]): Accumulator[F, A] = {
+  override def through[F](flow: Flow[F, E, ?]): Accumulator[F, A] = {
     new SinkAccumulator(flow.toMat(toSink)(Keep.right))
   }
 
-  override def run(source: Source[E, _])(implicit materializer: Materializer): Future[A] = source.runWith(toSink)
+  override def run(source: Source[E, ?])(implicit materializer: Materializer): Future[A] = source.runWith(toSink)
   override def run()(implicit materializer: Materializer): Future[A]                     = handler(None)
   override def run(elem: E)(implicit materializer: Materializer): Future[A]              = handler(Some(elem))
 }
 
 private class FlattenedAccumulator[-E, +A](future: Future[Accumulator[E, A]])(implicit materializer: Materializer)
     extends SinkAccumulator[E, A](Accumulator.futureToSink(future)) {
-  override def run(source: Source[E, _])(implicit materializer: Materializer): Future[A] = {
+  override def run(source: Source[E, ?])(implicit materializer: Materializer): Future[A] = {
     future.flatMap(_.run(source))(materializer.executionContext)
   }
 
@@ -256,7 +256,7 @@ object Accumulator {
    *
    * @return An accumulator that forwards the stream to the produced source.
    */
-  def source[E]: Accumulator[E, Source[E, _]] = {
+  def source[E]: Accumulator[E, Source[E, ?]] = {
     // If Akka streams ever provides Sink.source(), we should use that instead.
     // https://github.com/akka/akka/issues/18406
     new SinkAccumulator(

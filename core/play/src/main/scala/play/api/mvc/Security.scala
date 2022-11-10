@@ -4,9 +4,9 @@
 
 package play.api.mvc
 
-import play.api._
+import play.api.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc.Results._
+import play.api.mvc.Results.*
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

@@ -14,8 +14,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 import play.api.MarkerContexts.SecurityMarkerContext
-import play.api._
-import play.api.http._
+import play.api.*
+import play.api.http.*
 import play.api.inject.SimpleModule
 import play.api.inject.bind
 import play.api.libs.crypto.CookieSigner
@@ -206,7 +206,7 @@ trait CookieHeaderEncoding {
   val SetCookieHeaderSeparator      = ";;"
   val SetCookieHeaderSeparatorRegex = SetCookieHeaderSeparator.r
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   // We use netty here but just as an API to handle cookies encoding
 
@@ -380,7 +380,7 @@ object CookieHeaderMerging {
    */
   private def mergeOn[A, B](input: Iterable[A], f: A => B): Seq[A] = {
     val withMergeValue: Seq[(B, A)] = input.toSeq.map(el => (f(el), el))
-    ListMap(withMergeValue: _*).values.toSeq
+    ListMap(withMergeValue *).values.toSeq
   }
 
   /**

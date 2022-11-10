@@ -6,14 +6,14 @@ package play.core.formatters
 
 import java.nio.CharBuffer
 import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets._
+import java.nio.charset.StandardCharsets.*
 import java.util.concurrent.ThreadLocalRandom
 
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
-import akka.stream.stage._
-import akka.stream._
+import akka.stream.stage.*
+import akka.stream.*
 import akka.util.ByteString
 import akka.util.ByteStringBuilder
 import play.api.mvc.MultipartFormData
@@ -29,9 +29,9 @@ object Multipart {
    * Transforms a `Source[MultipartFormData.Part]` to a `Source[ByteString]`
    */
   def transform(
-      body: Source[MultipartFormData.Part[Source[ByteString, _]], _],
+      body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?],
       boundary: String
-  ): Source[ByteString, _] = {
+  ): Source[ByteString, ?] = {
     body.via(format(boundary, Charset.defaultCharset(), 4096))
   }
 
@@ -42,8 +42,8 @@ object Multipart {
       boundary: String,
       nioCharset: Charset,
       chunkSize: Int
-  ): Flow[MultipartFormData.Part[Source[ByteString, _]], ByteString, NotUsed] = {
-    Flow[MultipartFormData.Part[Source[ByteString, _]]]
+  ): Flow[MultipartFormData.Part[Source[ByteString, ?]], ByteString, NotUsed] = {
+    Flow[MultipartFormData.Part[Source[ByteString, ?]]]
       .via(streamed(boundary, nioCharset, chunkSize))
       .flatMapConcat(identity)
   }
@@ -127,9 +127,9 @@ object Multipart {
       boundary: String,
       nioCharset: Charset,
       chunkSize: Int
-  ): GraphStage[FlowShape[MultipartFormData.Part[Source[ByteString, _]], Source[ByteString, Any]]] =
-    new GraphStage[FlowShape[MultipartFormData.Part[Source[ByteString, _]], Source[ByteString, Any]]] {
-      val in  = Inlet[MultipartFormData.Part[Source[ByteString, _]]]("CustomCharsetByteStringFormatter.in")
+  ): GraphStage[FlowShape[MultipartFormData.Part[Source[ByteString, ?]], Source[ByteString, Any]]] =
+    new GraphStage[FlowShape[MultipartFormData.Part[Source[ByteString, ?]], Source[ByteString, Any]]] {
+      val in  = Inlet[MultipartFormData.Part[Source[ByteString, ?]]]("CustomCharsetByteStringFormatter.in")
       val out = Outlet[Source[ByteString, Any]]("CustomCharsetByteStringFormatter.out")
 
       override def shape = FlowShape.of(in, out)

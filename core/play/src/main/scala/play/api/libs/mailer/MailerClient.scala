@@ -1,6 +1,6 @@
 package play.api.libs.mailer
 
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 trait MailerClient {
 

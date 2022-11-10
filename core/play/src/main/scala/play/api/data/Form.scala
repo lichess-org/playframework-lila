@@ -7,12 +7,12 @@ package play.api.data
 import akka.annotation.InternalApi
 
 import scala.language.existentials
-import play.api.data.format._
-import play.api.data.validation._
+import play.api.data.format.*
+import play.api.data.validation.*
 import play.api.http.HttpVerbs
-import play.api.i18n._
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.i18n.*
+import play.api.libs.json.*
+import play.api.mvc.*
 import scala.util.control.NoStackTrace
 
 /**
@@ -96,7 +96,7 @@ case class Form[T](mapping: Mapping[T], data: Map[String, String], errors: Seq[F
    *
    * @return a copy of this form filled with the new data
    */
-  def bindFromRequest()(implicit request: play.api.mvc.Request[_], formBinding: FormBinding): Form[T] = {
+  def bindFromRequest()(implicit request: play.api.mvc.Request[?], formBinding: FormBinding): Form[T] = {
     bindFromRequest(formBinding(request))
   }
 
@@ -279,7 +279,7 @@ case class Form[T](mapping: Mapping[T], data: Map[String, String], errors: Seq[F
  * @param value the field value, if any
  */
 case class Field(
-    private val form: Form[_],
+    private val form: Form[?],
     name: String,
     constraints: Seq[(String, Seq[Any])],
     format: Option[(String, Seq[Any])],
@@ -542,7 +542,7 @@ trait Mapping[T] { self =>
   /**
    * Sub-mappings (these can be seen as sub-keys).
    */
-  def mappings: Seq[Mapping[_]]
+  def mappings: Seq[Mapping[?]]
 
   /**
    * The Format expected for this field, if it exists.
@@ -857,7 +857,7 @@ case class RepeatedMapping[T](
   /**
    * Sub-mappings (these can be seen as sub-keys).
    */
-  val mappings: Seq[Mapping[_]] = wrapped.mappings
+  val mappings: Seq[Mapping[?]] = wrapped.mappings
 }
 
 /**
@@ -940,7 +940,7 @@ case class OptionalMapping[T](wrapped: Mapping[T], constraints: Seq[Constraint[O
   }
 
   /** Sub-mappings (these can be seen as sub-keys). */
-  val mappings: Seq[Mapping[_]] = wrapped.mappings
+  val mappings: Seq[Mapping[?]] = wrapped.mappings
 }
 
 /**
@@ -1027,7 +1027,7 @@ case class FieldMapping[T](key: String = "", constraints: Seq[Constraint[T]] = N
   }
 
   /** Sub-mappings (these can be seen as sub-keys). */
-  val mappings: Seq[Mapping[_]] = Seq(this)
+  val mappings: Seq[Mapping[?]] = Seq(this)
 }
 
 /**
@@ -1072,7 +1072,7 @@ case class FormJsonExpansionTooDeep(limit: Int)
     with NoStackTrace
 
 trait FormBinding {
-  def apply(request: play.api.mvc.Request[_]): Map[String, Seq[String]]
+  def apply(request: play.api.mvc.Request[?]): Map[String, Seq[String]]
 }
 
 object FormBinding {
@@ -1091,7 +1091,7 @@ object FormBinding {
 class DefaultFormBinding(maxChars: Long, maxDepth: Int) extends FormBinding {
   def this(maxChars: Long) = this(maxChars, Form.FromJsonMaxDepth)
 
-  def apply(request: play.api.mvc.Request[_]): Map[String, Seq[String]] = {
+  def apply(request: play.api.mvc.Request[?]): Map[String, Seq[String]] = {
     import play.api.mvc.MultipartFormData
     val unwrap = request.body match {
       case body: play.api.mvc.AnyContent =>
@@ -1099,19 +1099,19 @@ class DefaultFormBinding(maxChars: Long, maxDepth: Int) extends FormBinding {
       case body => body
     }
     val data: Map[String, Seq[String]] = unwrap match {
-      case body: Map[_, _]                   => body.asInstanceOf[Map[String, Seq[String]]]
-      case body: MultipartFormData[_]        => multipartFormParse(body)
-      case Right(body: MultipartFormData[_]) => multipartFormParse(body)
+      case body: Map[?, ?]                   => body.asInstanceOf[Map[String, Seq[String]]]
+      case body: MultipartFormData[?]        => multipartFormParse(body)
+      case Right(body: MultipartFormData[?]) => multipartFormParse(body)
       case body: play.api.libs.json.JsValue  => jsonParse(body).toMap
       case _                                 => Map.empty
     }
-    val method: Map[_ <: String, Seq[String]] = request.method.toUpperCase match {
+    val method: Map[? <: String, Seq[String]] = request.method.toUpperCase match {
       case HttpVerbs.POST | HttpVerbs.PUT | HttpVerbs.PATCH => Map.empty
       case _                                                => request.queryString
     }
     (data ++ method).toMap
   }
-  private def multipartFormParse(body: MultipartFormData[_]) = body.asFormUrlEncoded
+  private def multipartFormParse(body: MultipartFormData[?]) = body.asFormUrlEncoded
 
   private def jsonParse(jsValue: JsValue) = FormUtils.fromJson(jsValue, maxChars, maxDepth).view.mapValues(Seq(_))
 }

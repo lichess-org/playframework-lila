@@ -11,11 +11,11 @@ import java.util.Properties
 import java.time.Period
 import java.time.temporal.TemporalAmount
 
-import com.typesafe.config._
+import com.typesafe.config.*
 import play.twirl.api.utils.StringEscapeUtils
 import play.utils.PlayIO
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NonFatal
@@ -127,8 +127,8 @@ object Configuration {
    */
   def from(data: Map[String, Any]): Configuration = {
     def toJava(data: Any): Any = data match {
-      case map: Map[_, _]        => map.view.mapValues(toJava).toMap.asJava
-      case iterable: Iterable[_] => iterable.map(toJava).asJava
+      case map: Map[?, ?]        => map.view.mapValues(toJava).toMap.asJava
+      case iterable: Iterable[?] => iterable.map(toJava).asJava
       case v                     => v
     }
 

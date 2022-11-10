@@ -4,7 +4,7 @@
 
 package play.api.mvc
 
-import java.lang.{ StringBuilder => JStringBuilder }
+import java.lang.{ StringBuilder as JStringBuilder }
 import java.net.URLEncoder
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,9 +16,9 @@ import akka.stream.scaladsl.FileIO
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
 import akka.util.ByteString
-import play.api.http.HeaderNames._
+import play.api.http.HeaderNames.*
 import play.api.http.FileMimeTypes
-import play.api.http._
+import play.api.http.*
 import play.api.i18n.Lang
 import play.api.Logger
 import play.api.Mode
@@ -28,7 +28,7 @@ import play.api.libs.typedmap.TypedMap
 import play.core.utils.CaseInsensitiveOrdered
 import play.core.utils.HttpHeaderParameterEncoding
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContext
 
@@ -208,7 +208,7 @@ case class Result(
    * @return the new result
    */
   def discardingCookies(cookies: DiscardingCookie*): Result = {
-    withCookies(cookies.map(_.toCookie): _*)
+    withCookies(cookies.map(_.toCookie) *)
   }
 
   /**
@@ -384,7 +384,7 @@ case class Result(
    * @param e1 The new attribute.
    * @return The new version of this object with the new attribute.
    */
-  def addAttrs(e1: TypedEntry[_]): Result = withAttrs(attrs + e1)
+  def addAttrs(e1: TypedEntry[?]): Result = withAttrs(attrs + e1)
 
   /**
    * Create a new versions of this object with the given attributes attached to it.
@@ -393,7 +393,7 @@ case class Result(
    * @param e2 The second new attribute.
    * @return The new version of this object with the new attributes.
    */
-  def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_]): Result = withAttrs(attrs + e1 + e2)
+  def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?]): Result = withAttrs(attrs + e1 + e2)
 
   /**
    * Create a new versions of this object with the given attributes attached to it.
@@ -403,7 +403,7 @@ case class Result(
    * @param e3 The third new attribute.
    * @return The new version of this object with the new attributes.
    */
-  def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_], e3: TypedEntry[_]): Result = withAttrs(attrs + e1 + e2 + e3)
+  def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?], e3: TypedEntry[?]): Result = withAttrs(attrs + e1 + e2 + e3)
 
   /**
    * Create a new versions of this object with the given attributes attached to it.
@@ -411,8 +411,8 @@ case class Result(
    * @param entries The new attributes.
    * @return The new version of this object with the new attributes.
    */
-  def addAttrs(entries: TypedEntry[_]*): Result =
-    withAttrs(attrs.+(entries: _*))
+  def addAttrs(entries: TypedEntry[?]*): Result =
+    withAttrs(attrs.+(entries *))
 
   /**
    * Create a new versions of this object with the given attribute removed.
@@ -420,7 +420,7 @@ case class Result(
    * @param key The key of the attribute to remove.
    * @return The new version of this object with the attribute removed.
    */
-  def removeAttr(key: TypedKey[_]): Result =
+  def removeAttr(key: TypedKey[?]): Result =
     withAttrs(attrs - key)
 }
 
@@ -513,7 +513,7 @@ object Results extends Results {
 
 /** Helper utilities to generate results. */
 trait Results {
-  import play.api.http.Status._
+  import play.api.http.Status.*
 
   /**
    * Generates default `Result` from a content type, headers and content.
@@ -534,7 +534,7 @@ trait Results {
       )
     }
 
-    private def streamFile(file: Source[ByteString, _], name: Option[String], length: Option[Long], inline: Boolean)(
+    private def streamFile(file: Source[ByteString, ?], name: Option[String], length: Option[Long], inline: Boolean)(
         implicit fileMimeTypes: FileMimeTypes
     ): Result = {
       Result(
@@ -635,7 +635,7 @@ trait Results {
      * @param content Source providing the content to stream.
      * @param contentType an optional content type.
      */
-    def chunked[C](content: Source[C, _], contentType: Option[String] = None)(
+    def chunked[C](content: Source[C, ?], contentType: Option[String] = None)(
         implicit writeable: Writeable[C]
     ): Result = {
       Result(
@@ -661,7 +661,7 @@ trait Results {
      *      deducing it from this file name if the {@code implicit fileMimeTypes} includes it or fallback to the content-type of the
      *      {@code implicit writeable} if unknown.
      */
-    def chunked[C](content: Source[C, _], inline: Boolean, fileName: Option[String])(
+    def chunked[C](content: Source[C, ?], inline: Boolean, fileName: Option[String])(
         implicit writeable: Writeable[C],
         fileMimeTypes: FileMimeTypes
     ): Result = {
@@ -684,7 +684,7 @@ trait Results {
      * @param contentLength an optional content length.
      * @param contentType an optional content type.
      */
-    def streamed[C](content: Source[C, _], contentLength: Option[Long], contentType: Option[String] = None)(
+    def streamed[C](content: Source[C, ?], contentLength: Option[Long], contentType: Option[String] = None)(
         implicit writeable: Writeable[C]
     ): Result = {
       Result(
@@ -708,7 +708,7 @@ trait Results {
      *      deducing it from this file name if the {@code implicit fileMimeTypes} includes it or fallback to the content-type of the
      *      {@code implicit writeable} if unknown.
      */
-    def streamed[C](content: Source[C, _], contentLength: Option[Long], inline: Boolean, fileName: Option[String])(
+    def streamed[C](content: Source[C, ?], contentLength: Option[Long], inline: Boolean, fileName: Option[String])(
         implicit writeable: Writeable[C],
         fileMimeTypes: FileMimeTypes
     ): Result = {

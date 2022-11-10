@@ -4,8 +4,8 @@
 
 package play.core.utils
 
-import java.lang.{ StringBuilder => JStringBuilder }
-import java.util.{ BitSet => JBitSet }
+import java.lang.{ StringBuilder as JStringBuilder }
+import java.util.{ BitSet as JBitSet }
 
 /**
  * Support for rending HTTP header parameters according to RFC5987.

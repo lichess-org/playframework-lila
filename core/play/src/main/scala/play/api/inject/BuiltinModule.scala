@@ -15,13 +15,13 @@ import akka.actor.CoordinatedShutdown
 import akka.actor.typed.Scheduler
 import akka.stream.Materializer
 import com.typesafe.config.Config
-import play.api._
-import play.api.http.HttpConfiguration._
-import play.api.http._
+import play.api.*
+import play.api.http.HttpConfiguration.*
+import play.api.http.*
 import play.api.libs.Files.TemporaryFileReaperConfigurationProvider
-import play.api.libs.Files._
-import play.api.libs.concurrent._
-import play.api.mvc._
+import play.api.libs.Files.*
+import play.api.libs.concurrent.*
+import play.api.mvc.*
 import play.api.mvc.request.DefaultRequestFactory
 import play.api.mvc.request.RequestFactory
 import play.api.routing.Router
@@ -38,12 +38,12 @@ import scala.concurrent.ExecutionContextExecutor
  */
 class BuiltinModule
     extends SimpleModule((env, conf) => {
-      def dynamicBindings(factories: ((Environment, Configuration) => Seq[Binding[_]])*) = {
+      def dynamicBindings(factories: ((Environment, Configuration) => Seq[Binding[?]])*) = {
         factories.flatMap(_(env, conf))
       }
 
       Seq(
-        bind[Environment] to env,
+        bind[Environment] `to` env,
         bind[ConfigurationProvider].to(new ConfigurationProvider(conf)),
         bind[Configuration].toProvider[ConfigurationProvider],
         bind[Config].toProvider[ConfigProvider],
@@ -114,7 +114,7 @@ class RoutesProvider @Inject() (
 }
 
 object RoutesProvider {
-  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
     val routerClass = Router.load(environment, configuration)
 
     import scala.language.existentials

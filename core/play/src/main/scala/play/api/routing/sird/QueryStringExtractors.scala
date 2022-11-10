@@ -22,7 +22,7 @@ class SeqQueryStringParameter(paramName: String) extends QueryStringParameterExt
 }
 
 trait QueryStringParameterExtractor[T] {
-  import QueryStringParameterExtractor._
+  import QueryStringParameterExtractor.*
   def unapply(qs: QueryString): Option[T]
   def unapply(req: RequestHeader): Option[T] = unapply(req.queryString)
   def unapply(uri: URI): Option[T]           = unapply(parse(uri.getRawQuery))

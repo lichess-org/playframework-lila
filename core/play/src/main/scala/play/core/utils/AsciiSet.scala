@@ -4,7 +4,7 @@
 
 package play.core.utils
 
-import java.util.{ BitSet => JBitSet }
+import java.util.{ BitSet as JBitSet }
 
 object AsciiSet {
 

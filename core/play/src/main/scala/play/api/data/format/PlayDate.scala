@@ -5,7 +5,7 @@
 package play.api.data.format
 
 import java.time.format.DateTimeFormatter
-import java.time.temporal._
+import java.time.temporal.*
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime

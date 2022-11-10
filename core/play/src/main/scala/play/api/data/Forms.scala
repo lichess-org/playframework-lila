@@ -4,8 +4,8 @@
 
 package play.api.data
 
-import play.api.data.format._
-import play.api.data.validation._
+import play.api.data.format.*
+import play.api.data.validation.*
 
 /**
  * Contains data manipulation helpers (typically HTTP form handling)
@@ -223,7 +223,7 @@ object Forms {
 
   // --
 
-  import Formats._
+  import Formats.*
 
   /**
    * Constructs a simple mapping for a text field.

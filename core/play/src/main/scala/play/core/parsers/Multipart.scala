@@ -12,21 +12,21 @@ import scala.concurrent.Future
 import scala.util.Failure
 
 import akka.stream.Materializer
-import akka.stream.scaladsl._
+import akka.stream.scaladsl.*
 import akka.stream.Attributes
 import akka.stream.FlowShape
 import akka.stream.Inlet
 import akka.stream.IOResult
 import akka.stream.Outlet
-import akka.stream.stage._
+import akka.stream.stage.*
 import akka.util.ByteString
 
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.Files.TemporaryFileCreator
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
-import play.api.mvc.MultipartFormData._
-import play.api.http.Status._
+import play.api.mvc.*
+import play.api.mvc.MultipartFormData.*
+import play.api.http.Status.*
 import play.api.http.HttpErrorHandler
 
 import play.core.Execution.Implicits.trampoline
@@ -49,7 +49,7 @@ object Multipart {
    */
   @deprecated("Use the overloaded partParser method that takes the allowEmptyFiles flag", "2.9.0")
   def partParser[A](maxMemoryBufferSize: Long, errorHandler: HttpErrorHandler)(
-      partHandler: Accumulator[Part[Source[ByteString, _]], Either[Result, A]]
+      partHandler: Accumulator[Part[Source[ByteString, ?]], Either[Result, A]]
   )(implicit mat: Materializer): BodyParser[A] = partParser(maxMemoryBufferSize, false, errorHandler)(partHandler)
 
   /**
@@ -61,7 +61,7 @@ object Multipart {
    * @param partHandler The accumulator to handle the parts.
    */
   def partParser[A](maxMemoryBufferSize: Long, allowEmptyFiles: Boolean, errorHandler: HttpErrorHandler)(
-      partHandler: Accumulator[Part[Source[ByteString, _]], Either[Result, A]]
+      partHandler: Accumulator[Part[Source[ByteString, ?]], Either[Result, A]]
   )(implicit mat: Materializer): BodyParser[A] = BodyParser { request =>
     val maybeBoundary = for {
       mt         <- request.mediaType
@@ -76,8 +76,8 @@ object Multipart {
           .splitWhen(_.isLeft)
           .prefixAndTail(1)
           .map {
-            case (Seq(Left(part: FilePart[_])), body) =>
-              part.copy[Source[ByteString, _]](ref = body.collect {
+            case (Seq(Left(part: FilePart[?])), body) =>
+              part.copy[Source[ByteString, ?]](ref = body.collect {
                 case Right(bytes) => bytes
               })
             case (Seq(Left(other)), ignored) =>
@@ -126,11 +126,11 @@ object Multipart {
       errorHandler: HttpErrorHandler
   )(implicit mat: Materializer): BodyParser[MultipartFormData[A]] = BodyParser { request =>
     partParser(maxMemoryBufferSize, allowEmptyFiles, errorHandler) {
-      val handleFileParts = Flow[Part[Source[ByteString, _]]].mapAsync(1) {
-        case filePart: FilePart[Source[ByteString, _]] =>
+      val handleFileParts = Flow[Part[Source[ByteString, ?]]].mapAsync(1) {
+        case filePart: FilePart[Source[ByteString, ?]] =>
           filePartHandler(FileInfo(filePart.key, filePart.filename, filePart.contentType, filePart.dispositionType))
             .run(filePart.ref)
-        case other: Part[_] => Future.successful(other.asInstanceOf[Part[Nothing]])
+        case other: Part[?] => Future.successful(other.asInstanceOf[Part[Nothing]])
       }
 
       val multipartAccumulator = Accumulator(Sink.fold[Seq[Part[A]], Part[A]](Vector.empty)(_ :+ _)).mapFuture {
@@ -441,7 +441,7 @@ object Multipart {
               val headerString = input.slice(headerStart, headerEnd).utf8String
               val headers: Map[String, String] =
                 headerString.linesIterator.map { header =>
-                  val key :: value = header.trim.split(":").toList
+                  val key :: value = header.trim.split(":").toList: @unchecked
 
                   (key.trim.toLowerCase(java.util.Locale.ENGLISH), value.mkString(":").trim)
                 }.toMap

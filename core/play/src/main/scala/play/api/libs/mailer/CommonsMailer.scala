@@ -12,7 +12,7 @@ import org.apache.commons.mail.MultiPartEmail
 import org.slf4j.LoggerFactory
 
 import javax.activation.URLDataSource
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 import scala.util.control.NonFatal
 
 abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {

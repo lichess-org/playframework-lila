@@ -32,7 +32,7 @@ trait Request[+A] extends RequestHeader {
    * it is an entity representing an "empty" body.
    */
   override def hasBody: Boolean = {
-    import play.api.http.HeaderNames._
+    import play.api.http.HeaderNames.*
     if (headers.get(CONTENT_LENGTH).isDefined || headers.get(TRANSFER_ENCODING).isDefined) {
       // A relevant header is set, which means this is a real request or a fake request used for testing where the user
       // cared about setting the headers. We can just use them to see if a body exists. In a real life production application,
@@ -84,13 +84,13 @@ trait Request[+A] extends RequestHeader {
     new RequestImpl[A](connection, method, target, version, headers, newAttrs, body)
   override def addAttr[B](key: TypedKey[B], value: B): Request[A] =
     withAttrs(attrs.updated(key, value))
-  override def addAttrs(e1: TypedEntry[_]): Request[A]                    = withAttrs(attrs + e1)
-  override def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_]): Request[A] = withAttrs(attrs + (e1, e2))
-  override def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_], e3: TypedEntry[_]): Request[A] =
+  override def addAttrs(e1: TypedEntry[?]): Request[A]                    = withAttrs(attrs + e1)
+  override def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?]): Request[A] = withAttrs(attrs + (e1, e2))
+  override def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?], e3: TypedEntry[?]): Request[A] =
     withAttrs(attrs + (e1, e2, e3))
-  override def addAttrs(entries: TypedEntry[_]*): Request[A] =
-    withAttrs(attrs.+(entries: _*))
-  override def removeAttr(key: TypedKey[_]): Request[A] =
+  override def addAttrs(entries: TypedEntry[?]*): Request[A] =
+    withAttrs(attrs.+(entries *))
+  override def removeAttr(key: TypedKey[?]): Request[A] =
     withAttrs(attrs - key)
 }
 

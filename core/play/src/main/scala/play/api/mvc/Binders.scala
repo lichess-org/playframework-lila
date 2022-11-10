@@ -10,10 +10,10 @@ import java.util.OptionalDouble
 import java.util.OptionalInt
 import java.util.OptionalLong
 import java.util.UUID
-import scala.annotation._
+import scala.annotation.*
 
-import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters._
+import scala.jdk.CollectionConverters.*
+import scala.jdk.OptionConverters.*
 
 import reflect.ClassTag
 
@@ -488,7 +488,7 @@ object PathBindable {
   /**
    * This is used by the Java RouterBuilder DSL.
    */
-  private[play] lazy val pathBindableRegister: Map[Class[_], PathBindable[_]] = {
+  private[play] lazy val pathBindableRegister: Map[Class[?], PathBindable[?]] = {
     import scala.language.existentials
     def register[T](implicit pb: PathBindable[T], ct: ClassTag[T]) = ct.runtimeClass -> pb
     Map(

@@ -4,7 +4,7 @@
 
 package play.utils
 
-import java.io._
+import java.io.*
 
 import scala.io.Codec
 import java.net.URL

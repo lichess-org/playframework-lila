@@ -6,22 +6,22 @@ package play.api.http
 
 import java.util.concurrent.CompletionStage
 
-import javax.inject._
-import play.api._
-import play.api.http.Status._
+import javax.inject.*
+import play.api.*
+import play.api.http.Status.*
 import play.api.inject.Binding
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.Results.*
+import play.api.mvc.*
 import play.api.routing.Router
 import play.mvc.Http
 import play.utils.PlayIO
 import play.utils.Reflect
 
 import scala.annotation.tailrec
-import scala.jdk.FutureConverters._
-import scala.concurrent._
+import scala.jdk.FutureConverters.*
+import scala.concurrent.*
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -93,7 +93,7 @@ class PreferredMediaTypeHttpErrorHandler(val handlers: (String, HttpErrorHandler
 }
 
 object PreferredMediaTypeHttpErrorHandler {
-  def apply(handlers: (String, HttpErrorHandler)*) = new PreferredMediaTypeHttpErrorHandler(handlers: _*)
+  def apply(handlers: (String, HttpErrorHandler)*) = new PreferredMediaTypeHttpErrorHandler(handlers *)
 }
 
 object HttpErrorHandler {
@@ -101,7 +101,7 @@ object HttpErrorHandler {
   /**
    * Get the bindings for the error handler from the configuration
    */
-  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
     Reflect.bindingsFromConfiguration[
       HttpErrorHandler,
       DefaultHttpErrorHandler

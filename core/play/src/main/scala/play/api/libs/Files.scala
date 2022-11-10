@@ -8,8 +8,8 @@ import java.io.File
 import java.io.IOException
 import java.lang.ref.Reference
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{ Files => JFiles }
-import java.nio.file._
+import java.nio.file.{ Files as JFiles }
+import java.nio.file.*
 import java.time.Clock
 import java.time.Instant
 import java.util.stream
@@ -27,7 +27,7 @@ import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.language.implicitConversions
 import scala.util.Failure
 import scala.util.Try
@@ -363,7 +363,7 @@ object Files {
       Future {
         playTempFolder
           .map { f =>
-            import scala.jdk.StreamConverters._
+            import scala.jdk.StreamConverters.*
 
             val directoryStream: stream.Stream[Path] = JFiles.list(f)
 
@@ -399,7 +399,7 @@ object Files {
     }
 
     if (config.enabled) {
-      import config._
+      import config.*
       playTempFolder match {
         case Some(folder) =>
           logger.debug(s"Reaper enabled on $folder, starting in $initialDelay with $interval intervals")

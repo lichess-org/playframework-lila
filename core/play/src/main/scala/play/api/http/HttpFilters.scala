@@ -17,7 +17,7 @@ import play.api.Logger
 import play.api.mvc.EssentialFilter
 import play.utils.Reflect
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * Provides filters to the [[play.api.http.HttpRequestHandler]].
@@ -44,7 +44,7 @@ trait HttpFilters {
 class DefaultHttpFilters @Inject() (val filters: EssentialFilter*) extends HttpFilters
 
 object HttpFilters {
-  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
     Reflect.bindingsFromConfiguration[
       HttpFilters,
       EnabledFilters

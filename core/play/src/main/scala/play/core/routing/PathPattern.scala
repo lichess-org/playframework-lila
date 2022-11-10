@@ -35,7 +35,7 @@ case class StaticPart(value: String) extends PathPart {
  * A pattern for match paths, consisting of a sequence of path parts.
  */
 case class PathPattern(parts: Seq[PathPart]) {
-  import java.util.regex._
+  import java.util.regex.*
 
   private def decodeIfEncoded(decode: Boolean, groupCount: Int): Matcher => Either[Throwable, String] =
     matcher =>

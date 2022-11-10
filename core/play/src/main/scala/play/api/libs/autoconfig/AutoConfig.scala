@@ -28,4 +28,6 @@ object AutoConfig {
    */
   // TODO make it scala3
   def loader[T]: ConfigLoader[T] = ??? // macro AutoConfigImpl.loader[T]
+
+  // given derived[T: Type](using Quotes): Expr[ConfigLoader[T]] = ???
 }

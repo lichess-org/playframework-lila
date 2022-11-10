@@ -4,8 +4,8 @@
 
 package play.api.libs
 
-import javax.naming._
-import javax.naming.Context._
+import javax.naming.*
+import javax.naming.Context.*
 
 /**
  * JNDI Helpers.

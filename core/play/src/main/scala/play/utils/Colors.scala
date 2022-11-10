@@ -5,7 +5,7 @@
 package play.utils
 
 object Colors {
-  import scala.Console._
+  import scala.Console.*
 
   lazy val isANSISupported = {
     sys.props

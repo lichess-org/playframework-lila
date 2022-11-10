@@ -9,7 +9,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import play.api.mvc.Headers
 
-import scala.jdk.OptionConverters._
+import scala.jdk.OptionConverters.*
 import scala.concurrent.Future
 
 /**
@@ -39,7 +39,7 @@ sealed trait HttpEntity {
   /**
    * The entity as a data stream.
    */
-  def dataStream: Source[ByteString, _]
+  def dataStream: Source[ByteString, ?]
 
   /**
    * Consume the data from this entity.
@@ -85,7 +85,7 @@ object HttpEntity {
    *                      delimited.
    * @param contentType The content type, if known.
    */
-  final case class Streamed(data: Source[ByteString, _], contentLength: Option[Long], contentType: Option[String])
+  final case class Streamed(data: Source[ByteString, ?], contentLength: Option[Long], contentType: Option[String])
       extends HttpEntity {
     def isKnownEmpty = false
     def dataStream   = data
@@ -101,7 +101,7 @@ object HttpEntity {
    *               contain no trailers.
    * @param contentType The content type, if known.
    */
-  final case class Chunked(chunks: Source[HttpChunk, _], contentType: Option[String]) extends HttpEntity {
+  final case class Chunked(chunks: Source[HttpChunk, ?], contentType: Option[String]) extends HttpEntity {
     def isKnownEmpty  = false
     def contentLength = None
     def dataStream = chunks.collect {

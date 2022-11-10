@@ -5,11 +5,11 @@
 package play.api.http
 
 import akka.util.ByteString
-import play.api.mvc._
-import play.api.libs.json._
-import play.twirl.api._
+import play.api.mvc.*
+import play.api.libs.json.*
+import play.twirl.api.*
 
-import scala.annotation._
+import scala.annotation.*
 
 /**
  * Defines the default content type for type `A`.

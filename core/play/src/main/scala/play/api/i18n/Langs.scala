@@ -14,7 +14,7 @@ import play.api.Logger
 
 import scala.util.Try
 import scala.util.control.NonFatal
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * A Lang supported by the application.

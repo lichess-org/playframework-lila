@@ -4,7 +4,7 @@
 
 package play.api.data
 
-import validation._
+import validation.*
 
 /*
   DO NOT EDIT THE SCALA CODE IN THIS FILE, IT IS GENERATED.

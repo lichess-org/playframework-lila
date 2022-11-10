@@ -72,7 +72,7 @@ object LoggerConfigurator {
       config: Configuration,
       optionalProperties: Map[String, String]
   ): Map[String, String] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     val mutableMap = new scala.collection.mutable.HashMap[String, String]()
     mutableMap.put("application.home", env.rootPath.getAbsolutePath)
 
@@ -93,7 +93,7 @@ object LoggerConfigurator {
 
   def apply(loggerConfiguratorClassName: String, classLoader: ClassLoader): Option[LoggerConfigurator] = {
     try {
-      val loggerConfiguratorClass: Class[_] = classLoader.loadClass(loggerConfiguratorClassName)
+      val loggerConfiguratorClass: Class[?] = classLoader.loadClass(loggerConfiguratorClassName)
       Some(loggerConfiguratorClass.getDeclaredConstructor().newInstance().asInstanceOf[LoggerConfigurator])
     } catch {
       case ex: Exception =>

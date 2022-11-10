@@ -4,27 +4,27 @@
 
 package play.api
 
-import java.io._
+import java.io.*
 
 import akka.actor.ActorSystem
 import akka.actor.CoordinatedShutdown
 import akka.stream.Materializer
 import javax.inject.Inject
 import javax.inject.Singleton
-import play.api.http._
+import play.api.http.*
 import play.api.inject.ApplicationLifecycle
-import play.api.inject._
+import play.api.inject.*
 import play.api.internal.libs.concurrent.CoordinatedShutdownSupport
-import play.api.libs.Files._
+import play.api.libs.Files.*
 import play.api.libs.concurrent.AkkaComponents
 import play.api.libs.concurrent.AkkaTypedComponents
 import play.api.libs.concurrent.CoordinatedShutdownProvider
-import play.api.libs.crypto._
-import play.api.mvc._
+import play.api.libs.crypto.*
+import play.api.mvc.*
 import play.api.mvc.request.DefaultRequestFactory
 import play.api.mvc.request.RequestFactory
 import play.api.routing.Router
-import play.utils._
+import play.utils.*
 
 import scala.annotation.implicitNotFound
 import scala.concurrent.Future
@@ -111,7 +111,7 @@ trait Application {
   /**
    * Stop the application.  The returned future will be redeemed when all stop hooks have been run.
    */
-  def stop(): Future[_]
+  def stop(): Future[?]
 
   /**
    * Get the runtime injector for this application. In a runtime dependency injection based application, this can be
@@ -199,7 +199,7 @@ class DefaultApplication @Inject() (
 
   override def classloader: ClassLoader = environment.classLoader
 
-  override def stop(): Future[_] =
+  override def stop(): Future[?] =
     CoordinatedShutdownSupport.asyncShutdown(actorSystem, ApplicationStoppedReason)
 }
 

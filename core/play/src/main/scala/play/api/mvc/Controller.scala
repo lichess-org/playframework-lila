@@ -6,7 +6,7 @@ package play.api.mvc
 
 import javax.inject.Inject
 import play.api.data.FormBinding
-import play.api.http._
+import play.api.http.*
 import play.twirl.api.Html
 
 import scala.concurrent.ExecutionContext

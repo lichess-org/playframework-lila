@@ -7,11 +7,11 @@ package play.api.http
 import javax.inject.Inject
 import javax.inject.Provider
 
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.inject.Binding
 import play.api.inject.BindingKey
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.routing.Router
 import play.api.Configuration
 import play.api.Environment
@@ -40,7 +40,7 @@ trait HttpRequestHandler {
 }
 
 object HttpRequestHandler {
-  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
     Reflect.bindingsFromConfiguration[
       HttpRequestHandler,
       DefaultHttpRequestHandler

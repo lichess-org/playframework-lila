@@ -18,7 +18,7 @@ import scala.util.control.NonFatal
 
 object BuildSettings {
 
-  val playVersion = "2.8.18-lila_3.2"
+  val playVersion = "2.8.18-lila_3.3"
 
   def evictionSettings: Seq[Setting[_]] = Seq(
     // This avoids a lot of dependency resolution warnings to be showed.
@@ -31,7 +31,7 @@ object BuildSettings {
 
   /** These settings are used by all projects. */
   def playCommonSettings: Seq[Setting[_]] = Def.settings(
-    scalaVersion := "3.2.0",
+    scalaVersion := "3.2.1",
     ivyLoggingLevel := UpdateLogging.DownloadOnly,
     resolvers ++= Resolver.sonatypeOssRepos("releases"), // sync ScriptedTools.scala
     resolvers ++= Seq(
@@ -42,13 +42,7 @@ object BuildSettings {
     evictionSettings,
     ivyConfigurations ++= Seq(SourcesApplication),
     javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation"),
-    (Compile / doc / scalacOptions) := {
-      // disable the new scaladoc feature for scala 2.12+ (https://github.com/scala/scala-dev/issues/249 and https://github.com/scala/bug/issues/11340)
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, v)) if v >= 12 => Seq("-no-java-comments")
-        case _                       => Seq()
-      }
-    },
+    (Compile / doc / scalacOptions) := Seq("-no-java-comments"),
     (Test / fork) := true,
     (Test / parallelExecution) := false,
     (Test / test / testListeners) := Nil,
@@ -140,12 +134,6 @@ object BuildSettings {
     Project(name, file(dir))
       .enablePlugins(PlayLibrary, AkkaSnapshotRepositories)
       .settings(playRuntimeSettings: _*)
-      .settings(
-        scalacOptions ++= Seq(
-          "-source:3.0-migration",
-          "-rewrite"
-        )
-      )
   }
 
   def playScriptedSettings: Seq[Setting[_]] = Seq(

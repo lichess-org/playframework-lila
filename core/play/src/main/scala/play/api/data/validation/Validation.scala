@@ -247,7 +247,7 @@ object Invalid {
    * @param args the validation error message arguments
    * @return an `Invalid` value
    */
-  def apply(error: String, args: Any*): Invalid = Invalid(Seq(ValidationError(error, args: _*)))
+  def apply(error: String, args: Any*): Invalid = Invalid(Seq(ValidationError(error, args *)))
 }
 
 object ParameterValidator {
@@ -286,8 +286,8 @@ object ValidationError {
    * Conversion from a JsonValidationError to a Play ValidationError.
    */
   def fromJsonValidationError(jve: JsonValidationError): ValidationError = {
-    ValidationError(jve.message, jve.args: _*)
+    ValidationError(jve.message, jve.args *)
   }
 
-  def apply(message: String, args: Any*) = new ValidationError(Seq(message), args: _*)
+  def apply(message: String, args: Any*) = new ValidationError(Seq(message), args *)
 }

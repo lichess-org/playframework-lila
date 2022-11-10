@@ -10,10 +10,10 @@ import java.util.OptionalLong
 import java.util.OptionalDouble
 
 import play.api.http.HttpErrorHandler
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.routing.Router
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * A route
@@ -187,9 +187,9 @@ a1 <- pa1.value
   }
   // format: on
 
-  def call[T](params: List[Param[_]])(generator: (Seq[_]) => Handler): Handler =
+  def call[T](params: List[Param[?]])(generator: (Seq[?]) => Handler): Handler =
     (params
-      .foldLeft[Either[String, Seq[_]]](Right(Seq[T]())) { (seq, param) =>
+      .foldLeft[Either[String, Seq[?]]](Right(Seq[T]())) { (seq, param) =>
         seq.flatMap(s => param.value.map(s :+ _))
       })
       .fold(badRequest, generator)

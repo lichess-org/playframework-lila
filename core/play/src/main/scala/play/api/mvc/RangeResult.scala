@@ -16,12 +16,12 @@ import akka.stream.scaladsl.FileIO
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
-import akka.stream.stage._
+import akka.stream.stage.*
 import akka.util.ByteString
 import play.api.http.ContentTypes
-import play.api.http.HeaderNames._
+import play.api.http.HeaderNames.*
 import play.api.http.HttpEntity
-import play.api.http.Status._
+import play.api.http.Status.*
 
 // Long should be good enough to represent even very large files
 // considering that Long.MAX_VALUE is 9223372036854775807 which
@@ -380,7 +380,7 @@ object RangeResult {
 
   def ofSource(
       entityLength: Long,
-      source: Source[ByteString, _],
+      source: Source[ByteString, ?],
       rangeHeader: Option[String],
       fileName: Option[String],
       contentType: Option[String]
@@ -390,7 +390,7 @@ object RangeResult {
 
   def ofSource(
       entityLength: Option[Long],
-      source: Source[ByteString, _],
+      source: Source[ByteString, ?],
       rangeHeader: Option[String],
       fileName: Option[String],
       contentType: Option[String]
@@ -405,7 +405,7 @@ object RangeResult {
   @ApiMayChange
   def ofSource(
       entityLength: Option[Long],
-      getSource: Long => (Long, Source[ByteString, _]),
+      getSource: Long => (Long, Source[ByteString, ?]),
       rangeHeader: Option[String],
       fileName: Option[String],
       contentType: Option[String]
