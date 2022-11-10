@@ -87,6 +87,7 @@ object Dependencies {
         playJson,
         guava,
         "javax.inject"                                              % "javax.inject" % "1",
+        mailer
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
   val nettyVersion = "4.1.84.Final"
@@ -161,4 +162,6 @@ object Dependencies {
     "com.typesafe.play"             % "shaded-oauth"            % playWsStandaloneVersion,
     "com.github.ben-manes.caffeine" % "jcache"                  % caffeineVersion % Test,
   )
+
+  val mailer = "org.apache.commons" % "commons-email" % "1.5"
 }
