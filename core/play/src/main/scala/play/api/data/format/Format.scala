@@ -88,7 +88,7 @@ object Formats {
    * @param key Key name of the field to parse
    * @param data Field data
    */
-  def parsing[T](parse: String => T, errMsg: String, errArgs: Seq[Any])(
+  def parsing[T](parse: String => T, errMsg: String, errArgs: Seq[Matchable])(
       key: String,
       data: Map[String, String]
   ): Either[Seq[FormError], T] = {

@@ -252,7 +252,7 @@ case class Form[T](mapping: Mapping[T], data: Map[String, String], errors: Seq[F
    * @param args Error message arguments
    * @return a copy of this form with the added error
    */
-  def withError(key: String, message: String, args: Any*): Form[T] = withError(FormError(key, message, args))
+  def withError(key: String, message: String, args: Matchable*): Form[T] = withError(FormError(key, message, args))
 
   /**
    * Adds a global error to this form
@@ -260,7 +260,7 @@ case class Form[T](mapping: Mapping[T], data: Map[String, String], errors: Seq[F
    * @param args Error message arguments
    * @return a copy of this form with the added global error
    */
-  def withGlobalError(message: String, args: Any*): Form[T] = withError(FormError("", message, args))
+  def withGlobalError(message: String, args: Matchable*): Form[T] = withError(FormError("", message, args))
 
   /**
    * Discards this form’s errors
@@ -508,10 +508,10 @@ private[data] object FormUtils {
  *                 is passed the last one will be used.
  * @param args Arguments used to format the message.
  */
-case class FormError(key: String, messages: Seq[String], args: Seq[Any] = Nil) {
+case class FormError(key: String, messages: Seq[String], args: Seq[Matchable] = Nil) {
   def this(key: String, message: String) = this(key, Seq(message), Nil)
 
-  def this(key: String, message: String, args: Seq[Any]) = this(key, Seq(message), args)
+  def this(key: String, message: String, args: Seq[Matchable]) = this(key, Seq(message), args)
 
   lazy val message = messages.last
 
@@ -526,7 +526,7 @@ case class FormError(key: String, messages: Seq[String], args: Seq[Any] = Nil) {
 object FormError {
   def apply(key: String, message: String) = new FormError(key, message)
 
-  def apply(key: String, message: String, args: Seq[Any]) = new FormError(key, message, args)
+  def apply(key: String, message: String, args: Seq[Matchable]) = new FormError(key, message, args)
 }
 
 /**
