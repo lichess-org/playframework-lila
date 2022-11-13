@@ -12,7 +12,7 @@ import org.apache.commons.mail.MultiPartEmail
 import org.slf4j.LoggerFactory
 
 import javax.activation.URLDataSource
-import scala.collection.JavaConverters.*
+import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
 abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
@@ -30,14 +30,24 @@ abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
   def createEmail(data: Email): MultiPartEmail = {
     val email = createEmail(data.bodyText, data.bodyHtml, data.charset.getOrElse("utf-8"))
     email.setSubject(data.subject)
-    setAddress(data.from) { (address, name) => email.setFrom(address, name) }
-    data.replyTo.foreach(setAddress(_) { (address, name) => email.addReplyTo(address, name) })
+    setAddress(data.from) { (address, name) =>
+      email.setFrom(address, name)
+    }
+    data.replyTo.foreach(setAddress(_) { (address, name) =>
+      email.addReplyTo(address, name)
+    })
     data.bounceAddress.foreach(email.setBounceAddress)
-    data.to.foreach(setAddress(_) { (address, name) => email.addTo(address, name) })
-    data.cc.foreach(setAddress(_) { (address, name) => email.addCc(address, name) })
-    data.bcc.foreach(setAddress(_) { (address, name) => email.addBcc(address, name) })
-    data.headers.foreach {
-      header => email.addHeader(header._1, header._2)
+    data.to.foreach(setAddress(_) { (address, name) =>
+      email.addTo(address, name)
+    })
+    data.cc.foreach(setAddress(_) { (address, name) =>
+      email.addCc(address, name)
+    })
+    data.bcc.foreach(setAddress(_) { (address, name) =>
+      email.addBcc(address, name)
+    })
+    data.headers.foreach { header =>
+      email.addHeader(header._1, header._2)
     }
     conf.timeout.foreach(email.setSocketTimeout)
     conf.connectionTimeout.foreach(email.setSocketConnectionTimeout)
@@ -59,15 +69,21 @@ abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
     }
     email.setStartTLSEnabled(conf.tls || conf.tlsRequired)
     email.setStartTLSRequired(conf.tlsRequired)
-    val authenticator = for (u <- conf.user; p <- conf.password) yield new DefaultAuthenticator(u, p)
+    val authenticator = for {
+      u <- conf.user
+      p <- conf.password
+    } yield new DefaultAuthenticator(u, p)
     authenticator.foreach(email.setAuthenticator(_))
 
     // After the email was set up we can now also manipulate the session properties directly
     val mailProperties = email.getMailSession.getProperties()
-    conf.props.entrySet().asScala.foreach(prop => {
-      mailProperties.setProperty("mail.smtp." + prop.getKey(), prop.getValue().unwrapped().toString)
-      mailProperties.setProperty("mail.smtps." + prop.getKey(), prop.getValue().unwrapped().toString)
-    })
+    conf.props
+      .entrySet()
+      .asScala
+      .foreach(prop => {
+        mailProperties.setProperty("mail.smtp." + prop.getKey(), prop.getValue().unwrapped().toString)
+        mailProperties.setProperty("mail.smtps." + prop.getKey(), prop.getValue().unwrapped().toString)
+      })
     email.setMailSession(Session.getInstance(mailProperties, authenticator.orNull))
 
     if (conf.debugMode && logger.isDebugEnabled) {
@@ -119,8 +135,8 @@ abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
     if (emailAddress != null) {
       try {
         val iAddress = new InternetAddress(emailAddress)
-        val address = iAddress.getAddress
-        val name = iAddress.getPersonal
+        val address  = iAddress.getAddress
+        val name     = iAddress.getPersonal
         setter(address, name)
       } catch {
         case NonFatal(_) => setter(emailAddress, null)
@@ -131,22 +147,23 @@ abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
   private def handleAttachmentData(email: MultiPartEmail, attachmentData: AttachmentData): Unit = {
     val description = attachmentData.description.getOrElse(attachmentData.name)
     val disposition = attachmentData.disposition.getOrElse(EmailAttachment.ATTACHMENT)
-    val dataSource = new javax.mail.util.ByteArrayDataSource(attachmentData.data, attachmentData.mimetype)
+    val dataSource  = new javax.mail.util.ByteArrayDataSource(attachmentData.data, attachmentData.mimetype)
     attachmentData.contentId match {
       case Some(cid) =>
         email match {
           case htmlEmail: HtmlEmail => htmlEmail.embed(dataSource, attachmentData.name, cid)
-          case _ => if (conf.debugMode && logger.isDebugEnabled) {
-            logger.debug("You need to set an HTML body to embed images with cid")
-          }
+          case _ =>
+            if (conf.debugMode && logger.isDebugEnabled) {
+              logger.debug("You need to set an HTML body to embed images with cid")
+            }
         }
       case None => email.attach(dataSource, attachmentData.name, description, disposition)
     }
   }
 
   private def handleAttachmentFile(email: MultiPartEmail, attachmentFile: AttachmentFile): Unit = {
-    val description = attachmentFile.description.getOrElse(attachmentFile.name)
-    val disposition = attachmentFile.disposition.getOrElse(EmailAttachment.ATTACHMENT)
+    val description     = attachmentFile.description.getOrElse(attachmentFile.name)
+    val disposition     = attachmentFile.disposition.getOrElse(EmailAttachment.ATTACHMENT)
     val emailAttachment = new EmailAttachment()
     emailAttachment.setName(attachmentFile.name)
     emailAttachment.setPath(attachmentFile.file.getPath)
@@ -156,9 +173,10 @@ abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
       case Some(cid) =>
         email match {
           case htmlEmail: HtmlEmail => htmlEmail.embed(attachmentFile.file, cid)
-          case _ => if (conf.debugMode && logger.isDebugEnabled) {
-            logger.debug("You need to set an HTML body to embed images with cid")
-          }
+          case _ =>
+            if (conf.debugMode && logger.isDebugEnabled) {
+              logger.debug("You need to set an HTML body to embed images with cid")
+            }
         }
       case None => email.attach(emailAttachment)
     }
@@ -167,14 +185,15 @@ abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
   private def handleAttachmentDataSource(email: MultiPartEmail, attachmentDataSource: AttachmentDataSource): Unit = {
     val description = attachmentDataSource.description.getOrElse(attachmentDataSource.name)
     val disposition = attachmentDataSource.disposition.getOrElse(EmailAttachment.ATTACHMENT)
-    val dataSource = attachmentDataSource.dataSource
+    val dataSource  = attachmentDataSource.dataSource
     attachmentDataSource.contentId match {
       case Some(cid) =>
         email match {
           case htmlEmail: HtmlEmail => htmlEmail.embed(dataSource, attachmentDataSource.name, cid)
-          case _ => if (conf.debugMode && logger.isDebugEnabled) {
-            logger.debug("You need to set an HTML body to embed images with cid")
-          }
+          case _ =>
+            if (conf.debugMode && logger.isDebugEnabled) {
+              logger.debug("You need to set an HTML body to embed images with cid")
+            }
         }
       case None => email.attach(dataSource, attachmentDataSource.name, description, disposition)
     }
@@ -183,14 +202,15 @@ abstract class CommonsMailer(conf: SMTPConfiguration) extends MailerClient {
   private def handleAttachmentURL(email: MultiPartEmail, attachmentURL: AttachmentURL): Unit = {
     val description = attachmentURL.description.getOrElse(attachmentURL.name)
     val disposition = attachmentURL.disposition.getOrElse(EmailAttachment.ATTACHMENT)
-    val url = attachmentURL.url
+    val url         = attachmentURL.url
     attachmentURL.contentId match {
       case Some(cid) =>
         email match {
           case htmlEmail: HtmlEmail => htmlEmail.embed(new URLDataSource(url), attachmentURL.name, cid)
-          case _ => if (conf.debugMode && logger.isDebugEnabled) {
-            logger.debug("You need to set an HTML body to embed images with cid")
-          }
+          case _ =>
+            if (conf.debugMode && logger.isDebugEnabled) {
+              logger.debug("You need to set an HTML body to embed images with cid")
+            }
         }
       case None => email.attach(url, attachmentURL.name, description, disposition)
     }
