@@ -11,6 +11,7 @@ import org.scalafmt.sbt.ScalafmtPlugin
 
 scalacOptions ++= Seq(
   "nowarn", // migration
+  "-Xcheck-macros",
   "-source:future-migration",
   "-rewrite",
   "-Xtarget:12"

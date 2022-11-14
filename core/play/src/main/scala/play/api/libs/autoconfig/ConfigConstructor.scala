@@ -21,3 +21,11 @@ import scala.annotation.StaticAnnotation
 /** Used to mark a non-primary constructor as the constructor to use to instantiate the configuration class.
   */
 final class ConfigConstructor extends StaticAnnotation
+
+
+
+case class Config(a: Int, b: String)
+val config = Config(42, "ha")
+
+// val _ = AutoConfig.fun(config)
+val _ = AutoConfig.loader[Config]
