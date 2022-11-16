@@ -146,6 +146,9 @@ package object templates {
     "play.api.Play.routesCompilerMaybeApplication.map(_.injector).getOrElse(play.api.inject.NewInstanceInjector)"
 
   val scalaReservedWords = List(
+    "given",
+    "using",
+    "extension",
     "abstract",
     "case",
     "catch",
@@ -162,6 +165,7 @@ package object templates {
     "if",
     "implicit",
     "import",
+    "export",
     "lazy",
     "macro",
     "match",
