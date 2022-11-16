@@ -18,7 +18,7 @@ import scala.util.control.NonFatal
 
 object BuildSettings {
 
-  val playVersion = "2.8.18-lila_1.19"
+  val playVersion = "2.8.18-lila_1.20"
 
   /** File header settings.  */
   private def fileUriRegexFilter(pattern: String): FileFilter = new FileFilter {

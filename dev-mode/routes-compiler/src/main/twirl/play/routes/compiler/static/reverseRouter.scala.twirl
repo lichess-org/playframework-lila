@@ -10,10 +10,10 @@ import play.api.mvc.Call
 import @if(!i.startsWith("_root_.")){_root_.}@i}
 
 @markLines(routes: _*)
-@{packageName.map("package " + _ + " ").getOrElse("")}@if(packageName.isDefined){@ob}
+@{packageName.map("package " + _ + ".routes ").getOrElse("")}@if(packageName.isDefined){@ob}
 @for((controller, routes) <- groupRoutesByController(routes)) {
   @markLines(routes: _*)
-  final class Reverse@(controller.replace(".", "_")) @ob
+  object @(controller.replace(".", "_")) @ob
 
   @for(((method, _), routes) <- groupRoutesByMethod(routes)) {@routes match {
   case Seq(route: Route) => {
