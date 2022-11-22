@@ -34,7 +34,6 @@ trait RoutesGenerator {
 private object RoutesGenerator {
   val ForwardsRoutesFile = "Routes.scala"
   val ReverseRoutesFile  = "ReverseRoutes.scala"
-  val JavaWrapperFile    = "routes.java"
 }
 
 /**
@@ -201,25 +200,6 @@ object InjectedRoutesGenerator extends RoutesGenerator {
             )
             .body
             .replace("""import _root_.controllers.Assets.Asset""", "")
-    }
-  }
-
-  private def generateJavaWrappers(
-      sourceInfo: RoutesSourceInfo,
-      namespace: Option[String],
-      rules: List[Rule],
-      namespaceReverseRouter: Boolean
-  ) = {
-    rules.collect { case r: Route => r }.groupBy(_.call.packageName.map(_.stripPrefix("_root_."))).map {
-      case (pn, routes) =>
-        val packageName = namespace
-          .filter(_ => namespaceReverseRouter)
-          .map(_ + pn.map("." + _).getOrElse(""))
-          .orElse(pn.orElse(namespace))
-        val controllers = routes.groupBy(_.call.controller).keys.toSeq
-
-        (packageName.map(_.replace(".", "/") + "/").getOrElse("") + JavaWrapperFile) ->
-          static.twirl.javaWrappers(sourceInfo, namespace, packageName, controllers).body
     }
   }
 }
