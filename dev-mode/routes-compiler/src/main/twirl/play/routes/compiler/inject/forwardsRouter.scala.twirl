@@ -7,6 +7,7 @@
 // @@GENERATOR:play-routes-compiler
 // @@SOURCE:@sourceInfo.source
 
+package router
 @for(p <- pkg) {package @p}
 
 import play.core.routing._
