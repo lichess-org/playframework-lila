@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.streams
@@ -79,7 +79,7 @@ private[play] object Execution {
           runnables.addLast(next)
           runnables.addLast(runnable)
           local.set(runnables)
-        case arrayDeque: ArrayDeque[_] =>
+        case arrayDeque: ArrayDeque[?] =>
           // Add this Runnable to the end of the existing ArrayDeque
           val runnables = arrayDeque.asInstanceOf[ArrayDeque[Runnable]]
           runnables.addLast(runnable)
@@ -104,7 +104,7 @@ private[play] object Execution {
           next.run()
           // Recurse in case more Runnables were added
           executeScheduled()
-        case arrayDeque: ArrayDeque[_] =>
+        case arrayDeque: ArrayDeque[?] =>
           val runnables = arrayDeque.asInstanceOf[ArrayDeque[Runnable]]
           // Rather than recursing, we can use a more efficient
           // while loop. The value of the ThreadLocal will stay as

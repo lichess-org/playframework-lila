@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs
@@ -12,7 +12,7 @@ import akka.util.ByteStringBuilder
 import play.twirl.api.utils.StringEscapeUtils
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import play.twirl.api._
+import play.twirl.api.*
 
 /**
  * Helper function to produce a Comet using <a href="http://doc.akka.io/docs/akka/2.6/scala/stream/index.html">Akka Streams</a>.

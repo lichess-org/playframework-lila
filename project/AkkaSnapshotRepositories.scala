@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 import sbt.Keys._
 import sbt._
 
@@ -14,7 +18,8 @@ object AkkaSnapshotRepositories extends AutoPlugin {
     resolvers ++= sys.env
       .get("GITHUB_EVENT_NAME")
       .filter(_.equalsIgnoreCase("schedule"))
-      .map(_ => Resolver.sonatypeRepo("snapshots")) // contains akka(-http) snapshots
+      .map(_ => Resolver.sonatypeOssRepos("snapshots")) // contains akka(-http) snapshots
       .toSeq
+      .flatten
   }
 }

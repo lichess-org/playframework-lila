@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.sbt.scriptedtools
@@ -20,8 +20,6 @@ import scala.sys.process.Process
 import sbt._
 import sbt.Keys._
 
-import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
-
 import play.sbt.routes.RoutesCompiler.autoImport._
 import play.sbt.run.PlayRun
 
@@ -29,7 +27,7 @@ object ScriptedTools extends AutoPlugin {
   override def trigger = allRequirements
 
   override def projectSettings: Seq[Def.Setting[_]] = Def.settings(
-    resolvers += Resolver.sonatypeRepo("releases"), // sync BuildSettings.scala
+    resolvers ++= Resolver.sonatypeOssRepos("releases"), // sync BuildSettings.scala
     // This is copy/pasted from AkkaSnapshotRepositories since scripted tests also need
     // the snapshot resolvers in `cron` builds.
     // If this is a scheduled GitHub Action
@@ -37,9 +35,25 @@ object ScriptedTools extends AutoPlugin {
     resolvers ++= sys.env
       .get("GITHUB_EVENT_NAME")
       .filter(_.equalsIgnoreCase("schedule"))
-      .map(_ => Resolver.sonatypeRepo("snapshots")) // contains akka(-http) snapshots
+      .map(_ => Resolver.sonatypeOssRepos("snapshots")) // contains akka(-http) snapshots
       .toSeq
+      .flatten
   )
+
+  def scalaVersionFromJavaProperties() =
+    sys
+      .props("scala.crossversions")
+      .split(" ")
+      .toSeq
+      .filter(v => SemanticSelector(sys.props("scala.version")).matches(VersionNumber(v))) match {
+      case Nil =>
+        sys.error("Unable to detect scalaVersion! Did you pass scala.crossversions and scala.version Java properties?")
+      case Seq(version) => version
+      case multiple =>
+        sys.error(
+          s"Multiple crossScalaVersions matched query '${sys.props("scala.version")}': ${multiple.mkString(", ")}"
+        )
+    }
 
   def callIndex(): Unit                   = callUrl("/")
   def applyEvolutions(path: String): Unit = callUrl(path)

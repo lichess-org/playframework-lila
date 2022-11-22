@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.libs.ws.ahc;
@@ -7,10 +7,6 @@ package play.libs.ws.ahc;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.w3c.dom.Document;
-import play.libs.ws.*;
-import play.mvc.Http;
-
 import java.io.File;
 import java.io.InputStream;
 import java.time.Duration;
@@ -20,6 +16,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import org.w3c.dom.Document;
+import play.libs.ws.*;
+import play.mvc.Http;
 
 /** A Play WS request backed by AsyncHTTPClient implementation. */
 public class AhcWSRequest implements WSRequest {

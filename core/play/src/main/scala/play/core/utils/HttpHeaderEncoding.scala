@@ -1,11 +1,11 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.utils
 
-import java.lang.{ StringBuilder => JStringBuilder }
-import java.util.{ BitSet => JBitSet }
+import java.lang.{ StringBuilder as JStringBuilder }
+import java.util.{ BitSet as JBitSet }
 
 /**
  * Support for rending HTTP header parameters according to RFC5987.

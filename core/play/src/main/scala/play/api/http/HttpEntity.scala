@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.http
@@ -8,9 +8,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import play.api.mvc.Headers
-import play.http.{ HttpEntity => JHttpEntity }
 
-import scala.jdk.OptionConverters._
+import scala.jdk.OptionConverters.*
 import scala.concurrent.Future
 
 /**
@@ -40,7 +39,7 @@ sealed trait HttpEntity {
   /**
    * The entity as a data stream.
    */
-  def dataStream: Source[ByteString, _]
+  def dataStream: Source[ByteString, ?]
 
   /**
    * Consume the data from this entity.
@@ -48,11 +47,6 @@ sealed trait HttpEntity {
   def consumeData(implicit mat: Materializer): Future[ByteString] = {
     dataStream.runFold(ByteString.empty)(_ ++ _)
   }
-
-  /**
-   * Convert this entity to its Java counterpart.
-   */
-  def asJava: JHttpEntity
 
   /**
    * Return this entity as the given content type.
@@ -80,7 +74,6 @@ object HttpEntity {
     def contentLength                                    = Some(data.size)
     def dataStream                                       = if (data.isEmpty) Source.empty[ByteString] else Source.single(data)
     override def consumeData(implicit mat: Materializer) = Future.successful(data)
-    def asJava                                           = new JHttpEntity.Strict(data, contentType.toJava)
     def as(contentType: String)                          = copy(contentType = Option(contentType))
   }
 
@@ -92,16 +85,10 @@ object HttpEntity {
    *                      delimited.
    * @param contentType The content type, if known.
    */
-  final case class Streamed(data: Source[ByteString, _], contentLength: Option[Long], contentType: Option[String])
+  final case class Streamed(data: Source[ByteString, ?], contentLength: Option[Long], contentType: Option[String])
       extends HttpEntity {
     def isKnownEmpty = false
     def dataStream   = data
-    def asJava =
-      new JHttpEntity.Streamed(
-        data.asJava,
-        contentLength.asInstanceOf[Option[java.lang.Long]].toJava,
-        contentType.toJava
-      )
     def as(contentType: String) = copy(contentType = Option(contentType))
   }
 
@@ -114,13 +101,12 @@ object HttpEntity {
    *               contain no trailers.
    * @param contentType The content type, if known.
    */
-  final case class Chunked(chunks: Source[HttpChunk, _], contentType: Option[String]) extends HttpEntity {
+  final case class Chunked(chunks: Source[HttpChunk, ?], contentType: Option[String]) extends HttpEntity {
     def isKnownEmpty  = false
     def contentLength = None
     def dataStream = chunks.collect {
       case HttpChunk.Chunk(data) => data
     }
-    def asJava                  = new JHttpEntity.Chunked(chunks.asJava, contentType.toJava)
     def as(contentType: String) = copy(contentType = Option(contentType))
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.inject
@@ -15,19 +15,17 @@ import akka.actor.CoordinatedShutdown
 import akka.actor.typed.Scheduler
 import akka.stream.Materializer
 import com.typesafe.config.Config
-import play.api._
-import play.api.http.HttpConfiguration._
-import play.api.http._
+import play.api.*
+import play.api.http.HttpConfiguration.*
+import play.api.http.*
 import play.api.libs.Files.TemporaryFileReaperConfigurationProvider
-import play.api.libs.Files._
-import play.api.libs.concurrent._
-import play.api.mvc._
+import play.api.libs.Files.*
+import play.api.libs.concurrent.*
+import play.api.mvc.*
 import play.api.mvc.request.DefaultRequestFactory
 import play.api.mvc.request.RequestFactory
 import play.api.routing.Router
-import play.core.j.JavaRouterAdapter
 import play.core.routing.GeneratedRouter
-import play.libs.concurrent.HttpExecutionContext
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
@@ -40,12 +38,12 @@ import scala.concurrent.ExecutionContextExecutor
  */
 class BuiltinModule
     extends SimpleModule((env, conf) => {
-      def dynamicBindings(factories: ((Environment, Configuration) => Seq[Binding[_]])*) = {
+      def dynamicBindings(factories: ((Environment, Configuration) => Seq[Binding[?]])*) = {
         factories.flatMap(_(env, conf))
       }
 
       Seq(
-        bind[Environment] to env,
+        bind[Environment] `to` env,
         bind[ConfigurationProvider].to(new ConfigurationProvider(conf)),
         bind[Configuration].toProvider[ConfigurationProvider],
         bind[Config].toProvider[ConfigProvider],
@@ -66,16 +64,12 @@ class BuiltinModule
         bind[BodyParsers.Default].toSelf,
         bind[DefaultActionBuilder].to[DefaultActionBuilderImpl],
         bind[ControllerComponents].to[DefaultControllerComponents],
-        bind[MessagesActionBuilder].to[DefaultMessagesActionBuilderImpl],
-        bind[MessagesControllerComponents].to[DefaultMessagesControllerComponents],
         bind[Futures].to[DefaultFutures],
         // Application lifecycle, bound both to the interface, and its implementation, so that Application can access it
         // to shut it down.
         bind[DefaultApplicationLifecycle].toSelf,
         bind[ApplicationLifecycle].to(bind[DefaultApplicationLifecycle]),
         bind[Application].to[DefaultApplication],
-        bind[play.Application].to[play.DefaultApplication],
-        bind[play.routing.Router].to[JavaRouterAdapter],
         bind[ActorSystem].toProvider[ActorSystemProvider],
         bind[ClassicActorSystemProvider].toProvider[ClassicActorSystemProviderProvider],
         bind[Materializer].toProvider[MaterializerProvider],
@@ -85,15 +79,11 @@ class BuiltinModule
         bind[ExecutionContextExecutor].toProvider[ExecutionContextProvider],
         bind[ExecutionContext].to(bind[ExecutionContextExecutor]),
         bind[Executor].to(bind[ExecutionContextExecutor]),
-        bind[HttpExecutionContext].toSelf,
-        bind[play.core.j.JavaContextComponents].to[play.core.j.DefaultJavaContextComponents],
-        bind[play.core.j.JavaHandlerComponents].to[play.core.j.DefaultJavaHandlerComponents],
         bind[FileMimeTypes].toProvider[DefaultFileMimeTypesProvider]
       ) ++ dynamicBindings(
         HttpErrorHandler.bindingsFromConfiguration,
         HttpFilters.bindingsFromConfiguration,
         HttpRequestHandler.bindingsFromConfiguration,
-        ActionCreator.bindingsFromConfiguration,
         RoutesProvider.bindingsFromConfiguration
       )
     })
@@ -124,7 +114,7 @@ class RoutesProvider @Inject() (
 }
 
 object RoutesProvider {
-  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
     val routerClass = Router.load(environment, configuration)
 
     import scala.language.existentials

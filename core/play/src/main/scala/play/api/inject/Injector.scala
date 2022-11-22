@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.inject
@@ -35,11 +35,6 @@ trait Injector {
    * Get an instance bound to the given binding key.
    */
   def instanceOf[T](key: BindingKey[T]): T
-
-  /**
-   * Get as an instance of the Java injector.
-   */
-  def asJava: play.inject.Injector = new play.inject.DelegateInjector(this)
 }
 
 /**
@@ -82,7 +77,7 @@ object NewInstanceInjector extends Injector {
  * @param fallback The injector to fallback to if no component can be found.
  * @param components The components that this injector provides.
  */
-class SimpleInjector(fallback: Injector, components: Map[Class[_], Any] = Map.empty) extends Injector {
+class SimpleInjector(fallback: Injector, components: Map[Class[?], Any] = Map.empty) extends Injector {
 
   /**
    * Get an instance of the given class from the injector.

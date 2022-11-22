@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.server.common
@@ -18,9 +18,9 @@ import play.core.utils.AsciiRange
 import play.core.utils.AsciiSet
 
 import scala.annotation.tailrec
-import scala.collection.immutable.ArraySeq
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+import scala.collection.immutable.ArraySeq
 
 private[play] final class ServerResultUtils(
     sessionBaker: SessionCookieBaker,

@@ -1,17 +1,16 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.http
 
 import com.typesafe.config.ConfigMemorySize
-import io.jsonwebtoken.SignatureAlgorithm
 
 import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
 import org.slf4j.LoggerFactory
-import play.api._
+import play.api.*
 import play.api.libs.Codecs
 import play.api.mvc.Cookie.SameSite
 import play.core.cookie.encoding.ClientCookieDecoder
@@ -20,7 +19,7 @@ import play.core.cookie.encoding.ServerCookieDecoder
 import play.core.cookie.encoding.ServerCookieEncoder
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
 
@@ -111,7 +110,6 @@ case class SessionConfiguration(
     domain: Option[String] = None,
     path: String = "/",
     sameSite: Option[SameSite] = Some(SameSite.Lax),
-    jwt: JWTConfiguration = JWTConfiguration()
 )
 
 /**
@@ -132,7 +130,6 @@ case class FlashConfiguration(
     domain: Option[String] = None,
     path: String = "/",
     sameSite: Option[SameSite] = Some(SameSite.Lax),
-    jwt: JWTConfiguration = JWTConfiguration()
 )
 
 /**
@@ -197,7 +194,7 @@ object HttpConfiguration {
           case _ => // "foo=bar".span(_ != '=') -> (foo,=bar)
             line.span(_ != '=') match {
               case (key, v) => Some(key -> v.drop(1)) // '=' prefix
-              case _        => Option.empty[(String, String)] // skip invalid
+              case null     => Option.empty[(String, String)] // skip invalid
             }
         }
       }
@@ -248,7 +245,6 @@ object HttpConfiguration {
         domain = config.getDeprecated[Option[String]]("play.http.session.domain", "session.domain"),
         sameSite = parseSameSite(config, "play.http.session.sameSite"),
         path = sessionPath,
-        jwt = JWTConfigurationParser(config, secretConfiguration, "play.http.session.jwt")
       ),
       flash = FlashConfiguration(
         cookieName = config.getDeprecated[String]("play.http.flash.cookieName", "flash.cookieName"),
@@ -257,7 +253,6 @@ object HttpConfiguration {
         domain = config.get[Option[String]]("play.http.flash.domain"),
         sameSite = parseSameSite(config, "play.http.flash.sameSite"),
         path = flashPath,
-        jwt = JWTConfigurationParser(config, secretConfiguration, "play.http.flash.jwt")
       ),
       fileMimeTypes = FileMimeTypesConfiguration(
         parseFileMimeTypes(config)
@@ -354,56 +349,5 @@ object HttpConfiguration {
   @Singleton
   class SecretConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[SecretConfiguration] {
     lazy val get: SecretConfiguration = conf.secret
-  }
-}
-
-/**
- * The JSON Web Token configuration
- *
- * @param signatureAlgorithm The signature algorithm used to sign the JWT
- * @param expiresAfter The period of time after which the JWT expires, if any.
- * @param clockSkew The amount of clock skew to permit for expiration / not before checks
- * @param dataClaim The claim key corresponding to the data map passed in by the user
- */
-case class JWTConfiguration(
-    signatureAlgorithm: String = "HS256",
-    expiresAfter: Option[FiniteDuration] = None,
-    clockSkew: FiniteDuration = 30.seconds,
-    dataClaim: String = "data"
-)
-
-object JWTConfigurationParser {
-  def apply(
-      config: Configuration,
-      secretConfiguration: SecretConfiguration,
-      parent: String
-  ): JWTConfiguration = {
-    JWTConfiguration(
-      signatureAlgorithm = getSignatureAlgorithm(config, secretConfiguration, parent),
-      expiresAfter = config.get[Option[FiniteDuration]](s"${parent}.expiresAfter"),
-      clockSkew = config.get[FiniteDuration](s"${parent}.clockSkew"),
-      dataClaim = config.get[String](s"${parent}.dataClaim")
-    )
-  }
-
-  private def getSignatureAlgorithm(
-      config: Configuration,
-      secretConfiguration: SecretConfiguration,
-      parent: String
-  ): String = {
-    val signatureAlgorithmPath      = s"${parent}.signatureAlgorithm"
-    val signatureAlgorithm          = config.get[String](signatureAlgorithmPath)
-    val minKeyLengthBits            = SignatureAlgorithm.forName(signatureAlgorithm).getMinKeyLength
-    val applicationSecretLengthBits = secretConfiguration.secret.getBytes(StandardCharsets.UTF_8).length * 8
-    if (applicationSecretLengthBits < minKeyLengthBits) {
-      val message =
-        s"""
-           |The application secret is too short and does not have the recommended amount of entropy for algorithm $signatureAlgorithm defined at $signatureAlgorithmPath.
-           |Current application secret bits: $applicationSecretLengthBits, minimal required bits for algorithm $signatureAlgorithm: $minKeyLengthBits.
-           |To set the application secret, please read https://playframework.com/documentation/latest/ApplicationSecret
-           |""".stripMargin
-      throw config.reportError("play.http.secret.key", message)
-    }
-    signatureAlgorithm
   }
 }

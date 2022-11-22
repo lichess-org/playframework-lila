@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api
@@ -9,12 +9,12 @@ package play.api
  *
  * @see [[play.Mode]]
  */
-sealed abstract class Mode(val asJava: play.Mode)
+sealed abstract trait Mode
 
 object Mode {
-  case object Dev  extends Mode(play.Mode.DEV)
-  case object Test extends Mode(play.Mode.TEST)
-  case object Prod extends Mode(play.Mode.PROD)
+  case object Dev  extends Mode
+  case object Test extends Mode
+  case object Prod extends Mode
 
   lazy val values: Set[play.api.Mode] = Set(Dev, Test, Prod)
 }

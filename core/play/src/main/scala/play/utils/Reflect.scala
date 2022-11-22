@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.utils
@@ -37,45 +37,25 @@ object Reflect {
    * @param config The configuration
    * @param key The key to look up the classname from the configuration
    * @tparam ScalaTrait The trait to bind
-   * @tparam JavaInterface The Java interface for Java versions of the implementation
-   * @tparam JavaAdapter An adapter class that depends on `JavaInterface` and provides `ScalaTrait`
-   * @tparam JavaDelegate An implementation of `JavaInterface` that delegates to `ScalaTrait`, for when the configured
-   *                      class is not an instance of `JavaInterface`.
    * @tparam Default The default implementation of `ScalaTrait` if no user implementation has been provided
    * @return Zero or more bindings to provide `ScalaTrait`
    */
   def bindingsFromConfiguration[
       ScalaTrait,
-      JavaInterface,
-      JavaAdapter <: ScalaTrait,
-      JavaDelegate <: JavaInterface,
       Default <: ScalaTrait
   ](environment: Environment, config: Configuration, key: String, defaultClassName: String)(
       implicit
       scalaTrait: SubClassOf[ScalaTrait],
-      javaInterface: SubClassOf[JavaInterface],
-      javaAdapter: ClassTag[JavaAdapter],
-      javaDelegate: ClassTag[JavaDelegate],
       default: ClassTag[Default]
-  ): Seq[Binding[_]] = {
+  ): Seq[Binding[?]] = {
     def bind[T: SubClassOf]: BindingKey[T] = BindingKey(implicitly[SubClassOf[T]].runtimeClass)
 
-    configuredClass[ScalaTrait, JavaInterface, Default](environment, config, key, defaultClassName) match {
+    configuredClass[ScalaTrait, Default](environment, config, key, defaultClassName) match {
       // Directly implements the scala trait
-      case Some(Left(direct)) =>
+      case Some(direct) =>
         Seq(
           bind[ScalaTrait].to(direct),
-          bind[JavaInterface].to[JavaDelegate],
-          bind[JavaDelegate].toSelf,
           BindingKey(direct).toSelf
-        )
-      // Implements the java interface
-      case Some(Right(java)) =>
-        Seq(
-          bind[ScalaTrait].to[JavaAdapter],
-          bind[JavaAdapter].toSelf,
-          bind[JavaInterface].to(java),
-          BindingKey(java).toSelf
         )
 
       case None => Nil
@@ -104,10 +84,9 @@ object Reflect {
    * @param config The configuration
    * @param key The key to look up the classname from the configuration
    * @tparam ScalaTrait The Scala trait to return
-   * @tparam JavaInterface The Java interface for Java versions of the implementation
    * @tparam Default The default implementation of `ScalaTrait` if no user implementation has been provided
    */
-  def configuredClass[ScalaTrait, JavaInterface, Default <: ScalaTrait](
+  def configuredClass[ScalaTrait, Default <: ScalaTrait](
       environment: Environment,
       config: Configuration,
       key: String,
@@ -115,10 +94,9 @@ object Reflect {
   )(
       implicit
       scalaTrait: SubClassOf[ScalaTrait],
-      javaInterface: SubClassOf[JavaInterface],
       default: ClassTag[Default]
-  ): Option[Either[Class[_ <: ScalaTrait], Class[_ <: JavaInterface]]] = {
-    def loadClass(className: String, notFoundFatal: Boolean): Option[Class[_]] = {
+  ): Option[Class[? <: ScalaTrait]] = {
+    def loadClass(className: String, notFoundFatal: Boolean): Option[Class[?]] = {
       try {
         Some(environment.classLoader.loadClass(className))
       } catch {
@@ -143,17 +121,12 @@ object Reflect {
     }
 
     maybeClass.map {
-      // Directly implements the scala trait
-      case scalaTrait(scalaClass) =>
-        Left(scalaClass)
-      // Implements the java interface
-      case javaInterface(java) =>
-        Right(java)
+      case scalaTrait(scalaClass) => scalaClass
 
       case unknown =>
         throw new PlayException(
           s"Cannot load $key",
-          s"$key [${unknown.getClass}}] does not implement ${scalaTrait.runtimeClass} or ${javaInterface.runtimeClass}."
+          s"$key [${unknown.getClass}}] does not implement ${scalaTrait.runtimeClass}."
         )
     }
   }
@@ -170,29 +143,29 @@ object Reflect {
     }
   }
 
-  def getClass[T: ClassTag](fqcn: String, classLoader: ClassLoader): Class[_ <: T] = {
-    val c = Class.forName(fqcn, false, classLoader).asInstanceOf[Class[_ <: T]]
+  def getClass[T: ClassTag](fqcn: String, classLoader: ClassLoader): Class[? <: T] = {
+    val c = Class.forName(fqcn, false, classLoader).asInstanceOf[Class[? <: T]]
     val t = implicitly[ClassTag[T]].runtimeClass
     if (t.isAssignableFrom(c)) c
     else throw new ClassCastException(s"$t is not assignable from $c")
   }
 
-  def createInstance[T: ClassTag](clazz: Class[_]): T = {
+  def createInstance[T: ClassTag](clazz: Class[?]): T = {
     val o = clazz.getDeclaredConstructor().newInstance()
     val t = implicitly[ClassTag[T]].runtimeClass
     if (t.isInstance(o)) o.asInstanceOf[T]
     else throw new ClassCastException(clazz.getName + " is not an instance of " + t)
   }
 
-  def simpleName(clazz: Class[_]): String = {
+  def simpleName(clazz: Class[?]): String = {
     val name = clazz.getName
     name.substring(name.lastIndexOf('.') + 1)
   }
 
   class SubClassOf[T](val runtimeClass: Class[T]) {
-    def unapply(clazz: Class[_]): Option[Class[_ <: T]] = {
+    def unapply(clazz: Class[?]): Option[Class[? <: T]] = {
       if (runtimeClass.isAssignableFrom(clazz)) {
-        Some(clazz.asInstanceOf[Class[_ <: T]])
+        Some(clazz.asInstanceOf[Class[? <: T]])
       } else {
         None
       }

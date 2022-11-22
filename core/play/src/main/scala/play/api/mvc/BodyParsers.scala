@@ -1,35 +1,35 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
 
-import java.io._
-import java.nio.charset.StandardCharsets._
-import java.nio.charset._
+import java.io.*
+import java.nio.charset.StandardCharsets.*
+import java.nio.charset.*
 import java.nio.file.Files
 import java.util.Locale
 
 import javax.inject.Inject
 import akka.actor.ActorSystem
-import akka.stream._
+import akka.stream.*
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.StreamConverters
-import akka.stream.stage._
+import akka.stream.stage.*
 import akka.util.ByteString
-import play.api._
+import play.api.*
 import play.api.data.DefaultFormBinding
 import play.api.data.Form
 import play.api.data.FormBinding
-import play.api.http.Status._
-import play.api.http._
+import play.api.http.Status.*
+import play.api.http.*
 import play.api.libs.Files.SingletonTemporaryFileCreator
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.Files.TemporaryFileCreator
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc.MultipartFormData._
+import play.api.mvc.MultipartFormData.*
 import play.core.Execution
 import play.core.parsers.Multipart
 import play.utils.PlayIO
@@ -42,7 +42,7 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.control.Exception.catching
 import scala.util.control.NonFatal
-import scala.xml._
+import scala.xml.*
 
 /**
  * A request body that adapts automatically according the request Content-Type.
@@ -224,7 +224,7 @@ case class RawBuffer(
     temporaryFileCreator: TemporaryFileCreator,
     initialData: ByteString = ByteString.empty
 ) {
-  import play.api.libs.Files._
+  import play.api.libs.Files.*
 
   @volatile private var inMemory: ByteString                 = initialData
   @volatile private var backedByTemporaryFile: TemporaryFile = _
@@ -744,65 +744,6 @@ trait PlayBodyParsers extends BodyParserUtils {
       }(Execution.trampoline)
     }
 
-  // -- XML parser
-
-  /**
-   * Parse the body as Xml without checking the Content-Type.
-   *
-   * @param maxLength Max length (in bytes) allowed or returns EntityTooLarge HTTP response.
-   */
-  def tolerantXml(maxLength: Long): BodyParser[NodeSeq] =
-    tolerantBodyParser[NodeSeq]("xml", maxLength, "Invalid XML") { (request, bytes) =>
-      val inputSource = new InputSource(bytes.iterator.asInputStream)
-
-      // Encoding notes: RFC 3023 is the RFC for XML content types.  Comments below reflect what it says.
-
-      // An externally declared charset takes precedence
-      request.charset
-        .orElse(
-          // If omitted, maybe select a default charset, based on the media type.
-          request.mediaType.collect {
-            // According to RFC 3023, the default encoding for text/xml is us-ascii. This contradicts RFC 2616, which
-            // states that the default for text/* is ISO-8859-1.  An RFC 3023 conforming client will send US-ASCII,
-            // in that case it is safe for us to use US-ASCII or ISO-8859-1.  But a client that knows nothing about
-            // XML, and therefore nothing about RFC 3023, but rather conforms to RFC 2616, will send ISO-8859-1.
-            // Since decoding as ISO-8859-1 works for both clients that conform to RFC 3023, and clients that conform
-            // to RFC 2616, we use that.
-            case mt if mt.mediaType == "text" => "iso-8859-1"
-            // Otherwise, there should be no default, it will be detected by the XML parser.
-          }
-        )
-        .foreach { charset =>
-          inputSource.setEncoding(charset)
-        }
-      Play.XML.load(inputSource)
-    }
-
-  /**
-   * Parse the body as Xml without checking the Content-Type.
-   */
-  def tolerantXml: BodyParser[NodeSeq] = tolerantXml(DefaultMaxTextLength)
-
-  /**
-   * Parse the body as Xml if the Content-Type is application/xml, text/xml or application/XXX+xml.
-   *
-   * @param maxLength Max length (in bytes) allowed or returns EntityTooLarge HTTP response.
-   */
-  def xml(maxLength: Long): BodyParser[NodeSeq] = when(
-    _.contentType.exists { t =>
-      val tl = t.toLowerCase(Locale.ENGLISH)
-      tl.startsWith("text/xml") || tl
-        .startsWith("application/xml") || ApplicationXmlMatcher.pattern.matcher(tl).matches()
-    },
-    tolerantXml(maxLength),
-    createBadResult("Expecting xml body", UNSUPPORTED_MEDIA_TYPE)
-  )
-
-  /**
-   * Parse the body as Xml if the Content-Type is application/xml, text/xml or application/XXX+xml.
-   */
-  def xml: BodyParser[NodeSeq] = xml(DefaultMaxTextLength)
-
   // -- File parsers
 
   /**
@@ -858,7 +799,7 @@ trait PlayBodyParsers extends BodyParserUtils {
   def tolerantFormUrlEncoded(maxLength: Long): BodyParser[Map[String, Seq[String]]] =
     tolerantBodyParser("formUrlEncoded", maxLength, "Error parsing application/x-www-form-urlencoded") {
       (request, bytes) =>
-        import play.core.parsers._
+        import play.core.parsers.*
         val charset          = request.charset.getOrElse("UTF-8")
         val urlEncodedString = bytes.decodeString("UTF-8")
         FormUrlEncodedParser.parse(urlEncodedString, charset)
@@ -926,10 +867,6 @@ trait PlayBodyParsers extends BodyParserUtils {
       case Some("text/plain") =>
         logger.trace("Parsing AnyContent as text")
         text(maxLengthOrDefault)(request).map(_.map(s => AnyContentAsText(s)))
-
-      case Some("text/xml") | Some("application/xml") | Some(ApplicationXmlMatcher()) =>
-        logger.trace("Parsing AnyContent as xml")
-        xml(maxLengthOrDefault)(request).map(_.map(x => AnyContentAsXml(x)))
 
       case Some("text/json") | Some("application/json") =>
         logger.trace("Parsing AnyContent as json")

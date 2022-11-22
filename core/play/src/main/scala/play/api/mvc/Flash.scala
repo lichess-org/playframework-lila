@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -10,7 +10,6 @@ import play.api.http.FlashConfiguration
 import play.api.http.SecretConfiguration
 import play.api.libs.crypto.CookieSigner
 import play.api.libs.crypto.CookieSignerProvider
-import play.mvc.Http
 
 /**
  * HTTP Flash scope.
@@ -87,8 +86,6 @@ case class Flash(data: Map[String, String] = Map.empty[String, String]) {
    * @return the modified flash
    */
   def --(keys: Iterable[String]): Flash = copy(data -- keys)
-
-  lazy val asJava: Http.Flash = new Http.Flash(this)
 }
 
 /**
@@ -112,18 +109,6 @@ trait FlashCookieBaker extends CookieBaker[Flash] with CookieDataCodec {
   def serialize(flash: Flash): Map[String, String] = flash.data
 }
 
-class DefaultFlashCookieBaker @Inject() (
-    val config: FlashConfiguration,
-    val secretConfiguration: SecretConfiguration,
-    val cookieSigner: CookieSigner
-) extends FlashCookieBaker
-    with FallbackCookieDataCodec {
-  def this() = this(FlashConfiguration(), SecretConfiguration(), new CookieSignerProvider(SecretConfiguration()).get)
-
-  override val jwtCodec: JWTCookieDataCodec           = DefaultJWTCookieDataCodec(secretConfiguration, config.jwt)
-  override val signedCodec: UrlEncodedCookieDataCodec = DefaultUrlEncodedCookieDataCodec(isSigned, cookieSigner)
-}
-
 class LegacyFlashCookieBaker @Inject() (
     val config: FlashConfiguration,
     val secretConfiguration: SecretConfiguration,
@@ -135,6 +120,4 @@ class LegacyFlashCookieBaker @Inject() (
 
 object Flash {
   val emptyCookie = new Flash
-
-  def fromJavaFlash(javaFlash: play.mvc.Http.Flash): Flash = javaFlash.asScala
 }

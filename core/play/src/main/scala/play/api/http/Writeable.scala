@@ -1,18 +1,18 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.http
 
 import akka.util.ByteString
 import play.api.libs.Files.TemporaryFile
-import play.api.mvc._
-import play.api.libs.json._
+import play.api.mvc.*
+import play.api.libs.json.*
 import play.api.mvc.MultipartFormData.FilePart
 
-import scala.annotation._
+import scala.annotation.*
 
-import java.nio.file.{ Files => JFiles }
+import java.nio.file.{ Files as JFiles }
 
 /**
  * Transform a value of type A to a Byte Array.
@@ -170,7 +170,7 @@ trait DefaultWriteables extends LowPriorityWriteables {
         formatDataParts(form.dataParts) ++ ByteString(form.files.flatMap { file =>
           val fileBytes = aWriteable.transform(file)
           filePartHeader(file) ++ fileBytes ++ codec.encode("\r\n")
-        }: _*) ++ codec.encode(s"--$boundary--")
+        } *) ++ codec.encode(s"--$boundary--")
       },
       contentType = Some(s"multipart/form-data; boundary=$boundary")
     )

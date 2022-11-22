@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.typedmap
@@ -33,11 +33,6 @@ final class TypedKey[A] private (val displayName: Option[String]) {
   def ->(value: A): TypedEntry[A] = bindValue(value)
 
   override def toString: String = displayName.getOrElse(super.toString)
-
-  /**
-   * @return The Java version for this key.
-   */
-  def asJava: play.libs.typedmap.TypedKey[A] = new play.libs.typedmap.TypedKey[A](this)
 }
 
 /**

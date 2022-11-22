@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.parsers
@@ -45,7 +45,7 @@ object FormUrlEncodedParser {
    * @return A Map of keys to the sequence of values for that key
    */
   def parseAsJava(data: String, encoding: String): java.util.Map[String, java.util.List[String]] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     parse(data, encoding).map {
       case (key, values) =>
         key -> values.asJava
@@ -59,7 +59,7 @@ object FormUrlEncodedParser {
    * @return A Map of keys to the sequence of array values for that key
    */
   def parseAsJavaArrayValues(data: String, encoding: String): java.util.Map[String, Array[String]] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     parse(data, encoding).map {
       case (key, values) =>
         key -> values.toArray

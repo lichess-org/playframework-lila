@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.server.common
@@ -9,9 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import play.api.Application
 import play.api.http.HttpConfiguration
 import play.api.libs.crypto.CookieSignerProvider
-import play.api.mvc.DefaultCookieHeaderEncoding
-import play.api.mvc.DefaultFlashCookieBaker
-import play.api.mvc.DefaultSessionCookieBaker
 import play.api.mvc.request.DefaultRequestFactory
 import play.core.server.ServerProvider
 import play.utils.InlineCache
@@ -94,14 +91,7 @@ private[play] abstract class ReloadCache[+T] {
           requestFactory.cookieHeaderEncoding
         )
       case Failure(_) =>
-        val httpConfig   = HttpConfiguration()
-        val cookieSigner = new CookieSignerProvider(httpConfig.secret).get
-
-        (
-          new DefaultSessionCookieBaker(httpConfig.session, httpConfig.secret, cookieSigner),
-          new DefaultFlashCookieBaker(httpConfig.flash, httpConfig.secret, cookieSigner),
-          new DefaultCookieHeaderEncoding(httpConfig.cookies)
-        )
+        sys error "Can't reloadServerResultUtils"
     }
     new ServerResultUtils(sessionBaker, flashBaker, cookieHeaderEncoding)
   }

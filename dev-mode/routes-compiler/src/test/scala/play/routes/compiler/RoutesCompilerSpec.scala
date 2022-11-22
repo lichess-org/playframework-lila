@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.routes.compiler
@@ -36,9 +36,7 @@ class RoutesCompilerSpec extends Specification with FileMatchers {
       RoutesCompiler.compile(RoutesCompilerTask(file, Seq.empty, true, true, false), InjectedRoutesGenerator, tmp)
 
       new File(tmp, "generating/Routes.scala") must exist
-      new File(tmp, "generating/RoutesPrefix.scala") must exist
       new File(tmp, "controllers/ReverseRoutes.scala") must exist
-      new File(tmp, "controllers/javascript/JavaScriptReverseRoutes.scala") must exist
       new File(tmp, "controllers/routes.java") must exist
     }
 

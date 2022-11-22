@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.server
@@ -80,7 +80,6 @@ class NettyServer(
   private val httpsNeedClientAuth = serverConfig.get[Boolean]("https.needClientAuth")
   private val httpIdleTimeout     = serverConfig.get[Duration]("http.idleTimeout")
   private val httpsIdleTimeout    = serverConfig.get[Duration]("https.idleTimeout")
-  private val wsBufferLimit       = serverConfig.get[ConfigMemorySize]("websocket.frame.maxLength").toBytes.toInt
 
   private lazy val transport = nettyConfig.get[String]("transport") match {
     case "native" => Native
@@ -187,7 +186,7 @@ class NettyServer(
    * Create a new PlayRequestHandler.
    */
   protected[this] def newRequestHandler(): ChannelInboundHandler =
-    new PlayRequestHandler(this, serverHeader, maxContentLength, wsBufferLimit)
+    new PlayRequestHandler(this, serverHeader, maxContentLength)
 
   /**
    * Create a sink for the incoming connection channels.

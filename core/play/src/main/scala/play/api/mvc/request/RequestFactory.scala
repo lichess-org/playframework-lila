@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc.request
@@ -9,8 +9,7 @@ import javax.inject.Inject
 import play.api.http.HttpConfiguration
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.typedmap.TypedMap
-import play.api.mvc._
-import play.core.system.RequestIdProvider
+import play.api.mvc.*
 
 /**
  * A `RequestFactory` provides logic for creating requests.
@@ -97,8 +96,8 @@ class DefaultRequestFactory @Inject() (
 ) extends RequestFactory {
   def this(config: HttpConfiguration) = this(
     new DefaultCookieHeaderEncoding(config.cookies),
-    new DefaultSessionCookieBaker(config.session, config.secret, new CookieSignerProvider(config.secret).get),
-    new DefaultFlashCookieBaker(config.flash, config.secret, new CookieSignerProvider(config.secret).get)
+    new LegacySessionCookieBaker(config.session, new CookieSignerProvider(config.secret).get),
+    new LegacyFlashCookieBaker(config.flash, config.secret, new CookieSignerProvider(config.secret).get)
   )
 
   override def createRequestHeader(
@@ -109,7 +108,6 @@ class DefaultRequestFactory @Inject() (
       headers: Headers,
       attrs: TypedMap
   ): RequestHeader = {
-    val requestId: Long = RequestIdProvider.freshId()
     val cookieCell = new LazyCell[Cookies] {
       protected override def emptyMarker: Cookies = null
       protected override def create: Cookies =
@@ -125,7 +123,6 @@ class DefaultRequestFactory @Inject() (
       protected override def create: Flash      = flashBaker.decodeFromCookie(cookieCell.value.get(flashBaker.COOKIE_NAME))
     }
     val updatedAttrMap = attrs + (
-      RequestAttrKey.Id      -> requestId,
       RequestAttrKey.Cookies -> cookieCell,
       RequestAttrKey.Session -> sessionCell,
       RequestAttrKey.Flash   -> flashCell

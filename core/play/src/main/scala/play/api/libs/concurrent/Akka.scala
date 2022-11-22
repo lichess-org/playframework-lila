@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.concurrent
@@ -23,10 +23,10 @@ import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
 import org.slf4j.LoggerFactory
-import play.api._
-import play.api.inject._
+import play.api.*
+import play.api.inject.*
 
-import scala.concurrent._
+import scala.concurrent.*
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -55,39 +55,6 @@ object Akka {
    */
   def providerOf[T <: Actor: ClassTag](name: String, props: Props => Props = identity): Provider[ActorRef] =
     new ActorRefProvider(name, props)
-
-  /**
-   * Create a binding for an actor implemented by the given class, with the given name.
-   *
-   * This will instantiate the actor using Play's injector, allowing it to be dependency injected itself.  The returned
-   * binding will provide the ActorRef for the actor, qualified with the given name, allowing it to be injected into
-   * other components.
-   *
-   * Example usage from a Play module:
-   * {{{
-   * def bindings = Seq(
-   *   Akka.bindingOf[MyActor]("myActor"),
-   *   ...
-   * )
-   * }}}
-   *
-   * Then to use the above actor in your application, add a qualified injected dependency, like so:
-   * {{{
-   *   class MyController @Inject() (@Named("myActor") myActor: ActorRef,
-   *      val controllerComponents: ControllerComponents) extends BaseController {
-   *     ...
-   *   }
-   * }}}
-   *
-   * @param name  The name of the actor.
-   * @param props A function to provide props for the actor. The props passed in will just describe how to create the
-   *              actor, this function can be used to provide additional configuration such as router and dispatcher
-   *              configuration.
-   * @tparam T The class that implements the actor.
-   * @return A binding for the actor.
-   */
-  def bindingOf[T <: Actor: ClassTag](name: String, props: Props => Props = identity): Binding[ActorRef] =
-    bind[ActorRef].qualifiedWith(name).to(providerOf[T](name, props)).eagerly()
 }
 
 /**
@@ -128,7 +95,7 @@ trait AkkaTypedComponents {
 @Singleton
 class ActorSystemProvider @Inject() (environment: Environment, configuration: Configuration)
     extends Provider[ActorSystem] {
-  lazy val get: ActorSystem = ActorSystemProvider.start(environment.classLoader, configuration, Nil: _*)
+  lazy val get: ActorSystem = ActorSystemProvider.start(environment.classLoader, configuration, Nil *)
 }
 
 /**
@@ -161,12 +128,12 @@ class ExecutionContextProvider @Inject() (actorSystem: ActorSystem) extends Prov
  */
 @Singleton
 class AkkaSchedulerProvider @Inject() (actorSystem: ActorSystem) extends Provider[Scheduler] {
-  import akka.actor.typed.scaladsl.adapter._
+  import akka.actor.typed.scaladsl.adapter.*
   override lazy val get: Scheduler = actorSystem.scheduler.toTyped
 }
 
 object ActorSystemProvider {
-  type StopHook = () => Future[_]
+  type StopHook = () => Future[?]
 
   private val logger = LoggerFactory.getLogger(classOf[ActorSystemProvider])
 
@@ -179,7 +146,7 @@ object ActorSystemProvider {
    */
   @deprecated("Use start(ClassLoader, Configuration, Setup*) instead", "2.8.0")
   protected[ActorSystemProvider] def start(classLoader: ClassLoader, config: Configuration): ActorSystem = {
-    start(classLoader, config, Nil: _*)
+    start(classLoader, config, Nil *)
   }
 
   /**
@@ -193,7 +160,7 @@ object ActorSystemProvider {
       config: Configuration,
       additionalSetup: Setup
   ): ActorSystem = {
-    start(classLoader, config, Seq(additionalSetup): _*)
+    start(classLoader, config, Seq(additionalSetup) *)
   }
 
   /**
@@ -236,7 +203,7 @@ object ActorSystemProvider {
     val name = config.get[String]("play.akka.actor-system")
 
     val bootstrapSetup   = BootstrapSetup(Some(classLoader), Some(akkaConfig), None)
-    val actorSystemSetup = ActorSystemSetup(bootstrapSetup +: additionalSetups: _*)
+    val actorSystemSetup = ActorSystemSetup(bootstrapSetup +: additionalSetups *)
 
     logger.debug(s"Starting application default Akka system: $name")
     ActorSystem(name, actorSystemSetup)

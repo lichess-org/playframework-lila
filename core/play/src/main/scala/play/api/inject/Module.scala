@@ -1,13 +1,12 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.inject
 
 import java.lang.reflect.Constructor
 
-import play.{ Environment => JavaEnvironment }
-import play.api._
+import play.api.*
 import play.libs.reflect.ConstructorUtils
 
 import scala.annotation.varargs
@@ -58,7 +57,7 @@ abstract class Module {
    * @param configuration The configuration
    * @return A sequence of bindings
    */
-  def bindings(environment: Environment, configuration: Configuration): scala.collection.Seq[Binding[_]]
+  def bindings(environment: Environment, configuration: Configuration): scala.collection.Seq[Binding[?]]
 
   /**
    * Create a binding key for the given class.
@@ -81,14 +80,14 @@ abstract class Module {
    */
   @deprecated("Use play.inject.Module instead if the Module is coded in Java.", "2.7.0")
   @varargs
-  final def seq(bindings: Binding[_]*): scala.collection.Seq[Binding[_]] = bindings
+  final def seq(bindings: Binding[?]*): scala.collection.Seq[Binding[?]] = bindings
 }
 
 /**
  * A simple Play module, which can be configured by passing a function or a list of bindings.
  */
-class SimpleModule(bindingsFunc: (Environment, Configuration) => Seq[Binding[_]]) extends Module {
-  def this(bindings: Binding[_]*) = this((_, _) => bindings)
+class SimpleModule(bindingsFunc: (Environment, Configuration) => Seq[Binding[?]]) extends Module {
+  def this(bindings: Binding[?]*) = this((_, _) => bindings)
 
   final override def bindings(environment: Environment, configuration: Configuration) =
     bindingsFunc(environment, configuration)
@@ -153,18 +152,16 @@ object Modules {
         val constructor: Option[Constructor[T]] =
           try {
             val argTypes = args.map(_.getClass)
-            Option(ConstructorUtils.getMatchingAccessibleConstructor(moduleClass, argTypes: _*))
+            Option(ConstructorUtils.getMatchingAccessibleConstructor(moduleClass, argTypes *))
           } catch {
             case _: NoSuchMethodException => None
             case _: SecurityException     => None
           }
-        constructor.map(_.newInstance(args: _*))
+        constructor.map(_.newInstance(args *))
       }
 
       {
         tryConstruct(environment, configuration)
-      }.orElse {
-          tryConstruct(new JavaEnvironment(environment), configuration.underlying)
         }
         .orElse {
           tryConstruct()

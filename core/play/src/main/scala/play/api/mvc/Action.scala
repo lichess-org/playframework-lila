@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -7,12 +7,12 @@ package play.api.mvc
 import javax.inject.Inject
 
 import akka.util.ByteString
-import play.api._
+import play.api.*
 import play.api.libs.streams.Accumulator
 import play.core.Execution
 import play.utils.ExecCtxUtils
 
-import scala.concurrent._
+import scala.concurrent.*
 
 /**
  * An `EssentialAction` underlies every `Action`. Given a `RequestHeader`, an
@@ -26,11 +26,6 @@ trait EssentialAction extends (RequestHeader => Accumulator[ByteString, Result])
 
   /** @return itself, for better support in the routes file. */
   def apply(): EssentialAction = this
-
-  def asJava: play.mvc.EssentialAction = new play.mvc.EssentialAction() {
-    def apply(rh: play.mvc.Http.RequestHeader) = self(rh.asScala).map(_.asJava)(Execution.trampoline).asJava
-    override def apply(rh: RequestHeader)      = self(rh)
-  }
 }
 
 /**

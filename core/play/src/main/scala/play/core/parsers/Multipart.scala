@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.parsers
@@ -12,21 +12,21 @@ import scala.concurrent.Future
 import scala.util.Failure
 
 import akka.stream.Materializer
-import akka.stream.scaladsl._
+import akka.stream.scaladsl.*
 import akka.stream.Attributes
 import akka.stream.FlowShape
 import akka.stream.Inlet
 import akka.stream.IOResult
 import akka.stream.Outlet
-import akka.stream.stage._
+import akka.stream.stage.*
 import akka.util.ByteString
 
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.Files.TemporaryFileCreator
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
-import play.api.mvc.MultipartFormData._
-import play.api.http.Status._
+import play.api.mvc.*
+import play.api.mvc.MultipartFormData.*
+import play.api.http.Status.*
 import play.api.http.HttpErrorHandler
 
 import play.core.Execution.Implicits.trampoline
@@ -49,7 +49,7 @@ object Multipart {
    */
   @deprecated("Use the overloaded partParser method that takes the allowEmptyFiles flag", "2.9.0")
   def partParser[A](maxMemoryBufferSize: Long, errorHandler: HttpErrorHandler)(
-      partHandler: Accumulator[Part[Source[ByteString, _]], Either[Result, A]]
+      partHandler: Accumulator[Part[Source[ByteString, ?]], Either[Result, A]]
   )(implicit mat: Materializer): BodyParser[A] = partParser(maxMemoryBufferSize, false, errorHandler)(partHandler)
 
   /**
@@ -61,7 +61,7 @@ object Multipart {
    * @param partHandler The accumulator to handle the parts.
    */
   def partParser[A](maxMemoryBufferSize: Long, allowEmptyFiles: Boolean, errorHandler: HttpErrorHandler)(
-      partHandler: Accumulator[Part[Source[ByteString, _]], Either[Result, A]]
+      partHandler: Accumulator[Part[Source[ByteString, ?]], Either[Result, A]]
   )(implicit mat: Materializer): BodyParser[A] = BodyParser { request =>
     val maybeBoundary = for {
       mt         <- request.mediaType
@@ -76,8 +76,8 @@ object Multipart {
           .splitWhen(_.isLeft)
           .prefixAndTail(1)
           .map {
-            case (Seq(Left(part: FilePart[_])), body) =>
-              part.copy[Source[ByteString, _]](ref = body.collect {
+            case (Seq(Left(part: FilePart[?])), body) =>
+              part.copy[Source[ByteString, ?]](ref = body.collect {
                 case Right(bytes) => bytes
               })
             case (Seq(Left(other)), ignored) =>
@@ -126,11 +126,11 @@ object Multipart {
       errorHandler: HttpErrorHandler
   )(implicit mat: Materializer): BodyParser[MultipartFormData[A]] = BodyParser { request =>
     partParser(maxMemoryBufferSize, allowEmptyFiles, errorHandler) {
-      val handleFileParts = Flow[Part[Source[ByteString, _]]].mapAsync(1) {
-        case filePart: FilePart[Source[ByteString, _]] =>
+      val handleFileParts = Flow[Part[Source[ByteString, ?]]].mapAsync(1) {
+        case filePart: FilePart[Source[ByteString, ?]] =>
           filePartHandler(FileInfo(filePart.key, filePart.filename, filePart.contentType, filePart.dispositionType))
             .run(filePart.ref)
-        case other: Part[_] => Future.successful(other.asInstanceOf[Part[Nothing]])
+        case other: Part[?] => Future.successful(other.asInstanceOf[Part[Nothing]])
       }
 
       val multipartAccumulator = Accumulator(Sink.fold[Seq[Part[A]], Part[A]](Vector.empty)(_ :+ _)).mapFuture {
@@ -326,8 +326,15 @@ object Multipart {
       "'boundary' parameter of multipart Content-Type must not end with a space char"
     )
 
-    // phantom type for ensuring soundness of our parsing method setup
     sealed trait StateResult
+    sealed trait Done extends StateResult
+    case object Done  extends Done
+    class ContinueParsing(parse: => StateResult) extends StateResult {
+      def apply(): StateResult = parse
+    }
+    object ContinueParsing {
+      def apply(parse: => StateResult): ContinueParsing = new ContinueParsing(parse)
+    }
 
     private[this] val needle: Array[Byte] = {
       val array = new Array[Byte](boundary.length + 4)
@@ -350,9 +357,9 @@ object Multipart {
 
     override def createLogic(attributes: Attributes): GraphStageLogic =
       new GraphStageLogic(shape) with InHandler with OutHandler {
-        private var output                           = collection.immutable.Queue.empty[RawPart]
-        private var state: ByteString => StateResult = tryParseInitialBoundary
-        private var terminated                       = false
+        private var output                    = collection.immutable.Queue.empty[RawPart]
+        private var state: ByteString => Done = tryParseInitialBoundary
+        private var terminated                = false
 
         override def onPush(): Unit = {
           if (!terminated) {
@@ -378,13 +385,23 @@ object Multipart {
 
         setHandlers(in, out, this)
 
-        def tryParseInitialBoundary(input: ByteString): StateResult = {
+        @tailrec
+        def handleParsingState(parse: ContinueParsing): Done = {
+          parse() match {
+            case Done               => Done
+            case c: ContinueParsing => handleParsingState(c)
+          }
+        }
+
+        def handleParsingState(exec: => StateResult): Done = handleParsingState(ContinueParsing(exec))
+
+        def tryParseInitialBoundary(input: ByteString): Done = {
           // we don't use boyerMoore here because we are testing for the boundary *without* a
           // preceding CRLF and at a known location (the very beginning of the entity)
           try {
             if (boundary(input, 0)) {
               val ix = boundaryLength
-              if (crlf(input, ix)) parseHeader(input, ix + 2, 0)
+              if (crlf(input, ix)) handleParsingState(parseHeader(input, ix + 2, 0))
               else if (doubleDash(input, ix)) terminate()
               else parsePreamble(input, 0)
             } else parsePreamble(input, 0)
@@ -393,11 +410,11 @@ object Multipart {
           }
         }
 
-        def parsePreamble(input: ByteString, offset: Int): StateResult = {
+        def parsePreamble(input: ByteString, offset: Int): Done = {
           try {
-            @tailrec def rec(index: Int): StateResult = {
+            @tailrec def rec(index: Int): Done = {
               val needleEnd = boyerMoore.nextIndex(input, index) + needle.length
-              if (crlf(input, needleEnd)) parseHeader(input, needleEnd + 2, 0)
+              if (crlf(input, needleEnd)) handleParsingState(parseHeader(input, needleEnd + 2, 0))
               else if (doubleDash(input, needleEnd)) terminate()
               else rec(needleEnd)
             }
@@ -424,7 +441,7 @@ object Multipart {
               val headerString = input.slice(headerStart, headerEnd).utf8String
               val headers: Map[String, String] =
                 headerString.linesIterator.map { header =>
-                  val key :: value = header.trim.split(":").toList
+                  val key :: value = header.trim.split(":").toList: @unchecked
 
                   (key.trim.toLowerCase(java.util.Locale.ENGLISH), value.mkString(":").trim)
                 }.toMap
@@ -488,7 +505,8 @@ object Multipart {
               } else {
                 // There was not even enough space in the input to contain the needle. Only after we have enough data
                 // of at least the size of the needle we can decide if the body is empty or not.
-                state = more => checkEmptyBody(input ++ more, partStart, memoryBufferSize)(nonEmpty)(empty)
+                state = more =>
+                  handleParsingState(checkEmptyBody(input ++ more, partStart, memoryBufferSize)(nonEmpty)(empty))
                 done()
               }
           }
@@ -517,7 +535,7 @@ object Multipart {
             val needleEnd      = currentPartEnd + needle.length
             if (crlf(input, needleEnd)) {
               emit(input.slice(offset, currentPartEnd))
-              parseHeader(input, needleEnd + 2, memoryBufferSize)
+              ContinueParsing(parseHeader(input, needleEnd + 2, memoryBufferSize))
             } else if (doubleDash(input, needleEnd)) {
               emit(input.slice(offset, currentPartEnd))
               terminate()
@@ -546,7 +564,7 @@ object Multipart {
               bufferExceeded("Memory buffer full on part " + partName)
             } else if (crlf(input, needleEnd)) {
               emit(DataPart(partName, input.slice(partStart, currentPartEnd).utf8String))
-              parseHeader(input, needleEnd + 2, newMemoryBufferSize)
+              ContinueParsing(parseHeader(input, needleEnd + 2, newMemoryBufferSize))
             } else if (doubleDash(input, needleEnd)) {
               emit(DataPart(partName, input.slice(partStart, currentPartEnd).utf8String))
               terminate()
@@ -573,7 +591,7 @@ object Multipart {
             val needleEnd      = currentPartEnd + needle.length
             if (crlf(input, needleEnd)) {
               emit(BadPart(headers))
-              parseHeader(input, needleEnd + 2, memoryBufferSize)
+              ContinueParsing(parseHeader(input, needleEnd + 2, memoryBufferSize))
             } else if (doubleDash(input, needleEnd)) {
               emit(BadPart(headers))
               terminate()
@@ -600,36 +618,31 @@ object Multipart {
           head
         }
 
-        def continue(input: ByteString, offset: Int)(next: (ByteString, Int) => StateResult): StateResult = {
+        def continue(input: ByteString, offset: Int)(next: (ByteString, Int) => StateResult): Done = {
           state = math.signum(offset - input.length) match {
-            case -1 => more => next(input ++ more, offset)
-            case 0  => next(_, 0)
+            case -1 => more => handleParsingState(next(input ++ more, offset))
+            case 0  => more => handleParsingState(next(more, 0))
             case 1  => throw new IllegalStateException
           }
           done()
         }
 
-        def continue(next: (ByteString, Int) => StateResult): StateResult = {
-          state = next(_, 0)
-          done()
-        }
-
-        def bufferExceeded(message: String): StateResult = {
+        def bufferExceeded(message: String): Done = {
           emit(MaxMemoryBufferExceeded(message))
           terminate()
         }
 
-        def fail(message: String): StateResult = {
+        def fail(message: String): Done = {
           emit(ParseError(message))
           terminate()
         }
 
-        def terminate(): StateResult = {
+        def terminate(): Done = {
           terminated = true
           done()
         }
 
-        def done(): StateResult = null // StateResult is a phantom type
+        def done(): Done = Done
 
         // the length of the needle without the preceding CRLF
         def boundaryLength: Int = needle.length - 2

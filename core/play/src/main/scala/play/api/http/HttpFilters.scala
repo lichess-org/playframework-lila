@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.http
@@ -17,7 +17,7 @@ import play.api.Logger
 import play.api.mvc.EssentialFilter
 import play.utils.Reflect
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * Provides filters to the [[play.api.http.HttpRequestHandler]].
@@ -28,8 +28,6 @@ trait HttpFilters {
    * Return the filters that should filter every request
    */
   def filters: Seq[EssentialFilter]
-
-  def asJava: play.http.HttpFilters = new JavaHttpFiltersDelegate(this)
 }
 
 /**
@@ -46,12 +44,9 @@ trait HttpFilters {
 class DefaultHttpFilters @Inject() (val filters: EssentialFilter*) extends HttpFilters
 
 object HttpFilters {
-  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
     Reflect.bindingsFromConfiguration[
       HttpFilters,
-      play.http.HttpFilters,
-      JavaHttpFiltersAdapter,
-      JavaHttpFiltersDelegate,
       EnabledFilters
     ](environment, configuration, "play.http.filters", "Filters")
   }
@@ -136,12 +131,3 @@ class NoHttpFilters extends HttpFilters {
 }
 
 object NoHttpFilters extends NoHttpFilters
-
-/**
- * Adapter from the Java HttpFilters to the Scala HttpFilters interface.
- */
-class JavaHttpFiltersAdapter @Inject() (underlying: play.http.HttpFilters)
-    extends DefaultHttpFilters(underlying.getFilters.asScala.toSeq: _*)
-
-class JavaHttpFiltersDelegate @Inject() (delegate: HttpFilters)
-    extends play.http.DefaultHttpFilters(delegate.filters.asJava)

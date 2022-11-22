@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.routes.compiler
@@ -32,11 +32,9 @@ trait RoutesGenerator {
 }
 
 private object RoutesGenerator {
-  val ForwardsRoutesFile          = "Routes.scala"
-  val ReverseRoutesFile           = "ReverseRoutes.scala"
-  val JavaScriptReverseRoutesFile = "JavaScriptReverseRoutes.scala"
-  val RoutesPrefixFile            = "RoutesPrefix.scala"
-  val JavaWrapperFile             = "routes.java"
+  val ForwardsRoutesFile = "Routes.scala"
+  val ReverseRoutesFile  = "ReverseRoutes.scala"
+  val JavaWrapperFile    = "routes.java"
 }
 
 /**
@@ -45,7 +43,7 @@ private object RoutesGenerator {
 object InjectedRoutesGenerator extends RoutesGenerator {
   import RoutesGenerator._
 
-  val id = "injected"
+  val id = "lila"
 
   case class Dependency[+T <: Rule](ident: String, clazz: String, rule: T)
 
@@ -59,8 +57,6 @@ object InjectedRoutesGenerator extends RoutesGenerator {
       )
     val routes = rules.collect { case r: Route => r }
 
-    val routesPrefixFiles = Seq(folder + RoutesPrefixFile -> generateRoutesPrefix(sourceInfo, namespace))
-
     val forwardsRoutesFiles = if (task.forwardsRouter) {
       Seq(folder + ForwardsRoutesFile -> generateRouter(sourceInfo, namespace, task.additionalImports, rules))
     } else {
@@ -68,20 +64,19 @@ object InjectedRoutesGenerator extends RoutesGenerator {
     }
 
     val reverseRoutesFiles = if (task.reverseRouter) {
-      generateReverseRouters(sourceInfo, namespace, task.additionalImports, routes, task.namespaceReverseRouter) ++
-        generateJavaScriptReverseRouters(
-          sourceInfo,
-          namespace,
-          task.additionalImports,
-          routes,
-          task.namespaceReverseRouter
-        ) ++
+      generateReverseRouters(
+        sourceInfo,
+        namespace,
+        task.additionalImports,
+        routes,
+        task.namespaceReverseRouter
+      ) ++
         generateJavaWrappers(sourceInfo, namespace, rules, task.namespaceReverseRouter)
     } else {
       Nil
     }
 
-    routesPrefixFiles ++ forwardsRoutesFiles ++ reverseRoutesFiles
+    forwardsRoutesFiles ++ reverseRoutesFiles
   }
 
   private def generateRouter(
@@ -149,12 +144,24 @@ object InjectedRoutesGenerator extends RoutesGenerator {
     }.distinct
 
     // Map all the rules to dependency descriptors
-    val rulesWithDeps = rules.map {
+    val rulesWithDeps: Seq[Dependency[Rule]] = rules.map {
       case include: Include =>
         includesDeps(include.router).copy(rule = include)
       case route: Route =>
         routesDeps((route.call.packageName, route.call.controller, route.call.instantiate)).copy(rule = route)
     }
+
+    val pathRulesWithDeps: Seq[(String, Seq[Dependency[Rule]])] =
+      rulesWithDeps.groupBy { dep =>
+        dep.rule match {
+          case inc: Include => inc.prefix
+          case route: Route =>
+            route.path.parts.headOption match {
+              case Some(StaticPart(value)) => s"${value.takeWhile('/' != _)}"
+              case _                       => ""
+            }
+        }
+      }.toSeq
 
     inject.twirl
       .forwardsRouter(
@@ -162,20 +169,12 @@ object InjectedRoutesGenerator extends RoutesGenerator {
         namespace,
         additionalImports,
         orderedDeps,
-        rulesWithDeps,
+        pathRulesWithDeps,
         includesDeps.values.toSeq
       )
       .body
+      .replace("""import _root_.controllers.Assets.Asset""", "")
   }
-
-  private def generateRoutesPrefix(sourceInfo: RoutesSourceInfo, namespace: Option[String]) =
-    static.twirl
-      .routesPrefix(
-        sourceInfo,
-        namespace,
-        _ => true
-      )
-      .body
 
   private def generateReverseRouters(
       sourceInfo: RoutesSourceInfo,
@@ -202,34 +201,7 @@ object InjectedRoutesGenerator extends RoutesGenerator {
               _ => true
             )
             .body
-    }
-  }
-
-  private def generateJavaScriptReverseRouters(
-      sourceInfo: RoutesSourceInfo,
-      namespace: Option[String],
-      additionalImports: Seq[String],
-      routes: List[Route],
-      namespaceReverseRouter: Boolean
-  ) = {
-    routes.groupBy(_.call.packageName.map(_.stripPrefix("_root_."))).map {
-      case (pn, routes) =>
-        val packageName = namespace
-          .filter(_ => namespaceReverseRouter)
-          .map(_ + pn.map("." + _).getOrElse(""))
-          .orElse(pn.orElse(namespace))
-        (packageName.map(_.replace(".", "/") + "/").getOrElse("") + "javascript/" + JavaScriptReverseRoutesFile) ->
-          static.twirl
-            .javascriptReverseRouter(
-              sourceInfo,
-              namespace,
-              additionalImports,
-              packageName,
-              routes,
-              namespaceReverseRouter,
-              _ => true
-            )
-            .body
+            .replace("""import _root_.controllers.Assets.Asset""", "")
     }
   }
 

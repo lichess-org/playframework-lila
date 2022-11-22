@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.routing
@@ -10,7 +10,6 @@ import play.api.Environment
 import play.api.mvc.Handler
 import play.api.mvc.RequestHeader
 import play.api.routing.Router.Routes
-import play.core.j.JavaRouterAdapter
 import play.utils.Reflect
 
 /**
@@ -23,13 +22,6 @@ trait Router {
    * The actual routes of the router.
    */
   def routes: Router.Routes
-
-  /**
-   * Documentation for the router.
-   *
-   * @return A list of method, path pattern and controller/method invocations for each route.
-   */
-  def documentation: Seq[(String, String, String)]
 
   /**
    * Get a new router that routes requests to `s"$prefix/$path"` in the same way this router routes requests to `path`.
@@ -52,14 +44,11 @@ trait Router {
    */
   final def handlerFor(request: RequestHeader): Option[Handler] = routes.lift(request)
 
-  def asJava: play.routing.Router = new JavaRouterAdapter(this)
-
   /**
    * Compose two routers into one. The resulting router will contain
    * both the routes in `this` as well as `router`
    */
   final def orElse(other: Router): Router = new Router {
-    def documentation: Seq[(String, String, String)] = self.documentation ++ other.documentation
     def withPrefix(prefix: String): Router           = self.withPrefix(prefix).orElse(other.withPrefix(prefix))
     def routes: Routes                               = self.routes.orElse(other.routes)
   }
@@ -80,7 +69,7 @@ object Router {
    *
    * @return The router class if configured or if a default one in the root package was detected.
    */
-  def load(env: Environment, configuration: Configuration): Option[Class[_ <: Router]] = {
+  def load(env: Environment, configuration: Configuration): Option[Class[? <: Router]] = {
     val className = configuration.getDeprecated[Option[String]]("play.http.router", "application.router")
 
     try {
@@ -95,35 +84,12 @@ object Router {
     }
   }
 
-  object RequestImplicits {
-    import play.api.mvc.RequestHeader
-
-    implicit class WithHandlerDef(val request: RequestHeader) extends AnyVal {
-
-      /**
-       * The [[HandlerDef]] representing the routes file entry (if any) on this request.
-       */
-      def handlerDef: Option[HandlerDef] = request.attrs.get(Attrs.HandlerDef)
-
-      /**
-       * Check if the route for this request has the given modifier tag (case insensitive).
-       *
-       * This can be used by a filter to change behavior.
-       */
-      def hasRouteModifier(modifier: String): Boolean =
-        handlerDef.exists(_.modifiers.exists(modifier.equalsIgnoreCase))
-    }
-  }
-
   /**
    * Request attributes used by the router.
    */
   object Attrs {
 
-    /**
-     * Key for the [[HandlerDef]] used to handle the request.
-     */
-    val HandlerDef: TypedKey[HandlerDef] = TypedKey("HandlerDef")
+    val ActionName: TypedKey[String] = TypedKey("ActionName")
   }
 
   /**
@@ -140,7 +106,6 @@ object Router {
    * Never returns an handler from the routes function.
    */
   val empty: Router = new Router {
-    def documentation              = Nil
     def withPrefix(prefix: String) = this
     def routes                     = PartialFunction.empty
   }
@@ -160,10 +125,9 @@ object Router {
 }
 
 /**
- * A simple router that implements the withPrefix and documentation methods for you.
+ * A simple router that implements the withPrefix for you.
  */
 trait SimpleRouter extends Router { self =>
-  def documentation: Seq[(String, String, String)] = Nil
   def withPrefix(prefix: String): Router = {
     if (prefix == "/") self
     else {
@@ -176,7 +140,6 @@ trait SimpleRouter extends Router { self =>
       new Router {
         def routes                = Function.unlift(prefixed.lift.andThen(_.flatMap(self.routes.lift)))
         def withPrefix(p: String) = self.withPrefix(Router.concatPrefix(p, prefix))
-        def documentation         = self.documentation
       }
     }
   }

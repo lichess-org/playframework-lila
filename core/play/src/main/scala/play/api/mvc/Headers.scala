@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -9,7 +9,7 @@ import java.util.Locale
 import play.api.http.HeaderNames
 import play.core.utils.CaseInsensitiveOrdered
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import scala.collection.immutable.TreeMap
 import scala.collection.immutable.TreeSet
@@ -42,7 +42,7 @@ class Headers(protected var _headers: Seq[(String, String)]) {
    * true in other cases so the headers need not be updated to reflect the body.
    */
   def hasBody: Boolean = {
-    import HeaderNames._
+    import HeaderNames.*
     get(CONTENT_LENGTH).exists(_.toLong > 0) || hasHeader(TRANSFER_ENCODING)
   }
 
@@ -75,14 +75,14 @@ class Headers(protected var _headers: Seq[(String, String)]) {
    * Remove any headers with the given keys
    */
   def remove(keys: String*): Headers = {
-    val keySet = TreeSet(keys: _*)(CaseInsensitiveOrdered)
+    val keySet = TreeSet(keys *)(CaseInsensitiveOrdered)
     new Headers(headers.filterNot { case (name, _) => keySet(name) })
   }
 
   /**
    * Append the given headers, replacing any existing headers having the same keys
    */
-  def replace(headers: (String, String)*): Headers = remove(headers.map(_._1): _*).add(headers: _*)
+  def replace(headers: (String, String)*): Headers = remove(headers.map(_._1) *).add(headers *)
 
   /**
    * Transform the Headers to a Map
@@ -107,8 +107,6 @@ class Headers(protected var _headers: Seq[(String, String)]) {
       .newBuilder[String, String](CaseInsensitiveOrdered)
       .++=(toMap.view.mapValues(_.headOption.getOrElse("")))
       .result()
-
-  lazy val asJava: play.mvc.Http.Headers = new play.mvc.Http.Headers(this.toMap.view.mapValues(_.asJava).toMap.asJava)
 
   /**
    * A headers map with all keys normalized to lowercase

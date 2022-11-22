@@ -1,18 +1,17 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.libs.ws.ahc;
 
 import akka.stream.Materializer;
+import java.io.IOException;
+import javax.inject.Inject;
 import play.api.libs.ws.ahc.AhcWSClientConfig;
 import play.api.libs.ws.ahc.cache.AhcHttpCache;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSRequest;
 import play.shaded.ahc.org.asynchttpclient.AsyncHttpClient;
-
-import javax.inject.Inject;
-import java.io.IOException;
 
 /**
  * A WS client backed by AsyncHttpClient implementation.

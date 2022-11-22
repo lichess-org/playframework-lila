@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.server
@@ -11,7 +11,6 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import play.api.ApplicationLoader.Context
 import play.api._
-import play.api.http.DevHttpErrorHandler
 import play.api.http.HttpErrorHandler
 import play.api.http.Port
 import play.api.inject.ApplicationLifecycle
@@ -20,29 +19,19 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import play.api.routing.Router
 import play.core._
-import play.routing.{ Router => JRouter }
-import play.{ ApplicationLoader => JApplicationLoader }
-import play.{ BuiltInComponents => JBuiltInComponents }
-import play.{ BuiltInComponentsFromContext => JBuiltInComponentsFromContext }
 
 import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.Try
-
-trait WebSocketable {
-  def getHeader(header: String): String
-  def check: Boolean
-}
+import play.api.http.DefaultHttpErrorHandler
 
 /**
  * Provides generic server behaviour for Play applications.
  */
-trait Server extends ReloadableServer {
+trait Server {
   def mode: Mode
 
   def applicationProvider: ApplicationProvider
-
-  def reload(): Unit = applicationProvider.get
 
   def stop(): Unit = {
     applicationProvider.get.foreach { app =>
@@ -100,7 +89,6 @@ object Server {
   private[server] def getHandlerFor(
       request: RequestHeader,
       tryApp: Try[Application],
-      fallbackErrorHandler: HttpErrorHandler
   ): (RequestHeader, Handler) = {
     @inline def handleErrors(
         errorHandler: HttpErrorHandler,
@@ -132,7 +120,7 @@ object Server {
         handleErrors(application.errorHandler, enrichedRequest)
       }
     } catch {
-      handleErrors(fallbackErrorHandler, request)
+      handleErrors(DefaultHttpErrorHandler, request)
     }
   }
 
@@ -203,8 +191,7 @@ object Server {
     val context = ApplicationLoader.Context(
       environment = Environment.simple(path = config.rootDir, mode = config.mode),
       initialConfiguration = Configuration(ConfigFactory.load()),
-      lifecycle = new DefaultApplicationLifecycle,
-      devContext = None
+      lifecycle = new DefaultApplicationLifecycle
     )
     val application = new BuiltInComponentsFromContext(context) with NoHttpFiltersComponents {
       def router = Router.from(routes)
@@ -231,8 +218,7 @@ object Server {
     val context: Context = ApplicationLoader.Context(
       environment = Environment.simple(path = config.rootDir, mode = config.mode),
       initialConfiguration = Configuration(ConfigFactory.load()),
-      lifecycle = new DefaultApplicationLifecycle,
-      devContext = None
+      lifecycle = new DefaultApplicationLifecycle
     )
     val application =
       (new BuiltInComponentsFromContext(context) with NoHttpFiltersComponents { self: BuiltInComponents =>
@@ -273,8 +259,7 @@ object Server {
     val context: Context = ApplicationLoader.Context(
       environment = Environment.simple(path = config.rootDir, mode = config.mode),
       initialConfiguration = Configuration(ConfigFactory.load()),
-      lifecycle = new DefaultApplicationLifecycle,
-      devContext = None
+      lifecycle = new DefaultApplicationLifecycle
     )
     withApplication(appProducer(context), config)(block)
   }
@@ -333,24 +318,5 @@ private[server] trait ServerFromRouter {
       config: ServerConfig = ServerConfig()
   )(routes: BuiltInComponents => PartialFunction[RequestHeader, Handler]): Server = {
     createServerFromRouter(config)(components => Router.from(routes(components)))
-  }
-}
-
-private[play] object JavaServerHelper {
-  def forRouter(router: JRouter, mode: Mode, httpPort: Option[Integer], sslPort: Option[Integer]): Server = {
-    forRouter(mode, httpPort, sslPort)(_ => router)
-  }
-
-  def forRouter(mode: Mode, httpPort: Option[Integer], sslPort: Option[Integer])(
-      block: JFunction[JBuiltInComponents, JRouter]
-  ): Server = {
-    val context = JApplicationLoader.create(Environment.simple(mode = mode).asJava)
-    val application = new JBuiltInComponentsFromContext(context) {
-      override def router: JRouter                                         = block.apply(this)
-      override def httpFilters(): java.util.List[play.mvc.EssentialFilter] = java.util.Collections.emptyList()
-    }.application.asScala()
-    Play.start(application)
-    val serverConfig = ServerConfig(mode = mode, port = httpPort.map(_.intValue), sslPort = sslPort.map(_.intValue))
-    implicitly[ServerProvider].createServer(serverConfig, application)
   }
 }

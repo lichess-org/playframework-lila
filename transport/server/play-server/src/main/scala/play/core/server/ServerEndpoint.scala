@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.server
@@ -28,4 +28,15 @@ import akka.annotation.ApiMayChange
    * Create a full URL out of a path. E.g. a path of `/foo` becomes `http://localhost:12345/foo`
    */
   def pathUrl(path: String): String = s"$scheme://$host:$port$path"
+
+  /**
+   * Create a full WebSocket URL out of a path. E.g. a path of `/foo` becomes `ws://localhost:12345/foo`
+   */
+  def wsPathUrl(path: String): String = {
+    val wsScheme = scheme match {
+      case "http"  => "ws"
+      case "https" => "wss"
+    }
+    s"$wsScheme://$host:$port$path"
+  }
 }

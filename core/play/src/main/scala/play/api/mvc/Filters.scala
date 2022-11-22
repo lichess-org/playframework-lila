@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -12,12 +12,6 @@ import scala.concurrent.Future
 
 trait EssentialFilter {
   def apply(next: EssentialAction): EssentialAction
-
-  def asJava: play.mvc.EssentialFilter = new play.mvc.EssentialFilter {
-    override def apply(next: play.mvc.EssentialAction) = EssentialFilter.this(next).asJava
-
-    override def asScala: EssentialFilter = EssentialFilter.this
-  }
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.logback
@@ -12,13 +12,13 @@ import ch.qos.logback.classic.jul.LevelChangePropagator
 import ch.qos.logback.classic.util.ContextInitializer
 import ch.qos.logback.core.util._
 import org.slf4j.ILoggerFactory
+import org.slf4j.LoggerFactory
 import org.slf4j.bridge._
-import org.slf4j.impl.StaticLoggerBinder
 import play.api._
 
 class LogbackLoggerConfigurator extends LoggerConfigurator {
   def loggerFactory: ILoggerFactory = {
-    StaticLoggerBinder.getSingleton.getLoggerFactory
+    LoggerFactory.getILoggerFactory
   }
 
   /**
@@ -114,7 +114,6 @@ class LogbackLoggerConfigurator extends LoggerConfigurator {
       // Ensure that play.Logger and play.api.Logger are ignored when detecting file name and line number for
       // logging
       val frameworkPackages = ctx.getFrameworkPackages
-      frameworkPackages.add(classOf[play.Logger].getName)
       frameworkPackages.add(classOf[play.api.Logger].getName)
 
       properties.foreach { case (k, v) => ctx.putProperty(k, v) }

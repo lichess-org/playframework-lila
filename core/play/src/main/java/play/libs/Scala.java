@@ -1,19 +1,18 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.libs;
 
 import akka.japi.JavaPartialFunction;
-import scala.jdk.javaapi.FutureConverters;
-import scala.runtime.AbstractFunction0;
-
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import scala.jdk.javaapi.FutureConverters;
+import scala.runtime.AbstractFunction0;
 
 /** Class that contains useful java &lt;-&gt; scala conversion helpers. */
 public class Scala {
@@ -227,18 +226,6 @@ public class Scala {
   @SuppressWarnings("unchecked")
   public static <A, B> scala.Tuple2<A, B> Tuple(A a, B b) {
     return new scala.Tuple2<A, B>(a, b);
-  }
-
-  /**
-   * Converts a scala {@code Tuple2} to a java F.Tuple.
-   *
-   * @param tuple the Scala Tuple.
-   * @param <A> input parameter type
-   * @param <B> return type.
-   * @return an instance of Tuple with the elements.
-   */
-  public static <A, B> F.Tuple<A, B> asJava(scala.Tuple2<A, B> tuple) {
-    return F.Tuple(tuple._1(), tuple._2());
   }
 
   /**

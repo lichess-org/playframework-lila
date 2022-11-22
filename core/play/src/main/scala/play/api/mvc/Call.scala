@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -12,10 +12,9 @@ package play.api.mvc
  * @param method the request HTTP method
  * @param url the request URL
  */
-case class Call(method: String, url: String, fragment: String = null) extends play.mvc.Call {
-  override def unique(): Call = copy(url = uniquify(url))
+case class Call(method: String, url: String, fragment: String = null) {
 
-  override def withFragment(fragment: String): Call = copy(fragment = fragment)
+  def withFragment(fragment: String): Call = copy(fragment = fragment)
 
   /**
    * Transform this call to an absolute URL.
@@ -37,25 +36,9 @@ case class Call(method: String, url: String, fragment: String = null) extends pl
   def absoluteURL(secure: Boolean)(implicit request: RequestHeader): String =
     "http" + (if (secure) "s" else "") + "://" + request.host + this.url + this.appendFragment
 
-  /**
-   * Transform this call to an WebSocket URL.
-   *
-   * {{{
-   * import play.api.mvc.{ Call, RequestHeader }
-   *
-   * implicit val req: RequestHeader = myRequest
-   * val url: String = Call("GET", "/url").webSocketURL()
-   * // == "ws://\$host/url", or "wss://\$host/url" if secure
-   * }}}
-   */
-  def webSocketURL()(implicit request: RequestHeader): String =
-    webSocketURL(request.secure)
-
-  /**
-   * Transform this call to an WebSocket URL.
-   */
-  def webSocketURL(secure: Boolean)(implicit request: RequestHeader): String =
-    "ws" + (if (secure) "s" else "") + "://" + request.host + this.url
+  protected def appendFragment =
+    if (fragment != null && !fragment.trim.isEmpty) s"#$fragment"
+    else ""
 
   /**
    * Transform this call to a URL relative to the current request's path.
@@ -70,4 +53,10 @@ case class Call(method: String, url: String, fragment: String = null) extends pl
    * }}}
    */
   def relative(implicit request: RequestHeader): String = this.relativeTo(request.path)
+
+  def relativeTo(startPath: String) = play.core.Paths.relative(startPath, url) + appendFragment
+
+  def path = s"$url${appendFragment}"
+
+  override def toString = path
 }

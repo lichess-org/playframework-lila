@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.routing.sird
@@ -22,7 +22,7 @@ class SeqQueryStringParameter(paramName: String) extends QueryStringParameterExt
 }
 
 trait QueryStringParameterExtractor[T] {
-  import QueryStringParameterExtractor._
+  import QueryStringParameterExtractor.*
   def unapply(qs: QueryString): Option[T]
   def unapply(req: RequestHeader): Option[T] = unapply(req.queryString)
   def unapply(uri: URI): Option[T]           = unapply(parse(uri.getRawQuery))

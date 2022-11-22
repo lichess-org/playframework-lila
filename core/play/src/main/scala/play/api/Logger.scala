@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api
@@ -7,13 +7,13 @@ package play.api
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-import org.slf4j.{ Logger => Slf4jLogger }
+import org.slf4j.{ Logger as Slf4jLogger }
 import org.slf4j.LoggerFactory
 import org.slf4j.Marker
 
 import scala.collection.mutable
 import scala.language.implicitConversions
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * Typical logger interface.
@@ -316,7 +316,7 @@ object Logger {
    * @param clazz a class whose name will be used as logger name
    * @return a logger
    */
-  def apply(clazz: Class[_]): Logger = new Logger(LoggerFactory.getLogger(clazz.getName.stripSuffix("$")))
+  def apply(clazz: Class[?]): Logger = new Logger(LoggerFactory.getLogger(clazz.getName.stripSuffix("$")))
 }
 
 /**

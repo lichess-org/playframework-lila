@@ -1,12 +1,12 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
 
-import play.api._
+import play.api.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc.Results._
+import play.api.mvc.Results.*
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -22,7 +22,7 @@ object Security {
    * The default error response for an unauthorized request; used multiple places here
    */
   private val DefaultUnauthorized: RequestHeader => Result = implicit request =>
-    Unauthorized(views.html.defaultpages.unauthorized())
+    Unauthorized("unauthorized")
 
   /**
    * Wraps another action, allowing only authenticated HTTP requests.
@@ -135,7 +135,7 @@ object Security {
   class AuthenticatedBuilder[U](
       userinfo: RequestHeader => Option[U],
       defaultParser: BodyParser[AnyContent],
-      onUnauthorized: RequestHeader => Result = implicit request => Unauthorized(views.html.defaultpages.unauthorized())
+      onUnauthorized: RequestHeader => Result = implicit request => Unauthorized("unauthorized")
   )(implicit val executionContext: ExecutionContext)
       extends ActionBuilder[({ type R[A] = AuthenticatedRequest[A, U] })#R, AnyContent] {
     lazy val parser = defaultParser

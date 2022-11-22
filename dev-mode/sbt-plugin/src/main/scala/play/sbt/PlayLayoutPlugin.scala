@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.sbt
@@ -7,7 +7,6 @@ package play.sbt
 import sbt._
 import sbt.Keys._
 import play.twirl.sbt.Import.TwirlKeys
-import com.typesafe.sbt.web.SbtWeb.autoImport._
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
 
 /**
@@ -24,17 +23,10 @@ object PlayLayoutPlugin extends AutoPlugin {
     target := baseDirectory.value / "target",
     Compile / sourceDirectory := baseDirectory.value / "app",
     Test / sourceDirectory := baseDirectory.value / "test",
-    Compile / resourceDirectory := baseDirectory.value / "conf",
     Compile / scalaSource := baseDirectory.value / "app",
     Test / scalaSource := baseDirectory.value / "test",
     Compile / javaSource := baseDirectory.value / "app",
     Test / javaSource := baseDirectory.value / "test",
-    Compile / TwirlKeys.compileTemplates / sourceDirectories := Seq((Compile / sourceDirectory).value),
-    Test / TwirlKeys.compileTemplates / sourceDirectories := Seq((Test / sourceDirectory).value),
-    // sbt-web
-    Assets / sourceDirectory := (Compile / sourceDirectory).value / "assets",
-    TestAssets / sourceDirectory := (Test / sourceDirectory).value / "assets",
-    Assets / resourceDirectory := baseDirectory.value / "public",
     // Native packager
     Universal / sourceDirectory := baseDirectory.value / "dist"
   )

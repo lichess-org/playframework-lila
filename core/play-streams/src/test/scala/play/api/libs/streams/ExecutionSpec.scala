@@ -1,10 +1,10 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs.streams
 
-import org.specs2.mutable._
+import org.specs2.mutable.*
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.SECONDS
@@ -22,7 +22,7 @@ class ExecutionSpec extends Specification {
   "trampoline" should {
     "execute code in the same thread" in {
       val f = Future(Thread.currentThread())(trampoline)
-      Await.result(f, waitTime) must equalTo(Thread.currentThread())
+      Await.result(f, waitTime) `must` equalTo(Thread.currentThread())
     }
 
     "not overflow the stack" in {
@@ -52,7 +52,7 @@ class ExecutionSpec extends Specification {
       }
 
       // Now verify that we don't overflow
-      Try(executeRecursively(trampoline, overflowTimes)) must beSuccessfulTry[Unit]
+      Try(executeRecursively(trampoline, overflowTimes)) `must` beSuccessfulTry[Unit]
     }
 
     "execute code in the order it was submitted" in {
@@ -73,7 +73,7 @@ class ExecutionSpec extends Specification {
         )
       )
 
-      runRecord must equalTo(0 to 8)
+      runRecord `must` equalTo(0 to 8)
     }
   }
 }

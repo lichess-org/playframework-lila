@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -8,7 +8,6 @@ import java.util.Locale
 import java.util.Optional
 
 import play.api.i18n.Lang
-import play.api.i18n.Messages
 import play.api.libs.typedmap.TypedEntry
 import play.api.libs.typedmap.TypedKey
 import play.api.libs.typedmap.TypedMap
@@ -33,7 +32,7 @@ trait Request[+A] extends RequestHeader {
    * it is an entity representing an "empty" body.
    */
   override def hasBody: Boolean = {
-    import play.api.http.HeaderNames._
+    import play.api.http.HeaderNames.*
     if (headers.get(CONTENT_LENGTH).isDefined || headers.get(TRANSFER_ENCODING).isDefined) {
       // A relevant header is set, which means this is a real request or a fake request used for testing where the user
       // cared about setting the headers. We can just use them to see if a body exists. In a real life production application,
@@ -44,13 +43,7 @@ trait Request[+A] extends RequestHeader {
       // No relevant header present, very likely this is a real life GET request (or alike) without a body or a fake request
       // used for testing where the user did not care about setting the headers (but maybe did set an entity though).
       // Let's do our best to find out if there is an entity that represents an "empty" body.
-      @tailrec @inline def isEmptyBody(body: Any): Boolean = body match {
-        case rb: play.mvc.Http.RequestBody =>
-          rb match {
-            // In PlayJava, Optional.empty() is used to represent an empty body
-            case _ if rb.as(classOf[Optional[_]]) != null => !rb.as(classOf[Optional[_]]).isPresent
-            case _                                        => isEmptyBody(rb.as(classOf[AnyRef]))
-          }
+      @inline def isEmptyBody(body: Any): Boolean = body match {
         case AnyContentAsEmpty | null | ()                      => true
         case unit if unit.isInstanceOf[scala.runtime.BoxedUnit] => true
         // All values which are known to represent an empty body have been checked, therefore, if we end up here, technically
@@ -91,30 +84,14 @@ trait Request[+A] extends RequestHeader {
     new RequestImpl[A](connection, method, target, version, headers, newAttrs, body)
   override def addAttr[B](key: TypedKey[B], value: B): Request[A] =
     withAttrs(attrs.updated(key, value))
-  override def addAttrs(e1: TypedEntry[_]): Request[A]                    = withAttrs(attrs + e1)
-  override def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_]): Request[A] = withAttrs(attrs + (e1, e2))
-  override def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_], e3: TypedEntry[_]): Request[A] =
+  override def addAttrs(e1: TypedEntry[?]): Request[A]                    = withAttrs(attrs + e1)
+  override def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?]): Request[A] = withAttrs(attrs + (e1, e2))
+  override def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?], e3: TypedEntry[?]): Request[A] =
     withAttrs(attrs + (e1, e2, e3))
-  override def addAttrs(entries: TypedEntry[_]*): Request[A] =
-    withAttrs(attrs.+(entries: _*))
-  override def removeAttr(key: TypedKey[_]): Request[A] =
+  override def addAttrs(entries: TypedEntry[?]*): Request[A] =
+    withAttrs(attrs.+(entries *))
+  override def removeAttr(key: TypedKey[?]): Request[A] =
     withAttrs(attrs - key)
-  override def withTransientLang(lang: Lang): Request[A] =
-    addAttr(Messages.Attrs.CurrentLang, lang)
-  override def withTransientLang(code: String): Request[A] =
-    withTransientLang(Lang(code))
-  override def withTransientLang(locale: Locale): Request[A] =
-    withTransientLang(Lang(locale))
-  override def withoutTransientLang(): Request[A] =
-    removeAttr(Messages.Attrs.CurrentLang)
-
-  override def asJava: Http.Request = this match {
-    case req: Request[Http.RequestBody @unchecked] =>
-      // This will preserve the parsed body since it is already using the Java body wrapper
-      new Http.RequestImpl(req)
-    case _ =>
-      new Http.RequestImpl(this.withBody(null))
-  }
 }
 
 object Request {

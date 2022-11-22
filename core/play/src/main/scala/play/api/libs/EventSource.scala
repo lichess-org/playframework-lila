@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.libs
@@ -8,7 +8,7 @@ import akka.stream.scaladsl.Flow
 import play.api.http.ContentTypeOf
 import play.api.http.ContentTypes
 import play.api.http.Writeable
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 
@@ -52,7 +52,7 @@ object EventSource {
    *   Ok.chunked(jsonStream via EventSource.flow).as(ContentTypes.EVENT_STREAM)
    * }}}
    */
-  def flow[E: EventDataExtractor: EventNameExtractor: EventIdExtractor]: Flow[E, Event, _] = {
+  def flow[E: EventDataExtractor: EventNameExtractor: EventIdExtractor]: Flow[E, Event, ?] = {
     Flow[E].map(Event(_))
   }
 

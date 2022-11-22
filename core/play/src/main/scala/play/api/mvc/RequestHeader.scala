@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -11,11 +11,10 @@ import play.api.http.HeaderNames
 import play.api.http.MediaRange
 import play.api.http.MediaType
 import play.api.i18n.Lang
-import play.api.i18n.Messages
 import play.api.libs.typedmap.TypedEntry
 import play.api.libs.typedmap.TypedKey
 import play.api.libs.typedmap.TypedMap
-import play.api.mvc.request._
+import play.api.mvc.request.*
 
 import scala.annotation.implicitNotFound
 
@@ -158,7 +157,7 @@ trait RequestHeader {
    * @param e1 The new attribute.
    * @return The new version of this object with the new attribute.
    */
-  def addAttrs(e1: TypedEntry[_]): RequestHeader = withAttrs(attrs + e1)
+  def addAttrs(e1: TypedEntry[?]): RequestHeader = withAttrs(attrs + e1)
 
   /**
    * Create a new versions of this object with the given attributes attached to it.
@@ -167,7 +166,7 @@ trait RequestHeader {
    * @param e2 The second new attribute.
    * @return The new version of this object with the new attributes.
    */
-  def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_]): RequestHeader = withAttrs(attrs + (e1, e2))
+  def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?]): RequestHeader = withAttrs(attrs + (e1, e2))
 
   /**
    * Create a new versions of this object with the given attributes attached to it.
@@ -177,7 +176,7 @@ trait RequestHeader {
    * @param e3 The third new attribute.
    * @return The new version of this object with the new attributes.
    */
-  def addAttrs(e1: TypedEntry[_], e2: TypedEntry[_], e3: TypedEntry[_]): RequestHeader = withAttrs(attrs + (e1, e2, e3))
+  def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?], e3: TypedEntry[?]): RequestHeader = withAttrs(attrs + (e1, e2, e3))
 
   /**
    * Create a new versions of this object with the given attributes attached to it.
@@ -185,8 +184,8 @@ trait RequestHeader {
    * @param entries The new attributes.
    * @return The new version of this object with the new attributes.
    */
-  def addAttrs(entries: TypedEntry[_]*): RequestHeader =
-    withAttrs(attrs.+(entries: _*))
+  def addAttrs(entries: TypedEntry[?]*): RequestHeader =
+    withAttrs(attrs.+(entries *))
 
   /**
    * Create a new versions of this object with the given attribute removed.
@@ -194,7 +193,7 @@ trait RequestHeader {
    * @param key The key of the attribute to remove.
    * @return The new version of this object with the attribute removed.
    */
-  def removeAttr(key: TypedKey[_]): RequestHeader =
+  def removeAttr(key: TypedKey[?]): RequestHeader =
     withAttrs(attrs - key)
 
   // -- Computed
@@ -312,57 +311,9 @@ trait RequestHeader {
   def withBody[A](body: A): Request[A] =
     new RequestImpl[A](connection, method, target, version, headers, attrs, body)
 
-  /**
-   * Create a new versions of this object with the given transient language set.
-   * The transient language will be taken into account when using [[play.api.i18n.MessagesApi.preferred()]] (It will take precedence over any other language).
-   *
-   * @param lang The language to use.
-   * @return The new version of this object with the given transient language set.
-   */
-  def withTransientLang(lang: Lang): RequestHeader =
-    addAttr(Messages.Attrs.CurrentLang, lang)
-
-  /**
-   * Create a new versions of this object with the given transient language set.
-   * The transient language will be taken into account when using [[play.api.i18n.MessagesApi.preferred()]] (It will take precedence over any other language).
-   *
-   * @param code The language to use.
-   * @return The new version of this object with the given transient language set.
-   */
-  def withTransientLang(code: String): RequestHeader =
-    withTransientLang(Lang(code))
-
-  /**
-   * Create a new versions of this object with the given transient language set.
-   * The transient language will be taken into account when using [[play.api.i18n.MessagesApi.preferred()]] (It will take precedence over any other language).
-   *
-   * @param locale The language to use.
-   * @return The new version of this object with the given transient language set.
-   */
-  def withTransientLang(locale: Locale): RequestHeader =
-    withTransientLang(Lang(locale))
-
-  /**
-   * Create a new versions of this object with the given transient language removed.
-   *
-   * @return The new version of this object with the transient language removed.
-   */
-  def withoutTransientLang(): RequestHeader =
-    removeAttr(Messages.Attrs.CurrentLang)
-
-  /**
-   * The transient language will be taken into account when using [[play.api.i18n.MessagesApi.preferred()]] (It will take precedence over any other language).
-   *
-   * @return The current transient language of this request.
-   */
-  def transientLang(): Option[Lang] =
-    attrs.get(Messages.Attrs.CurrentLang)
-
   override def toString: String = {
     method + " " + uri
   }
-
-  def asJava: play.mvc.Http.RequestHeader = new play.core.j.RequestHeaderImpl(this)
 }
 
 object RequestHeader {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.mvc
@@ -13,19 +13,15 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.jackson.io.JacksonDeserializer
-import io.jsonwebtoken.jackson.io.JacksonSerializer
 import play.api.MarkerContexts.SecurityMarkerContext
-import play.api._
-import play.api.http._
+import play.api.*
+import play.api.http.*
 import play.api.inject.SimpleModule
 import play.api.inject.bind
 import play.api.libs.crypto.CookieSigner
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.mvc.Cookie.SameSite
 import play.libs.Scala
-import play.mvc.Http.{ Cookie => JCookie }
 
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -54,28 +50,13 @@ case class Cookie(
     secure: Boolean = false,
     httpOnly: Boolean = true,
     sameSite: Option[Cookie.SameSite] = None
-) {
-  lazy val asJava = {
-    new JCookie(
-      name,
-      value,
-      maxAge.map(i => Integer.valueOf(i)).orNull,
-      path,
-      domain.orNull,
-      secure,
-      httpOnly,
-      sameSite.map(_.asJava).orNull
-    )
-  }
-}
+)
 
 object Cookie {
   private val logger = Logger(this.getClass)
 
   sealed abstract class SameSite(val value: String) {
     private def matches(v: String): Boolean = value.equalsIgnoreCase(v)
-
-    def asJava: play.mvc.Http.Cookie.SameSite = play.mvc.Http.Cookie.SameSite.parse(value).get
   }
   object SameSite {
     private[play] val values: Seq[SameSite]    = Seq(Strict, Lax, None)
@@ -225,7 +206,7 @@ trait CookieHeaderEncoding {
   val SetCookieHeaderSeparator      = ";;"
   val SetCookieHeaderSeparatorRegex = SetCookieHeaderSeparator.r
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.*
 
   // We use netty here but just as an API to handle cookies encoding
 
@@ -399,7 +380,7 @@ object CookieHeaderMerging {
    */
   private def mergeOn[A, B](input: Iterable[A], f: A => B): Seq[A] = {
     val withMergeValue: Seq[(B, A)] = input.toSeq.map(el => (f(el), el))
-    ListMap(withMergeValue: _*).values.toSeq
+    ListMap(withMergeValue *).values.toSeq
   }
 
   /**
@@ -625,207 +606,15 @@ trait UrlEncodedCookieDataCodec extends CookieDataCodec {
 }
 
 /**
- * JWT cookie encoding and decoding functionality
- */
-trait JWTCookieDataCodec extends CookieDataCodec {
-  private val logger = play.api.Logger(getClass)
-
-  def secretConfiguration: SecretConfiguration
-
-  def jwtConfiguration: JWTConfiguration
-
-  private lazy val formatter = new JWTCookieDataCodec.JWTFormatter(secretConfiguration, jwtConfiguration, clock)
-
-  /**
-   * Encodes the data as a `String`.
-   */
-  override def encode(data: Map[String, String]): String = {
-    val dataMap = Map(jwtConfiguration.dataClaim -> Jwts.claims(Scala.asJava(data)))
-    formatter.format(dataMap)
-  }
-
-  /**
-   * Decodes from an encoded `String`.
-   */
-  override def decode(encodedString: String): Map[String, String] = {
-    import io.jsonwebtoken._
-
-    import scala.jdk.CollectionConverters._
-
-    try {
-      // Get all the claims
-      val claimMap = formatter.parse(encodedString)
-
-      // Pull out the JWT data claim and only return that.
-      val data = claimMap(jwtConfiguration.dataClaim).asInstanceOf[java.util.Map[String, AnyRef]]
-      data.asScala.view.mapValues { v =>
-        v.toString
-      }.toMap
-    } catch {
-      case e: IllegalStateException =>
-        // Used in the case where the header algorithm does not match.
-        logger.error(e.getMessage)
-        Map.empty
-
-      // We want to warn specifically about premature and expired JWT,
-      // because they depend on clock skew and can cause silent user error
-      // if production servers get out of sync
-      case e: PrematureJwtException =>
-        val id = e.getClaims.getId
-        logger.warn(s"decode: premature JWT found! id = $id, message = ${e.getMessage}")(SecurityMarkerContext)
-        Map.empty
-
-      case e: ExpiredJwtException =>
-        val id = e.getClaims.getId
-        logger.warn(s"decode: expired JWT found! id = $id, message = ${e.getMessage}")(SecurityMarkerContext)
-        Map.empty
-
-      case e: security.SignatureException =>
-        // Thrown when an invalid cookie signature is found -- this can be confusing to end users
-        // so give a special logging message to indicate problem.
-
-        logger.warn(s"decode: cookie has invalid signature! message = ${e.getMessage}")(SecurityMarkerContext)
-        val devLogger = logger.forMode(Mode.Dev)
-        devLogger.info(
-          "The JWT signature in the cookie does not match the locally computed signature with the server. "
-            + "This usually indicates the browser has a leftover cookie from another Play application, so clearing "
-            + "cookies may resolve this error message."
-        )
-        Map.empty
-
-      case NonFatal(e) =>
-        logger.warn(s"decode: could not decode JWT: ${e.getMessage}", e)(SecurityMarkerContext)
-        Map.empty
-    }
-  }
-
-  /** The unique id of the JWT, if any. */
-  protected def uniqueId(): Option[String] = Some(JWTCookieDataCodec.JWTIDGenerator.generateId())
-
-  /** The clock used for checking expires / not before code */
-  protected def clock: java.time.Clock = java.time.Clock.systemUTC()
-}
-
-object JWTCookieDataCodec {
-
-  private val objectMapper: ObjectMapper = new ObjectMapper()
-
-  /**
-   * Maps to and from JWT claims.  This class is more basic than the JWT
-   * cookie signing, because it exposes all claims, not just the "data" ones.
-   *
-   * @param secretConfiguration the secret used for signing JWT
-   * @param jwtConfiguration the configuration for JWT
-   * @param clock the system clock
-   */
-  private[play] class JWTFormatter(
-      secretConfiguration: SecretConfiguration,
-      jwtConfiguration: JWTConfiguration,
-      clock: java.time.Clock
-  ) {
-    import io.jsonwebtoken._
-    import scala.jdk.CollectionConverters._
-
-    private val jwtClock = new Clock {
-      override def now(): Date = java.util.Date.from(clock.instant())
-    }
-
-    private val signatureAlgorithm = SignatureAlgorithm.forName(jwtConfiguration.signatureAlgorithm)
-
-    private val secretKey: SecretKey = new SecretKeySpec(
-      secretConfiguration.secret.getBytes(StandardCharsets.UTF_8),
-      signatureAlgorithm.getJcaName
-    )
-
-    private val jwtParser: JwtParser = Jwts
-      .parserBuilder()
-      .setClock(jwtClock)
-      .setSigningKey(secretKey)
-      .setAllowedClockSkewSeconds(jwtConfiguration.clockSkew.toSeconds)
-      .deserializeJsonWith(new JacksonDeserializer(objectMapper))
-      .build()
-
-    /**
-     * Parses encoded JWT against configuration, returns all JWT claims.
-     *
-     * @param encodedString the signed and encoded JWT.
-     * @return the map of claims
-     */
-    def parse(encodedString: String): Map[String, AnyRef] = {
-      val jws: Jws[Claims] = jwtParser.parseClaimsJws(encodedString)
-
-      val headerAlgorithm = jws.getHeader.getAlgorithm
-      if (headerAlgorithm != jwtConfiguration.signatureAlgorithm) {
-        val id  = jws.getBody.getId
-        val msg = s"Invalid header algorithm $headerAlgorithm in JWT $id"
-        throw new IllegalStateException(msg)
-      }
-
-      jws.getBody.asScala.toMap
-    }
-
-    /**
-     * Formats the input claims to a JWT string, and adds extra date related claims.
-     *
-     * @param claims all the claims to be added to JWT.
-     * @return the signed, encoded JWT with extra date related claims
-     */
-    def format(claims: Map[String, AnyRef]): String = {
-      val builder = Jwts.builder().serializeToJsonWith(new JacksonSerializer(objectMapper))
-      val now     = jwtClock.now()
-
-      // Add the claims one at a time because it saves problems with mutable maps
-      // under the implementation...
-      claims.foreach {
-        case (k, v) =>
-          builder.claim(k, v)
-      }
-
-      // https://tools.ietf.org/html/rfc7519#section-4.1.4
-      jwtConfiguration.expiresAfter.map { duration =>
-        val expirationDate = new Date(now.getTime + duration.toMillis)
-        builder.setExpiration(expirationDate)
-      }
-
-      builder.setNotBefore(now) // https://tools.ietf.org/html/rfc7519#section-4.1.5
-      builder.setIssuedAt(now)  // https://tools.ietf.org/html/rfc7519#section-4.1.6
-
-      // Sign and compact into a string...
-      // Even though secretKey already knows about the algorithm we have to pass signatureAlgorithm separately as well again.
-      // If not passing it, JJWT would try to determine the algorithm from the secretKey bit length via SignatureAlgorithm.forSigningKey(...)
-      // That would be a problem when e.g. in app conf HS256 is set (the default), but the secret has >= 64 bytes, then JJWT would choose HS512.
-      builder.signWith(secretKey, signatureAlgorithm).compact()
-    }
-  }
-
-  /** Utility object to generate random nonces for JWT from SecureRandom */
-  private[play] object JWTIDGenerator {
-    private val sr = new java.security.SecureRandom()
-    def generateId(): String = {
-      new java.math.BigInteger(130, sr).toString(32)
-    }
-  }
-}
-
-/**
  * A trait that identifies the cookie encoding and uses the appropriate codec, for
  * upgrading from a signed cookie encoding to a JWT cookie encoding.
  */
 trait FallbackCookieDataCodec extends CookieDataCodec {
-  def jwtCodec: JWTCookieDataCodec
 
   def signedCodec: UrlEncodedCookieDataCodec
 
-  def encode(data: Map[String, String]): String = jwtCodec.encode(data)
-
   def decode(encodedData: String): Map[String, String] = {
-    // Per https://github.com/playframework/playframework/pull/7053#issuecomment-285220730
-    val codec = encodedData match {
-      case s if s.contains('=') => signedCodec // It's a legacy session with at least one value.
-      case s if s.contains('.') => jwtCodec    // It's a JWT session.
-      case _                    => signedCodec // It's an empty legacy session.
-    }
-    codec.decode(encodedData)
+    signedCodec.decode(encodedData)
   }
 }
 
@@ -833,21 +622,6 @@ case class DefaultUrlEncodedCookieDataCodec(
     isSigned: Boolean,
     cookieSigner: CookieSigner
 ) extends UrlEncodedCookieDataCodec
-
-case class DefaultJWTCookieDataCodec @Inject() (
-    secretConfiguration: SecretConfiguration,
-    jwtConfiguration: JWTConfiguration
-) extends JWTCookieDataCodec
-
-/**
- * A cookie module that uses JWT as the cookie encoding, falling back to URL encoding.
- */
-class CookiesModule
-    extends SimpleModule(
-      bind[CookieSigner].toProvider[CookieSignerProvider],
-      bind[SessionCookieBaker].to[DefaultSessionCookieBaker],
-      bind[FlashCookieBaker].to[DefaultFlashCookieBaker]
-    )
 
 /**
  * A cookie module that uses the urlencoded cookie encoding.

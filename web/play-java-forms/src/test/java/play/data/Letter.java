@@ -1,14 +1,13 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.data;
 
+import java.util.List;
 import play.data.validation.Constraints;
 import play.libs.Files.TemporaryFile;
 import play.mvc.Http.MultipartFormData.FilePart;
-
-import java.util.List;
 
 public class Letter {
 

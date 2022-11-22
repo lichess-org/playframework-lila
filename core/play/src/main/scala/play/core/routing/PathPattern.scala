@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.core.routing
@@ -35,7 +35,7 @@ case class StaticPart(value: String) extends PathPart {
  * A pattern for match paths, consisting of a sequence of path parts.
  */
 case class PathPattern(parts: Seq[PathPart]) {
-  import java.util.regex._
+  import java.util.regex.*
 
   private def decodeIfEncoded(decode: Boolean, groupCount: Int): Matcher => Either[Throwable, String] =
     matcher =>
@@ -48,8 +48,8 @@ case class PathPattern(parts: Seq[PathPart]) {
           matcher.group(groupCount)
       }
 
-  private lazy val (regex, groups) = {
-    Some(parts.foldLeft("", Map.empty[String, Matcher => Either[Throwable, String]], 0) { (s, e) =>
+  private val (regex, groups) =
+    parts.foldLeft(Pattern.quote("/"), Map.empty[String, Matcher => Either[Throwable, String]], 0) { (s, e) =>
       e match {
         case StaticPart(p) => ((s._1 + Pattern.quote(p)), s._2, s._3)
         case DynamicPart(k, r, encodeable) => {
@@ -60,10 +60,9 @@ case class PathPattern(parts: Seq[PathPart]) {
           )
         }
       }
-    }).map {
+    } match {
       case (r, g, _) => Pattern.compile("^" + r + "$") -> g
-    }.get
-  }
+    }
 
   /**
    * Apply the path pattern to a given candidate path to see if it matches.

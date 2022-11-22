@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.api.data.validation
@@ -14,7 +14,7 @@ import play.api.libs.json.JsonValidationError
  * @param args the message arguments, to format the constraint name
  * @param f the validation function
  */
-case class Constraint[-T](name: Option[String], args: Seq[Any])(f: (T => ValidationResult)) {
+case class Constraint[-T](name: Option[String], args: Seq[Matchable])(f: (T => ValidationResult)) {
 
   /**
    * Run the constraint validation.
@@ -54,7 +54,8 @@ object Constraint {
    * @param f the validation function
    * @return a constraint
    */
-  def apply[T](name: String, args: Any*)(f: (T => ValidationResult)): Constraint[T] = apply(Some(name), args.toSeq)(f)
+  def apply[T](name: String, args: Matchable*)(f: (T => ValidationResult)): Constraint[T] =
+    apply(Some(name), args.toSeq)(f)
 }
 
 /**
@@ -247,7 +248,7 @@ object Invalid {
    * @param args the validation error message arguments
    * @return an `Invalid` value
    */
-  def apply(error: String, args: Any*): Invalid = Invalid(Seq(ValidationError(error, args: _*)))
+  def apply(error: String, args: Matchable*): Invalid = Invalid(Seq(ValidationError(error, args *)))
 }
 
 object ParameterValidator {
@@ -276,7 +277,7 @@ object ParameterValidator {
  * @param messages the error message, if more then one message is passed it will use the last one
  * @param args the error message arguments
  */
-case class ValidationError(messages: Seq[String], args: Any*) {
+case class ValidationError(messages: Seq[String], args: Matchable*) {
   lazy val message = messages.last
 }
 
@@ -286,8 +287,10 @@ object ValidationError {
    * Conversion from a JsonValidationError to a Play ValidationError.
    */
   def fromJsonValidationError(jve: JsonValidationError): ValidationError = {
-    ValidationError(jve.message, jve.args: _*)
+    ValidationError(jve.message, jve.args.collect {
+      case arg: Matchable => arg
+    } *)
   }
 
-  def apply(message: String, args: Any*) = new ValidationError(Seq(message), args: _*)
+  def apply(message: String, args: Matchable*) = new ValidationError(Seq(message), args *)
 }

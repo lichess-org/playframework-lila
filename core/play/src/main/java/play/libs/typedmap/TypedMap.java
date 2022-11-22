@@ -1,15 +1,14 @@
 /*
- * Copyright (C) Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) from 2022 The Play Framework Contributors <https://github.com/playframework>, 2011-2021 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package play.libs.typedmap;
 
-import play.api.libs.typedmap.TypedMap$;
-import scala.jdk.javaapi.OptionConverters;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import play.api.libs.typedmap.TypedMap$;
+import scala.jdk.javaapi.OptionConverters;
 
 /**
  * A TypedMap is an immutable map containing typed values. Each entry is associated with a {@link
