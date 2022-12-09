@@ -34,9 +34,6 @@ trait Server {
   def applicationProvider: ApplicationProvider
 
   def stop(): Unit = {
-    applicationProvider.get.foreach { app =>
-      LoggerConfigurator(app.classloader).foreach(_.shutdown())
-    }
   }
 
   /**
@@ -144,124 +141,6 @@ object Server {
       case "infinite" => Long.MaxValue
       case _          => config.getBytes(if (config.hasPath(deprecatedPath)) deprecatedPath else path)
     }
-  }
-
-  /**
-   * Run a block of code with a server for the given application.
-   *
-   * The passed in block takes the port that the application is running on. By default, this will be a random ephemeral
-   * port. This can be changed by passing in an explicit port with the config parameter.
-   *
-   * @param application The application for the server to server.
-   * @param config The configuration for the server. Defaults to test config with the http port bound to a random
-   *               ephemeral port.
-   * @param block The block of code to run.
-   * @param provider The server provider.
-   * @return The result of the block of code.
-   */
-  def withApplication[T](
-      application: Application,
-      config: ServerConfig = ServerConfig(port = Some(0), mode = Mode.Test)
-  )(block: Port => T)(implicit provider: ServerProvider): T = {
-    Play.start(application)
-    val server = provider.createServer(config, application)
-    try {
-      block(new Port(server.httpPort.orElse(server.httpsPort).get))
-    } finally {
-      server.stop()
-    }
-  }
-
-  /**
-   * Run a block of code with a server for the given routes.
-   *
-   * The passed in block takes the port that the application is running on. By default, this will be a random ephemeral
-   * port. This can be changed by passing in an explicit port with the config parameter.
-   *
-   * @param routes The routes for the server to server.
-   * @param config The configuration for the server. Defaults to test config with the http port bound to a random
-   *               ephemeral port.
-   * @param block The block of code to run.
-   * @param provider The server provider.
-   * @return The result of the block of code.
-   */
-  def withRouter[T](
-      config: ServerConfig = ServerConfig(port = Some(0), mode = Mode.Test)
-  )(routes: PartialFunction[RequestHeader, Handler])(block: Port => T)(implicit provider: ServerProvider): T = {
-    val context = ApplicationLoader.Context(
-      environment = Environment.simple(path = config.rootDir, mode = config.mode),
-      initialConfiguration = Configuration(ConfigFactory.load()),
-      lifecycle = new DefaultApplicationLifecycle
-    )
-    val application = new BuiltInComponentsFromContext(context) with NoHttpFiltersComponents {
-      def router = Router.from(routes)
-    }.application
-    withApplication(application, config)(block)
-  }
-
-  /**
-   * Run a block of code with a server for the given routes, obtained from the application components
-   *
-   * The passed in block takes the port that the application is running on. By default, this will be a random ephemeral
-   * port. This can be changed by passing in an explicit port with the config parameter.
-   *
-   * @param routes A function that obtains the routes from the server from the application components.
-   * @param config The configuration for the server. Defaults to test config with the http port bound to a random
-   *               ephemeral port.
-   * @param block The block of code to run.
-   * @param provider The server provider.
-   * @return The result of the block of code.
-   */
-  def withRouterFromComponents[T](config: ServerConfig = ServerConfig(port = Some(0), mode = Mode.Test))(
-      routes: BuiltInComponents => PartialFunction[RequestHeader, Handler]
-  )(block: Port => T)(implicit provider: ServerProvider): T = {
-    val context: Context = ApplicationLoader.Context(
-      environment = Environment.simple(path = config.rootDir, mode = config.mode),
-      initialConfiguration = Configuration(ConfigFactory.load()),
-      lifecycle = new DefaultApplicationLifecycle
-    )
-    val application =
-      (new BuiltInComponentsFromContext(context) with NoHttpFiltersComponents { self: BuiltInComponents =>
-        def router = Router.from(routes(self))
-      }).application
-    withApplication(application, config)(block)
-  }
-
-  /**
-   * Run a block of code with a server for the application containing routes.
-   *
-   * The passed in block takes the port that the application is running on. By default, this will be a random ephemeral
-   * port. This can be changed by passing in an explicit port with the config parameter.
-   *
-   * An easy way to set up an application with given routes is to use [[play.api.BuiltInComponentsFromContext]] with
-   * any extra components needed:
-   *
-   * {{{
-   *   Server.withApplicationFromContext(ServerConfig(mode = Mode.Prod, port = Some(0))) { context =>
-   *     new BuiltInComponentsFromContext(context) with AssetsComponents with play.filters.HttpFiltersComponents {
-   *      override def router: Router = Router.from {
-   *        case req => assets.versioned("/testassets", req.path)
-   *      }
-   *    }.application
-   *  } { withClient(block)(_) }
-   * }}}
-   *
-   * @param appProducer A function that takes an ApplicationLoader.Context and produces [[play.api.Application]]
-   * @param config The configuration for the server. Defaults to test config with the http port bound to a random
-   *               ephemeral port.
-   * @param block The block of code to run.
-   * @param provider The server provider.
-   * @return The result of the block of code.
-   */
-  def withApplicationFromContext[T](
-      config: ServerConfig = ServerConfig(port = Some(0), mode = Mode.Test)
-  )(appProducer: ApplicationLoader.Context => Application)(block: Port => T)(implicit provider: ServerProvider): T = {
-    val context: Context = ApplicationLoader.Context(
-      environment = Environment.simple(path = config.rootDir, mode = config.mode),
-      initialConfiguration = Configuration(ConfigFactory.load()),
-      lifecycle = new DefaultApplicationLifecycle
-    )
-    withApplication(appProducer(context), config)(block)
   }
 
   case object ServerStoppedReason extends CoordinatedShutdown.Reason

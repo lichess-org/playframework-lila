@@ -62,11 +62,6 @@ class NettyHeadersWrapperSpec extends Specification {
       headers.toSimpleMap must be_==(Map("a" -> "a1", "b" -> "b1", "c" -> "c1"))
     }
 
-    "return the value from a map by case insensitive" in {
-      (headers.toMap.get("A") must beSome(Seq("a1", "a2")))
-        .and(headers.toMap.get("b") must beSome(Seq("b1", "b2", "b3")))
-    }
-
     "return the value from a simple map by case insensitive" in {
       (headers.toSimpleMap.get("A") must beSome("a1")).and(headers.toSimpleMap.get("b") must beSome("b1"))
     }

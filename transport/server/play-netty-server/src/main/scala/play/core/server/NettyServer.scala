@@ -300,12 +300,6 @@ class NettyServer(
       logger.info("Running provided shutdown stop hooks")
       stopHook().map(_ => Done)
     }
-    cs.addTask(CoordinatedShutdown.PhaseBeforeActorSystemTerminate, "shutdown-logger") { () =>
-      Future {
-        super.stop()
-        Done
-      }
-    }
   }
 
   private def initializeChannelOptionsStaticMembers(): Unit = {
@@ -397,13 +391,6 @@ object NettyServer extends ServerFromRouter {
   private val logger = Logger(this.getClass)
 
   implicit val provider: NettyServerProvider = new NettyServerProvider
-
-  def main(args: Array[String]): Unit = {
-    System.err.println(
-      s"NettyServer.main is deprecated. Please start your Play server with the ${ProdServerStart.getClass.getName}.main."
-    )
-    ProdServerStart.main(args)
-  }
 
   /**
    * Create a Netty server from the given application and server configuration.
