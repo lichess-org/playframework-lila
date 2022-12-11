@@ -31,7 +31,7 @@ import play.api.http.DefaultHttpErrorHandler
 trait Server {
   def mode: Mode
 
-  def applicationProvider: ApplicationProvider
+  def application: Application
 
   def stop(): Unit = {}
 
@@ -78,7 +78,6 @@ object Server {
    * as a `Left`. Reasons to return a `Left` value:
    *
    * - If there's a "web command" installed that intercepts the request.
-   * - If we fail to get the `Application` from the `applicationProvider`,
    *   i.e. if there's an error loading the application.
    * - If an exception is thrown.
    */
