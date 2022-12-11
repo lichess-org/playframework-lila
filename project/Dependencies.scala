@@ -86,7 +86,7 @@ object Dependencies {
       Seq(
         playJson,
         guava,
-        "javax.inject"                                              % "javax.inject" % "1",
+        "javax.inject" % "javax.inject" % "1",
         mailer
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 

@@ -36,7 +36,6 @@ private object PlayRequestHandler {
 
 private[play] class PlayRequestHandler(
     val server: NettyServer,
-    val serverHeader: Option[String],
     val maxContentLength: Long,
     app: Application
 ) extends ChannelInboundHandlerAdapter {
@@ -65,7 +64,7 @@ private[play] class PlayRequestHandler(
 
   private val modelConversion: NettyModelConversion = {
     val forwardedHeader = ForwardedHeaderHandler.ForwardedHeaderHandlerConfig(Some(app.configuration))
-    NettyModelConversion(resultUtils, ForwardedHeaderHandler(forwardedHeader), serverHeader)
+    NettyModelConversion(resultUtils, ForwardedHeaderHandler(forwardedHeader))
   }
 
   /**

@@ -64,7 +64,6 @@ class NettyServer(
 
   private val serverConfig         = config.configuration.get[Configuration]("play.server")
   private val nettyConfig          = serverConfig.get[Configuration]("netty")
-  private val serverHeader         = nettyConfig.get[Option[String]]("server-header").collect { case s if s.nonEmpty => s }
   private val maxInitialLineLength = nettyConfig.get[Int]("maxInitialLineLength")
   private val maxHeaderSize =
     serverConfig.getDeprecated[ConfigMemorySize]("max-header-size", "netty.maxHeaderSize").toBytes.toInt
@@ -192,7 +191,7 @@ class NettyServer(
         pipeline.addLast("idle-handler", new IdleStateHandler(0, 0, idleTimeout.length, idleTimeout.unit))
       }
 
-      val requestHandler = new PlayRequestHandler(this, serverHeader, maxContentLength, application)
+      val requestHandler = new PlayRequestHandler(this, maxContentLength, application)
 
       // Use the streams handler to close off the connection.
       pipeline.addLast("http-handler", new HttpStreamsServerHandler(Seq[ChannelHandler](requestHandler).asJava))
@@ -289,7 +288,6 @@ class NettyServer(
     host = config.address,
     port = httpChannel.localAddress().asInstanceOf[InetSocketAddress].getPort,
     protocols = Set(HttpProtocol.HTTP_1_0, HttpProtocol.HTTP_1_1),
-    serverAttribute = serverHeader,
     ssl = None
   )
 }

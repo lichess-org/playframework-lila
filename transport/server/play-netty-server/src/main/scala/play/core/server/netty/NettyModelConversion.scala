@@ -46,7 +46,6 @@ import scala.util.Try
 private[server] class NettyModelConversion(
     resultUtils: ServerResultUtils,
     forwardedHeaderHandler: ForwardedHeaderHandler,
-    serverHeader: Option[String]
 ) {
   private val logger = Logger(classOf[NettyModelConversion])
 
@@ -273,10 +272,6 @@ private[server] class NettyModelConversion(
         response.headers().add(DATE, dateHeader)
       }
 
-      if (!response.headers().contains(SERVER)) {
-        serverHeader.foreach(response.headers().add(SERVER, _))
-      }
-
       Future.successful(response)
     } {
       // Fallback response
@@ -284,7 +279,6 @@ private[server] class NettyModelConversion(
         new DefaultFullHttpResponse(httpVersion, HttpResponseStatus.INTERNAL_SERVER_ERROR, Unpooled.EMPTY_BUFFER)
       HttpUtil.setContentLength(response, 0)
       response.headers().add(DATE, dateHeader)
-      serverHeader.foreach(response.headers().add(SERVER, _))
       response.headers().add(CONNECTION, "close")
       response
     }

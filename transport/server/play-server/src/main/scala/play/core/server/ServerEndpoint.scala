@@ -20,7 +20,6 @@ import akka.annotation.ApiMayChange
     host: String,
     port: Int,
     protocols: Set[String],
-    serverAttribute: Option[String],
     ssl: Option[SSLContext]
 ) {
 
@@ -28,15 +27,4 @@ import akka.annotation.ApiMayChange
    * Create a full URL out of a path. E.g. a path of `/foo` becomes `http://localhost:12345/foo`
    */
   def pathUrl(path: String): String = s"$scheme://$host:$port$path"
-
-  /**
-   * Create a full WebSocket URL out of a path. E.g. a path of `/foo` becomes `ws://localhost:12345/foo`
-   */
-  def wsPathUrl(path: String): String = {
-    val wsScheme = scheme match {
-      case "http"  => "ws"
-      case "https" => "wss"
-    }
-    s"$wsScheme://$host:$port$path"
-  }
 }
