@@ -9,7 +9,6 @@ import akka.actor.CoordinatedShutdown
 import akka.annotation.ApiMayChange
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.http.HttpErrorHandler
 import play.api.http.Port
@@ -49,22 +48,12 @@ trait Server {
    *
    * @return The HTTP port the server is bound to, if the HTTP connector is enabled.
    */
-  def httpPort: Option[Int] = serverEndpoints.httpEndpoint.map(_.port)
+  def httpPort: Int = serverEndpoint.port
 
   /**
-   * Returns the HTTPS port of the server.
-   *
-   * This is useful when the port number has been automatically selected (by setting a port number of 0).
-   *
-   * @return The HTTPS port the server is bound to, if the HTTPS connector is enabled.
+   * Endpoint information for this server.
    */
-  def httpsPort: Option[Int] = serverEndpoints.httpsEndpoint.map(_.port)
-
-  /**
-   * Endpoints information for this server.
-   */
-  @ApiMayChange
-  def serverEndpoints: ServerEndpoints
+  def serverEndpoint: ServerEndpoint
 }
 
 /**

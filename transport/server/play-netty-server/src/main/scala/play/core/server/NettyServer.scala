@@ -206,8 +206,8 @@ class NettyServer(
     }
   }
 
-  // Maybe the HTTP server channel
-  private val httpChannel = config.port.map(bindChannel(_))
+  // the HTTP server channel
+  private val httpChannel = bindChannel(config.port)
 
   private def bindChannel(port: Int): Channel = {
     val protocolName                   = "HTTP"
@@ -280,24 +280,18 @@ class NettyServer(
   }
 
   override lazy val mainAddress: InetSocketAddress = {
-    httpChannel.get.localAddress().asInstanceOf[InetSocketAddress]
+    httpChannel.localAddress().asInstanceOf[InetSocketAddress]
   }
 
-  private lazy val Http1Plain = httpChannel
-    .map(_.localAddress().asInstanceOf[InetSocketAddress])
-    .map(address =>
-      ServerEndpoint(
-        description = "Netty HTTP/1.1 (plaintext)",
-        scheme = "http",
-        host = config.address,
-        port = address.getPort,
-        protocols = Set(HttpProtocol.HTTP_1_0, HttpProtocol.HTTP_1_1),
-        serverAttribute = serverHeader,
-        ssl = None
-      )
-    )
-
-  override val serverEndpoints: ServerEndpoints = ServerEndpoints(Http1Plain.toSeq)
+  val serverEndpoint = ServerEndpoint(
+    description = "Netty HTTP/1.1 (plaintext)",
+    scheme = "http",
+    host = config.address,
+    port = httpChannel.localAddress().asInstanceOf[InetSocketAddress].getPort,
+    protocols = Set(HttpProtocol.HTTP_1_0, HttpProtocol.HTTP_1_1),
+    serverAttribute = serverHeader,
+    ssl = None
+  )
 }
 
 /**

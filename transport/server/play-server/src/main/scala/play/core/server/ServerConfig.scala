@@ -25,24 +25,18 @@ import play.api.Mode
  */
 case class ServerConfig(
     rootDir: File,
-    port: Option[Int],
-    sslPort: Option[Int],
+    port: Int,
     address: String,
     mode: Mode,
     properties: Properties,
     configuration: Configuration
-) {
-  // Some basic validation of config
-  if (port.isEmpty && sslPort.isEmpty)
-    throw new IllegalArgumentException("Must provide either an HTTP port or an HTTPS port")
-}
+)
 
 object ServerConfig {
   def apply(
       classLoader: ClassLoader = this.getClass.getClassLoader,
       rootDir: File = new File("."),
-      port: Option[Int] = Some(9000),
-      sslPort: Option[Int] = None,
+      port: Int = 9000,
       address: String = "0.0.0.0",
       mode: Mode = Mode.Prod,
       properties: Properties = System.getProperties
@@ -50,7 +44,6 @@ object ServerConfig {
     ServerConfig(
       rootDir = rootDir,
       port = port,
-      sslPort = sslPort,
       address = address,
       mode = mode,
       properties = properties,
