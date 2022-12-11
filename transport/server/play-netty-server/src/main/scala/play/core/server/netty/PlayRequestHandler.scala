@@ -15,12 +15,13 @@ import io.netty.handler.timeout.IdleStateEvent
 import play.api.http._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
+import play.api.mvc.request.DefaultRequestFactory
 import play.api.Application
 import play.api.Logger
 import play.api.Mode
 import play.core.server.NettyServer
 import play.core.server.Server
-import play.core.server.common.ReloadCache
+import play.core.server.common.ForwardedHeaderHandler
 import play.core.server.common.ServerResultUtils
 
 import scala.concurrent.Future
@@ -36,7 +37,8 @@ private object PlayRequestHandler {
 private[play] class PlayRequestHandler(
     val server: NettyServer,
     val serverHeader: Option[String],
-    val maxContentLength: Long
+    val maxContentLength: Long,
+    app: Application
 ) extends ChannelInboundHandlerAdapter {
   import PlayRequestHandler._
 
@@ -49,33 +51,22 @@ private[play] class PlayRequestHandler(
   // in.
   private var lastResponseSent: Future[Unit] = Future.successful(())
 
-  /**
-   * Values that are cached based on the current application.
-   */
-  private case class ReloadCacheValues(
-      resultUtils: ServerResultUtils,
-      modelConversion: NettyModelConversion,
-  )
-
-  /**
-   * A helper to cache values that are derived from the current application.
-   */
-  private val reloadCache = new ReloadCache[ReloadCacheValues] {
-    protected override def reloadValue(tryApp: Try[Application]): ReloadCacheValues = {
-      val serverResultUtils      = reloadServerResultUtils(tryApp)
-      val forwardedHeaderHandler = reloadForwardedHeaderHandler(tryApp)
-      val modelConversion        = new NettyModelConversion(serverResultUtils, forwardedHeaderHandler, serverHeader)
-      ReloadCacheValues(
-        resultUtils = serverResultUtils,
-        modelConversion = modelConversion,
-      )
+  private val resultUtils: ServerResultUtils = {
+    val requestFactory = app.requestFactory match {
+      case drf: DefaultRequestFactory => drf
+      case _                          => new DefaultRequestFactory(app.httpConfiguration)
     }
+    ServerResultUtils(
+      requestFactory.sessionBaker,
+      requestFactory.flashBaker,
+      requestFactory.cookieHeaderEncoding
+    )
   }
 
-  private def resultUtils(tryApp: Try[Application]): ServerResultUtils =
-    reloadCache.cachedFrom(tryApp).resultUtils
-  private def modelConversion(tryApp: Try[Application]): NettyModelConversion =
-    reloadCache.cachedFrom(tryApp).modelConversion
+  private val modelConversion: NettyModelConversion = {
+    val forwardedHeader = ForwardedHeaderHandler.ForwardedHeaderHandlerConfig(Some(app.configuration))
+    NettyModelConversion(resultUtils, ForwardedHeaderHandler(forwardedHeader), serverHeader)
+  }
 
   /**
    * Handle the given request.
@@ -85,15 +76,12 @@ private[play] class PlayRequestHandler(
 
     import play.core.Execution.Implicits.trampoline
 
-    val tryApp: Try[Application]       = server.applicationProvider.get
-    val cacheValues: ReloadCacheValues = reloadCache.cachedFrom(tryApp)
-
-    val tryRequest: Try[RequestHeader] = cacheValues.modelConversion.convertRequest(channel, request)
+    val tryRequest: Try[RequestHeader] = modelConversion.convertRequest(channel, request)
 
     def clientError(statusCode: Int, message: String): (RequestHeader, Handler) = {
-      val unparsedTarget = modelConversion(tryApp).createUnparsedRequestTarget(request)
-      val requestHeader  = modelConversion(tryApp).createRequestHeader(channel, request, unparsedTarget)
-      val result = errorHandler(tryApp).onClientError(
+      val unparsedTarget = modelConversion.createUnparsedRequestTarget(request)
+      val requestHeader  = modelConversion.createRequestHeader(channel, request, unparsedTarget)
+      val result = app.errorHandler.onClientError(
         requestHeader.addAttr(HttpErrorHandler.Attrs.HttpErrorInfo, HttpErrorInfo("server-backend")),
         statusCode,
         if (message == null) "" else message
@@ -111,14 +99,13 @@ private[play] class PlayRequestHandler(
               .flatMap(clh => catching(classOf[NumberFormatException]).opt(clh.toLong))
               .exists(_ > maxContentLength)) {
           clientError(Status.REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large")
-        } else Server.getHandlerFor(req, tryApp)
+        } else Server.getHandlerFor(req, app)
 
     }
 
     handler match {
       //execute normal action
-      case action: EssentialAction =>
-        handleAction(action, requestHeader, request, tryApp)
+      case action: EssentialAction => handleAction(action, requestHeader, request)
 
       // This case usually indicates an error in Play's internal routing or handling logic
       case h =>
@@ -226,12 +213,8 @@ private[play] class PlayRequestHandler(
       action: EssentialAction,
       requestHeader: RequestHeader,
       request: HttpRequest,
-      tryApp: Try[Application]
   ): Future[HttpResponse] = {
-    implicit val mat: Materializer = tryApp match {
-      case Success(app) => app.materializer
-      case Failure(_)   => server.materializer
-    }
+    implicit val mat: Materializer = app.materializer
     import play.core.Execution.Implicits.trampoline
 
     // Execute the action on the Play default execution context
@@ -240,7 +223,7 @@ private[play] class PlayRequestHandler(
       // Execute the action and get a result, calling errorHandler if errors happen in this process
       actionResult <- actionFuture
         .flatMap { acc =>
-          val body = modelConversion(tryApp).convertRequestBody(request)
+          val body = modelConversion.convertRequestBody(request)
           body match {
             case None         => acc.run()
             case Some(source) => acc.run(source)
@@ -249,16 +232,16 @@ private[play] class PlayRequestHandler(
         .recoverWith {
           case error =>
             logger.error("Cannot invoke the action", error)
-            errorHandler(tryApp).onServerError(requestHeader, error)
+            app.errorHandler.onServerError(requestHeader, error)
         }
       // Clean and validate the action's result
       validatedResult <- {
-        val cleanedResult = resultUtils(tryApp).prepareCookies(requestHeader, actionResult)
-        resultUtils(tryApp).validateResult(requestHeader, cleanedResult, errorHandler(tryApp))
+        val cleanedResult = resultUtils.prepareCookies(requestHeader, actionResult)
+        resultUtils.validateResult(requestHeader, cleanedResult, app.errorHandler)
       }
       // Convert the result to a Netty HttpResponse
-      convertedResult <- modelConversion(tryApp)
-        .convertResult(validatedResult, requestHeader, request.protocolVersion(), errorHandler(tryApp))
+      convertedResult <- modelConversion
+        .convertResult(validatedResult, requestHeader, request.protocolVersion(), app.errorHandler)
     } yield convertedResult
   }
 

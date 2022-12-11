@@ -84,7 +84,7 @@ object Server {
    */
   private[server] def getHandlerFor(
       request: RequestHeader,
-      tryApp: Try[Application],
+      application: Application,
   ): (RequestHeader, Handler) = {
     @inline def handleErrors(
         errorHandler: HttpErrorHandler,
@@ -98,25 +98,18 @@ object Server {
         (req, errorAction)
     }
 
+    // The request created by the request factory needs to be at this scope so that it can be
+    // used by application error handler. The reason for that is that this request is populated
+    // with all attributes necessary to translate it to Java.
+    // TODO: `copyRequestHeader` is a misleading name here since it is also populating the request with attributes
+    //       such as id, session, flash, etc.
+    val enrichedRequest: RequestHeader = application.requestFactory.copyRequestHeader(request)
     try {
-      // Get the Application from the try.
-      val application = tryApp.get
-      // We managed to get an Application, now make a fresh request using the Application's RequestFactory.
-      // The request created by the request factory needs to be at this scope so that it can be
-      // used by application error handler. The reason for that is that this request is populated
-      // with all attributes necessary to translate it to Java.
-      // TODO: `copyRequestHeader` is a misleading name here since it is also populating the request with attributes
-      //       such as id, session, flash, etc.
-      val enrichedRequest: RequestHeader = application.requestFactory.copyRequestHeader(request)
-      try {
-        // We hen use the Application's logic to handle that request.
-        val (handlerHeader, handler) = application.requestHandler.handlerForRequest(enrichedRequest)
-        (handlerHeader, handler)
-      } catch {
-        handleErrors(application.errorHandler, enrichedRequest)
-      }
+      // We hen use the Application's logic to handle that request.
+      val (handlerHeader, handler) = application.requestHandler.handlerForRequest(enrichedRequest)
+      (handlerHeader, handler)
     } catch {
-      handleErrors(DefaultHttpErrorHandler, request)
+      handleErrors(application.errorHandler, enrichedRequest)
     }
   }
 
