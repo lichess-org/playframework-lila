@@ -21,8 +21,8 @@ import play.api.Logger
 import play.api.Mode
 import play.core.server.NettyServer
 import play.core.server.Server
-import play.core.server.common.ForwardedHeaderHandler
 import play.core.server.common.ServerResultUtils
+import play.core.server.common.ForwardedHeaderHandler
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -37,7 +37,9 @@ private object PlayRequestHandler {
 private[play] class PlayRequestHandler(
     val server: NettyServer,
     val maxContentLength: Long,
-    app: Application
+    app: Application,
+    resultUtils: ServerResultUtils,
+    modelConversion: NettyModelConversion
 ) extends ChannelInboundHandlerAdapter {
   import PlayRequestHandler._
 
@@ -49,23 +51,6 @@ private[play] class PlayRequestHandler(
   // and replaces it to ensure that responses are written out in the same order that they came
   // in.
   private var lastResponseSent: Future[Unit] = Future.successful(())
-
-  private val resultUtils: ServerResultUtils = {
-    val requestFactory = app.requestFactory match {
-      case drf: DefaultRequestFactory => drf
-      case _                          => new DefaultRequestFactory(app.httpConfiguration)
-    }
-    ServerResultUtils(
-      requestFactory.sessionBaker,
-      requestFactory.flashBaker,
-      requestFactory.cookieHeaderEncoding
-    )
-  }
-
-  private val modelConversion: NettyModelConversion = {
-    val forwardedHeader = ForwardedHeaderHandler.ForwardedHeaderHandlerConfig(Some(app.configuration))
-    NettyModelConversion(resultUtils, ForwardedHeaderHandler(forwardedHeader))
-  }
 
   /**
    * Handle the given request.

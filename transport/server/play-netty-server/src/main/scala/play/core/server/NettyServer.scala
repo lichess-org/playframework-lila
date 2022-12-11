@@ -38,12 +38,15 @@ import play.api.routing.Router
 import play.core._
 import play.core.server.Server.ServerStoppedReason
 import play.core.server.netty._
+import play.core.server.common.ServerResultUtils
+import play.core.server.common.ForwardedHeaderHandler
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+import play.api.mvc.request.DefaultRequestFactory
 
 sealed trait NettyTransport
 case object Jdk    extends NettyTransport
@@ -191,7 +194,7 @@ class NettyServer(
         pipeline.addLast("idle-handler", new IdleStateHandler(0, 0, idleTimeout.length, idleTimeout.unit))
       }
 
-      val requestHandler = new PlayRequestHandler(this, maxContentLength, application)
+      val requestHandler = new PlayRequestHandler(this, maxContentLength, application, resultUtils, modelConversion)
 
       // Use the streams handler to close off the connection.
       pipeline.addLast("http-handler", new HttpStreamsServerHandler(Seq[ChannelHandler](requestHandler).asJava))
@@ -203,6 +206,23 @@ class NettyServer(
       childChannelEventLoop.register(connChannel)
       allChannels.add(connChannel)
     }
+  }
+
+  private val resultUtils: ServerResultUtils = {
+    val requestFactory = application.requestFactory match {
+      case drf: DefaultRequestFactory => drf
+      case _                          => new DefaultRequestFactory(application.httpConfiguration)
+    }
+    ServerResultUtils(
+      requestFactory.sessionBaker,
+      requestFactory.flashBaker,
+      requestFactory.cookieHeaderEncoding
+    )
+  }
+
+  private val modelConversion: NettyModelConversion = {
+    val forwardedHeader = ForwardedHeaderHandler.ForwardedHeaderHandlerConfig(Some(application.configuration))
+    NettyModelConversion(resultUtils, ForwardedHeaderHandler(forwardedHeader))
   }
 
   // the HTTP server channel
