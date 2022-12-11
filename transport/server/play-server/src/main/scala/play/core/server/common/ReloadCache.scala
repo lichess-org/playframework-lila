@@ -10,7 +10,6 @@ import play.api.Application
 import play.api.http.HttpConfiguration
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.mvc.request.DefaultRequestFactory
-import play.core.server.ServerProvider
 import play.utils.InlineCache
 
 import scala.util.Failure
@@ -52,29 +51,6 @@ private[play] abstract class ReloadCache[+T] {
   protected def reloadValue(tryApp: Try[Application]): T
 
   /**
-   * Helper to calculate the [[ServerDebugInfo]] after a reload.
-   * @param tryApp The application being loaded.
-   * @param serverProvider The server which embeds the application.
-   */
-  protected final def reloadDebugInfo(
-      tryApp: Try[Application],
-      serverProvider: ServerProvider
-  ): Option[ServerDebugInfo] = {
-    val enabled: Boolean = tryApp match {
-      case Success(app) => app.configuration.get[Boolean]("play.server.debug.addDebugInfoToRequests")
-      case Failure(_)   => true // Always enable debug info when the app fails to load
-    }
-    if (enabled) {
-      Some(
-        ServerDebugInfo(
-          serverProvider = serverProvider,
-          serverConfigCacheReloads = reloadCount
-        )
-      )
-    } else None
-  }
-
-  /**
    * Helper to calculate a `ServerResultUtil`.
    */
   protected final def reloadServerResultUtils(tryApp: Try[Application]): ServerResultUtils = {
@@ -91,7 +67,7 @@ private[play] abstract class ReloadCache[+T] {
           requestFactory.cookieHeaderEncoding
         )
       case Failure(_) =>
-        sys error "Can't reloadServerResultUtils"
+        sys.error("Can't reloadServerResultUtils")
     }
     new ServerResultUtils(sessionBaker, flashBaker, cookieHeaderEncoding)
   }

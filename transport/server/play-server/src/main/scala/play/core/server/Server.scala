@@ -33,8 +33,7 @@ trait Server {
 
   def applicationProvider: ApplicationProvider
 
-  def stop(): Unit = {
-  }
+  def stop(): Unit = {}
 
   /**
    * Get the address of the server.
@@ -159,43 +158,4 @@ trait ServerComponents {
   lazy val applicationLifecycle: ApplicationLifecycle = new DefaultApplicationLifecycle
 
   def serverStopHook: () => Future[Unit] = () => Future.successful(())
-}
-
-/**
- * Define how to create a Server from a Router.
- */
-private[server] trait ServerFromRouter {
-  protected def createServerFromRouter(serverConfig: ServerConfig = ServerConfig())(
-      routes: ServerComponents with BuiltInComponents => Router
-  ): Server
-
-  /**
-   * Creates a [[Server]] from the given router.
-   *
-   * @param config the server configuration
-   * @param routes the routes definitions
-   * @return an AkkaHttpServer instance
-   */
-  @deprecated(
-    "Use fromRouterWithComponents or use DefaultAkkaHttpServerComponents/DefaultNettyServerComponents",
-    "2.7.0"
-  )
-  def fromRouter(config: ServerConfig = ServerConfig())(routes: PartialFunction[RequestHeader, Handler]): Server = {
-    createServerFromRouter(config) { _ =>
-      Router.from(routes)
-    }
-  }
-
-  /**
-   * Creates a [[Server]] from the given router, using [[ServerComponents]].
-   *
-   * @param config the server configuration
-   * @param routes the routes definitions
-   * @return an AkkaHttpServer instance
-   */
-  def fromRouterWithComponents(
-      config: ServerConfig = ServerConfig()
-  )(routes: BuiltInComponents => PartialFunction[RequestHeader, Handler]): Server = {
-    createServerFromRouter(config)(components => Router.from(routes(components)))
-  }
 }

@@ -222,12 +222,10 @@ class NettyServer(
       }
 
       val idleTimeout = if (secure) httpsIdleTimeout else httpIdleTimeout
-      idleTimeout match {
-        case Duration.Inf => // Do nothing, in other words, don't set any timeout.
-        case Duration(timeout, timeUnit) =>
-          logger.trace(s"using idle timeout of $timeout $timeUnit on port $port")
-          // only timeout if both reader and writer have been idle for the specified time
-          pipeline.addLast("idle-handler", new IdleStateHandler(0, 0, timeout, timeUnit))
+      if (idleTimeout != Duration.Inf) {
+        logger.trace(s"using idle timeout of $idleTimeout on port $port")
+        // only timeout if both reader and writer have been idle for the specified time
+        pipeline.addLast("idle-handler", new IdleStateHandler(0, 0, idleTimeout.length, idleTimeout.unit))
       }
 
       val requestHandler = newRequestHandler()
@@ -356,21 +354,6 @@ class NettyServer(
 }
 
 /**
- * The Netty server provider
- */
-class NettyServerProvider extends ServerProvider {
-  def createServer(context: ServerProvider.Context) =
-    new NettyServer(
-      context.config,
-      context.appProvider,
-      context.stopHook,
-      context.actorSystem
-    )(
-      context.materializer
-    )
-}
-
-/**
  * Create a Netty server zfrom a given router using [[BuiltInComponents]]:
  *
  * {{{
@@ -387,32 +370,8 @@ class NettyServerProvider extends ServerProvider {
  *
  * Use this together with <a href="https://www.playframework.com/documentation/latest/ScalaSirdRouter">Sird Router</a>.
  */
-object NettyServer extends ServerFromRouter {
+object NettyServer {
   private val logger = Logger(this.getClass)
-
-  implicit val provider: NettyServerProvider = new NettyServerProvider
-
-  /**
-   * Create a Netty server from the given application and server configuration.
-   *
-   * @param application The application.
-   * @param config The server configuration.
-   * @return A started Netty server, serving the application.
-   */
-  def fromApplication(application: Application, config: ServerConfig = ServerConfig()): NettyServer = {
-    new NettyServer(config, ApplicationProvider(application), () => Future.successful(()), application.actorSystem)(
-      application.materializer
-    )
-  }
-
-  protected override def createServerFromRouter(
-      serverConf: ServerConfig
-  )(routes: ServerComponents with BuiltInComponents => Router): Server = {
-    new NettyServerComponents with BuiltInComponents with NoHttpFiltersComponents {
-      override lazy val serverConfig: ServerConfig = serverConf
-      override def router: Router                  = routes(this)
-    }.server
-  }
 }
 
 /**

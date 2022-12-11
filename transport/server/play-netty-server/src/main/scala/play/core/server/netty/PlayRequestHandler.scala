@@ -21,7 +21,6 @@ import play.api.Mode
 import play.core.server.NettyServer
 import play.core.server.Server
 import play.core.server.common.ReloadCache
-import play.core.server.common.ServerDebugInfo
 import play.core.server.common.ServerResultUtils
 
 import scala.concurrent.Future
@@ -56,7 +55,6 @@ private[play] class PlayRequestHandler(
   private case class ReloadCacheValues(
       resultUtils: ServerResultUtils,
       modelConversion: NettyModelConversion,
-      serverDebugInfo: Option[ServerDebugInfo]
   )
 
   /**
@@ -70,7 +68,6 @@ private[play] class PlayRequestHandler(
       ReloadCacheValues(
         resultUtils = serverResultUtils,
         modelConversion = modelConversion,
-        serverDebugInfo = reloadDebugInfo(tryApp, NettyServer.provider)
       )
     }
   }
@@ -93,37 +90,29 @@ private[play] class PlayRequestHandler(
 
     val tryRequest: Try[RequestHeader] = cacheValues.modelConversion.convertRequest(channel, request)
 
-    // Helper to attach ServerDebugInfo attribute to a RequestHeader
-    def attachDebugInfo(rh: RequestHeader): RequestHeader = {
-      ServerDebugInfo.attachToRequestHeader(rh, cacheValues.serverDebugInfo)
-    }
-
     def clientError(statusCode: Int, message: String): (RequestHeader, Handler) = {
       val unparsedTarget = modelConversion(tryApp).createUnparsedRequestTarget(request)
       val requestHeader  = modelConversion(tryApp).createRequestHeader(channel, request, unparsedTarget)
-      val debugHeader    = attachDebugInfo(requestHeader)
       val result = errorHandler(tryApp).onClientError(
-        debugHeader.addAttr(HttpErrorHandler.Attrs.HttpErrorInfo, HttpErrorInfo("server-backend")),
+        requestHeader.addAttr(HttpErrorHandler.Attrs.HttpErrorInfo, HttpErrorInfo("server-backend")),
         statusCode,
         if (message == null) "" else message
       )
       // If there's a problem in parsing the request, then we should close the connection, once done with it
-      debugHeader -> Server.actionForResult(result.map(_.withHeaders(HeaderNames.CONNECTION -> "close")))
+      requestHeader -> Server.actionForResult(result.map(_.withHeaders(HeaderNames.CONNECTION -> "close")))
     }
 
     val (requestHeader, handler): (RequestHeader, Handler) = tryRequest match {
       case Failure(exception: TooLongFrameException) => clientError(Status.REQUEST_URI_TOO_LONG, exception.getMessage)
       case Failure(exception)                        => clientError(Status.BAD_REQUEST, exception.getMessage)
-      case Success(untagged) =>
-        if (untagged.headers
+      case Success(req) =>
+        if (req.headers
               .get(HeaderNames.CONTENT_LENGTH)
               .flatMap(clh => catching(classOf[NumberFormatException]).opt(clh.toLong))
               .exists(_ > maxContentLength)) {
           clientError(Status.REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large")
-        } else {
-          val debugHeader: RequestHeader = attachDebugInfo(untagged)
-          Server.getHandlerFor(debugHeader, tryApp)
-        }
+        } else Server.getHandlerFor(req, tryApp)
+
     }
 
     handler match {
