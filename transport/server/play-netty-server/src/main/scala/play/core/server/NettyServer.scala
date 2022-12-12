@@ -22,6 +22,9 @@ import io.netty.channel._
 import io.netty.channel.epoll.EpollChannelOption
 import io.netty.channel.epoll.EpollEventLoopGroup
 import io.netty.channel.epoll.EpollServerSocketChannel
+import io.netty.channel.kqueue.KQueueChannelOption
+import io.netty.channel.kqueue.KQueueEventLoopGroup
+import io.netty.channel.kqueue.KQueueServerSocketChannel
 import io.netty.channel.group.DefaultChannelGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
@@ -49,7 +52,16 @@ import scala.util.control.NonFatal
 
 sealed trait NettyTransport
 case object Jdk    extends NettyTransport
-case object Native extends NettyTransport
+case object Native extends NettyTransport {
+  private val kqueue = System.getProperty("os.name").toLowerCase.startsWith("mac")
+  def eventLoop(threadCount: Int, threadFactory: java.util.concurrent.ThreadFactory): MultithreadEventLoopGroup =
+    if (kqueue) new KQueueEventLoopGroup(threadCount, threadFactory)
+    else new EpollEventLoopGroup(threadCount, threadFactory)
+  def socketChannelClass =
+    if (kqueue) classOf[KQueueServerSocketChannel]
+    else classOf[EpollServerSocketChannel]
+}
+
 
 /**
  * creates a Server implementation based Netty
@@ -97,7 +109,7 @@ class NettyServer(
   private val eventLoop = {
     val threadFactory = NamedThreadFactory("netty-event-loop")
     transport match {
-      case Native => new EpollEventLoopGroup(threadCount, threadFactory)
+      case Native => Native.eventLoop(threadCount, threadFactory)
       case Jdk    => new NioEventLoopGroup(threadCount, threadFactory)
     }
   }
@@ -163,7 +175,7 @@ class NettyServer(
     val channelPublisher = new HandlerPublisher(serverChannelEventLoop, classOf[Channel])
 
     val channelClass = transport match {
-      case Native => classOf[EpollServerSocketChannel]
+      case Native => Native.socketChannelClass
       case Jdk    => classOf[NioServerSocketChannel]
     }
 
@@ -320,7 +332,7 @@ class NettyServer(
 
     // How to force a class to get initialized:
     // https://docs.oracle.com/javase/specs/jls/se8/html/jls-12.html#jls-12.4.1
-    Seq(classOf[ChannelOption[_]], classOf[UnixChannelOption[_]], classOf[EpollChannelOption[_]]).foreach(clazz => {
+    Seq(classOf[ChannelOption[_]], classOf[UnixChannelOption[_]], classOf[EpollChannelOption[_]], classOf[KQueueChannelOption[_]]).foreach(clazz => {
       logger.debug(s"Class ${clazz.getName} will be initialized (if it hasn't been initialized already)")
       Class.forName(clazz.getName)
     })
