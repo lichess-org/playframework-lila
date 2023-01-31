@@ -30,7 +30,6 @@ import play.twirl.api.*
  *     Ok.chunked(source via Comet.flow("parent.clockChanged"))
  *   }
  * }}}
- *
  */
 object Comet {
   val initialHtmlChunk = Html(Array.fill[Char](5 * 1024)(' ').mkString + "<html><body>")
@@ -59,9 +58,7 @@ object Comet {
    */
   def json(callbackName: String): Flow[JsValue, ByteString, NotUsed] = {
     Flow[JsValue]
-      .map { msg =>
-        ByteString.fromString(Json.asciiStringify(msg))
-      }
+      .map { msg => ByteString.fromString(Json.asciiStringify(msg)) }
       .via(flow(callbackName))
   }
 

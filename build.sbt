@@ -55,7 +55,7 @@ lazy val PlayProject = PlayCrossBuiltProject("Play", "core/play")
       )
       .taskValue
   )
-  .dependsOn(PlayExceptionsProject, StreamsProject)
+  .dependsOn(PlayExceptionsProject, PlayConfiguration, StreamsProject)
 
 lazy val PlayServerProject = PlayCrossBuiltProject("Play-Server", "transport/server/play-server")
   .settings(libraryDependencies ++= playServerDependencies)
@@ -94,6 +94,16 @@ lazy val PlayLogback = PlayCrossBuiltProject("Play-Logback", "core/play-logback"
   )
   .dependsOn(PlayProject)
 
+lazy val PlayConfiguration = PlayCrossBuiltProject("Play-Configuration", "core/play-configuration")
+  .settings(
+    libraryDependencies ++= Seq(typesafeConfig, slf4jApi) ++ specs2Deps.map(_ % Test),
+    (Test / parallelExecution) := false,
+    mimaPreviousArtifacts      := Set.empty,
+    // quieten deprecation warnings in tests
+    (Test / scalacOptions) := (Test / scalacOptions).value.diff(Seq("-deprecation"))
+  )
+  .dependsOn(PlayExceptionsProject)
+
 // These projects are aggregate by the root project and every
 // task (compile, test, publish, etc) executed for the root
 // project will also be executed for them:
@@ -106,6 +116,7 @@ lazy val userProjects = Seq[ProjectReference](
   PlayNettyServerProject,
   PlayServerProject,
   PlayLogback,
+  PlayConfiguration,
   PlayExceptionsProject,
   StreamsProject
 )
@@ -118,8 +129,8 @@ lazy val PlayFramework = Project("Play-Framework", file("."))
   .enablePlugins(PlayRootProject)
   .settings(
     playCommonSettings,
-    scalaVersion := (PlayProject / scalaVersion).value,
-    crossScalaVersions := Nil,
+    scalaVersion                    := (PlayProject / scalaVersion).value,
+    crossScalaVersions              := Nil,
     (ThisBuild / playBuildRepoName) := "playframework",
     (Global / concurrentRestrictions) += Tags.limit(Tags.Test, 1),
     libraryDependencies ++= runtime(scalaVersion.value),

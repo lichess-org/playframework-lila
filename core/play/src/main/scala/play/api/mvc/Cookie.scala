@@ -277,9 +277,7 @@ trait CookieHeaderEncoding {
    */
   def encodeCookieHeader(cookies: Seq[Cookie]): String = {
     val encoder = config.clientEncoder
-    encoder.encode(cookies.map { cookie =>
-      new DefaultCookie(cookie.name, cookie.value)
-    }.asJava)
+    encoder.encode(cookies.map { cookie => new DefaultCookie(cookie.name, cookie.value) }.asJava)
   }
 
   /**

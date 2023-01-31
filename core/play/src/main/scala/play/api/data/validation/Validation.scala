@@ -96,7 +96,6 @@ trait Constraints {
 
   /**
    * $emailAddressDoc
-   *
    */
   def emailAddress: Constraint[String] = emailAddress()
 
@@ -112,7 +111,6 @@ trait Constraints {
 
   /**
    * $nonEmptyDoc
-   *
    */
   def nonEmpty: Constraint[String] = nonEmpty()
 
@@ -265,9 +263,7 @@ object ParameterValidator {
     }.flatten match {
       case Nil => Valid
       case invalids =>
-        invalids.reduceLeft { (a, b) =>
-          a ++ b
-        }
+        invalids.reduceLeft { (a, b) => a ++ b }
     }
 }
 

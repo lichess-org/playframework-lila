@@ -33,9 +33,7 @@ object Route {
   def apply(method: String, pathPattern: PathPattern) = new ParamsExtractor {
     def unapply(request: RequestHeader): Option[RouteParams] = {
       if (method == request.method) {
-        pathPattern(request.path).map { groups =>
-          RouteParams(groups, request.queryString)
-        }
+        pathPattern(request.path).map { groups => RouteParams(groups, request.queryString) }
       } else {
         None
       }
@@ -106,7 +104,7 @@ abstract class GeneratedRouter extends Router {
     pa.value.fold(badRequest, generator)
   }
 
-  //Keep the old versions for avoiding compiler failures while building for Scala 2.10,
+  // Keep the old versions for avoiding compiler failures while building for Scala 2.10,
   // and for avoiding warnings when building for newer Scala versions
   // format: off
   def call[A1, A2](pa1: Param[A1], pa2: Param[A2])(generator: Function2[A1, A2, Handler]): Handler = {
@@ -189,7 +187,7 @@ a1 <- pa1.value
 
   def call[T](params: List[Param[?]])(generator: (Seq[?]) => Handler): Handler =
     (params
-      .foldLeft[Either[String, Seq[?]]](Right(Seq[T]())) { (seq, param) =>
+      .foldLeft[Either[String, Seq[_]]](Right(Seq[T]())) { (seq, param) =>
         seq.flatMap(s => param.value.map(s :+ _))
       })
       .fold(badRequest, generator)

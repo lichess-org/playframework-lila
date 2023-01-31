@@ -97,9 +97,10 @@ object Files {
      */
     def copyTo(to: Path, replace: Boolean): Path = {
       val destination =
-        try if (replace) JFiles.copy(path, to, StandardCopyOption.REPLACE_EXISTING)
-        else if (!to.toFile.exists()) JFiles.copy(path, to)
-        else to
+        try
+          if (replace) JFiles.copy(path, to, StandardCopyOption.REPLACE_EXISTING)
+          else if (!to.toFile.exists()) JFiles.copy(path, to)
+          else to
         catch {
           case _: FileAlreadyExistsException => to
         }
@@ -409,9 +410,9 @@ object Files {
           )
       }
 
-      cancellable = Some(actorSystem.scheduler.scheduleAtFixedRate(initialDelay, interval) { () =>
-        reap()
-      }(actorSystem.dispatcher))
+      cancellable = Some(
+        actorSystem.scheduler.scheduleAtFixedRate(initialDelay, interval) { () => reap() }(actorSystem.dispatcher)
+      )
     }
   }
 

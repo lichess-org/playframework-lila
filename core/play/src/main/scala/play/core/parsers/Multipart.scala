@@ -8,6 +8,7 @@ import java.net.URLDecoder
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.util.Failure
 
@@ -30,6 +31,8 @@ import play.api.http.Status.*
 import play.api.http.HttpErrorHandler
 
 import play.core.Execution.Implicits.trampoline
+
+import scala.concurrent.duration.Duration
 
 /**
  * Utilities for handling multipart bodies
@@ -76,10 +79,14 @@ object Multipart {
           .splitWhen(_.isLeft)
           .prefixAndTail(1)
           .map {
-            case (Seq(Left(part: FilePart[?])), body) =>
-              part.copy[Source[ByteString, ?]](ref = body.collect {
-                case Right(bytes) => bytes
-              })
+            case (Seq(Left(part: FilePart[_])), body) =>
+              part.copy[Source[ByteString, _]](
+                ref = body.collect {
+                  case Right(bytes) => bytes
+                },
+                refToBytes =
+                  byteSource => Some(Await.result(byteSource.runFold(ByteString.empty)(_ ++ _), Duration.Inf))
+              )
             case (Seq(Left(other)), ignored) =>
               // If we don't run the source, it takes Akka streams 5 seconds to wake up and realise the source is empty
               // before it progresses onto the next element
@@ -179,7 +186,17 @@ object Multipart {
       Accumulator(FileIO.toPath(tempFile.path)).mapFuture {
         case IOResult(_, Failure(error)) => Future.failed(error)
         case IOResult(count, _) =>
-          Future.successful(FilePart(partName, filename, contentType, tempFile, count, dispositionType))
+          Future.successful(
+            FilePart(
+              partName,
+              filename,
+              contentType,
+              tempFile,
+              count,
+              dispositionType,
+              tf => Some(ByteString.fromArray(java.nio.file.Files.readAllBytes(tf.path)))
+            )
+          )
       }
   }
 
@@ -233,21 +250,22 @@ object Multipart {
 
     def unapply(headers: Map[String, String]): Option[(String, String, Option[String], String)] = {
       for {
-        values <- headers
-          .get("content-disposition")
-          .map(
-            split(_).iterator
-              .map(_.trim)
-              .map {
-                // unescape escaped quotes
-                case KeyValue(key, v) =>
-                  (key, v.trim.replaceAll("""\\"""", "\""))
-                case ExtendedKeyValue(key, encoding, value) =>
-                  (key, URLDecoder.decode(value, encoding))
-                case key => (key.trim, "")
-              }
-              .toMap
-          )
+        values <-
+          headers
+            .get("content-disposition")
+            .map(
+              split(_).iterator
+                .map(_.trim)
+                .map {
+                  // unescape escaped quotes
+                  case KeyValue(key, v) =>
+                    (key, v.trim.replaceAll("""\\"""", "\""))
+                  case ExtendedKeyValue(key, encoding, value) =>
+                    (key, URLDecoder.decode(value, encoding))
+                  case key => (key.trim, "")
+                }
+                .toMap
+            )
 
         dispositionType <- values.keys.find(key => key == "form-data" || key == "file")
         partName        <- values.get("name")
@@ -260,19 +278,20 @@ object Multipart {
   private[play] object PartInfoMatcher {
     def unapply(headers: Map[String, String]): Option[String] = {
       for {
-        values <- headers
-          .get("content-disposition")
-          .map(
-            _.split(";").iterator
-              .map(_.trim)
-              .map {
-                case KeyValue(key, v) => (key, v)
-                case ExtendedKeyValue(key, encoding, value) =>
-                  (key, URLDecoder.decode(value, encoding))
-                case key => (key.trim, "")
-              }
-              .toMap
-          )
+        values <-
+          headers
+            .get("content-disposition")
+            .map(
+              _.split(";").iterator
+                .map(_.trim)
+                .map {
+                  case KeyValue(key, v) => (key, v)
+                  case ExtendedKeyValue(key, encoding, value) =>
+                    (key, URLDecoder.decode(value, encoding))
+                  case key => (key.trim, "")
+                }
+                .toMap
+            )
         _        <- values.get("form-data")
         _        <- Option(values.contains("filename")).filter(_ == false)
         partName <- values.get("name")
@@ -524,7 +543,7 @@ object Multipart {
           if (memoryBufferSize > maxMemoryBufferSize) {
             bufferExceeded(s"Memory buffer full ($maxMemoryBufferSize) on part $partName")
           } else {
-            emit(FilePart(partName, fileName, contentType, (), -1, dispositionType))
+            emit(FilePart(partName, fileName, contentType, (), -1, dispositionType, (_: Any) => None))
             handleFileData(input, partStart, memoryBufferSize)
           }
         }

@@ -15,16 +15,15 @@ import io.netty.handler.timeout.IdleStateEvent
 import play.api.http._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
-import play.api.mvc.request.DefaultRequestFactory
 import play.api.Application
 import play.api.Logger
 import play.api.Mode
 import play.core.server.NettyServer
 import play.core.server.Server
 import play.core.server.common.ServerResultUtils
-import play.core.server.common.ForwardedHeaderHandler
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -78,17 +77,19 @@ private[play] class PlayRequestHandler(
       case Failure(exception: TooLongFrameException) => clientError(Status.REQUEST_URI_TOO_LONG, exception.getMessage)
       case Failure(exception)                        => clientError(Status.BAD_REQUEST, exception.getMessage)
       case Success(req) =>
-        if (req.headers
-              .get(HeaderNames.CONTENT_LENGTH)
-              .flatMap(clh => catching(classOf[NumberFormatException]).opt(clh.toLong))
-              .exists(_ > maxContentLength)) {
+        if (
+          req.headers
+            .get(HeaderNames.CONTENT_LENGTH)
+            .flatMap(clh => catching(classOf[NumberFormatException]).opt(clh.toLong))
+            .exists(_ > maxContentLength)
+        ) {
           clientError(Status.REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large")
         } else Server.getHandlerFor(req, app)
 
     }
 
     handler match {
-      //execute normal action
+      // execute normal action
       case action: EssentialAction => handleAction(action, requestHeader, request)
 
       // This case usually indicates an error in Play's internal routing or handling logic
@@ -99,7 +100,7 @@ private[play] class PlayRequestHandler(
     }
   }
 
-  //----------------------------------------------------------------
+  // ----------------------------------------------------------------
   // Netty overrides
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Object): Unit = {
@@ -187,7 +188,7 @@ private[play] class PlayRequestHandler(
     }
   }
 
-  //----------------------------------------------------------------
+  // ----------------------------------------------------------------
   // Private methods
 
   /**

@@ -8,6 +8,8 @@ import java.util
 import java.nio.charset.StandardCharsets
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import akka.util.Timeout
 import org.specs2.concurrent.ExecutionEnv
@@ -95,7 +97,7 @@ class AhcWSSpec(implicit ee: ExecutionEnv)
       .asInstanceOf[AhcWSRequest]
       .underlying
       .buildRequest()
-    new String(req.getByteData, StandardCharsets.UTF_8) must_== ("param1=value1")
+    new String(req.getByteData, StandardCharsets.UTF_8) must_== "param1=value1"
   }
 
   "Have form body on POST of content type text/plain" in {
@@ -172,7 +174,7 @@ class AhcWSSpec(implicit ee: ExecutionEnv)
     new String(req.getByteData, StandardCharsets.UTF_8) must be_==("param1=value1") // should result in byte data.
 
     val headers = req.getHeaders
-    headers.get("Content-Length") must_== ("9001")
+    headers.get("Content-Length") must_== "9001"
   }
 
   "Remove a user defined content length header if we are parsing body explicitly when signed" in {
@@ -412,6 +414,49 @@ class AhcWSSpec(implicit ee: ExecutionEnv)
     rep.body must ===("gziped response")
   }
 
+  def multipartFormDataFakeApp = {
+    val routes: (Application) => PartialFunction[(String, String), Handler] = { (app: Application) =>
+      {
+        case ("POST", "/") =>
+          val action = app.injector.instanceOf(classOf[DefaultActionBuilder])
+          action { request =>
+            Results.Ok(
+              request.body.asMultipartFormData
+                .map(mpf => {
+                  "dataPart name: " + mpf.dataParts.keys.mkString(",") + "\n" +
+                    "filePart names: " + mpf.files.map(_.key).mkString(",") + "\n" +
+                    "filePart filenames: " + mpf.files.map(_.filename).mkString(",")
+                })
+                .getOrElse("")
+            )
+          }
+      }
+    }
+
+    GuiceApplicationBuilder().appRoutes(routes).build()
+  }
+
+  "escape 'name' and 'filename' params of a multipart form body" in new WithServer(multipartFormDataFakeApp) {
+    {
+      val wsClient = app.injector.instanceOf(classOf[play.api.libs.ws.WSClient])
+      val file     = new java.io.File(this.getClass.getResource("/testassets/foo.txt").toURI)
+      val dp       = MultipartFormData.DataPart("h\"e\rl\nl\"o\rwo\nrld", "world")
+      val fp =
+        MultipartFormData.FilePart("u\"p\rl\no\"a\rd", "f\"o\ro\n_\"b\ra\nr.txt", None, FileIO.fromPath(file.toPath))
+      val source         = Source(List(dp, fp))
+      val futureResponse = wsClient.url(s"http://localhost:${Helpers.testServerPort}/").post(source)
+
+      // This test could experience CI timeouts. Give it more time.
+      val reallyLongTimeout = Timeout(defaultAwaitTimeout.duration * 3)
+      val rep               = await(futureResponse)(reallyLongTimeout)
+
+      rep.status must ===(200)
+      rep.body must be_==("""dataPart name: h%22e%0Dl%0Al%22o%0Dwo%0Arld
+                            |filePart names: u%22p%0Dl%0Ao%22a%0Dd
+                            |filePart filenames: f%22o%0Do%0A_%22b%0Da%0Ar.txt""".stripMargin)
+    }
+  }
+
   "Ahc WS Response" should {
     "get cookies from an AHC response" in {
       val ahcResponse: AHCResponse = mock[AHCResponse]
@@ -464,9 +509,7 @@ class AhcWSSpec(implicit ee: ExecutionEnv)
       val response = makeAhcResponse(ahcResponse)
 
       val optionCookie = response.cookie("someName")
-      optionCookie must beSome[WSCookie].which { cookie =>
-        cookie.maxAge must beNone
-      }
+      optionCookie must beSome[WSCookie].which { cookie => cookie.maxAge must beNone }
     }
 
     "get the body as bytes from the AHC response" in {

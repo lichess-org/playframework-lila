@@ -19,9 +19,9 @@ trait EssentialFilter {
  * {{{
  * object AccessLog extends Filter {
  *   override def apply(next: RequestHeader => Future[Result])(request: RequestHeader): Future[Result] = {
- * 		 val result = next(request)
- * 		 result.map { r => play.Logger.info(request + "\n\t => " + r; r }
- * 	 }
+ *     val result = next(request)
+ *     result.map { r => play.Logger.info(request + "\n\t => " + r; r }
+ *   }
  * }
  * }}}
  */
@@ -50,34 +50,33 @@ trait Filter extends EssentialFilter {
       val bodyAccumulator = Promise[Accumulator[ByteString, Result]]()
 
       // Invoke the filter
-      val result = self.apply({ (rh: RequestHeader) =>
+      val result = self.apply { (rh: RequestHeader) =>
         // Invoke the delegate
         bodyAccumulator.success(next(rh))
         promisedResult.future
-      })(rh)
+      }(rh)
 
-      result.onComplete({ resultTry =>
+      result.onComplete { resultTry =>
         // It is possible that the delegate function (the next filter in the chain) was never invoked by this Filter.
         // Therefore, as a fallback, we try to redeem the bodyAccumulator Promise here with an iteratee that consumes
         // the request body.
         bodyAccumulator.tryComplete(resultTry.map(simpleResult => Accumulator.done(simpleResult)))
-      })
+      }
 
       Accumulator.flatten(bodyAccumulator.future.map { it =>
         it.mapFuture { simpleResult =>
-            // When the iteratee is done, we can redeem the promised result that was returned to the filter
-            promisedResult.success(simpleResult)
+          // When the iteratee is done, we can redeem the promised result that was returned to the filter
+          promisedResult.success(simpleResult)
+          result
+        }.recoverWith {
+          case t: Throwable =>
+            // If the iteratee finishes with an error, fail the promised result that was returned to the
+            // filter with the same error. Note, we MUST use tryFailure here as it's possible that a)
+            // promisedResult was already completed successfully in the mapM method above but b) calculating
+            // the result in that method caused an error, so we ended up in this recover block anyway.
+            promisedResult.tryFailure(t)
             result
-          }
-          .recoverWith {
-            case t: Throwable =>
-              // If the iteratee finishes with an error, fail the promised result that was returned to the
-              // filter with the same error. Note, we MUST use tryFailure here as it's possible that a)
-              // promisedResult was already completed successfully in the mapM method above but b) calculating
-              // the result in that method caused an error, so we ended up in this recover block anyway.
-              promisedResult.tryFailure(t)
-              result
-          }
+        }
       })
     }
   }
@@ -104,9 +103,7 @@ object Filters {
  */
 object FilterChain {
   def apply(action: EssentialAction, filters: List[EssentialFilter]): EssentialAction = (rh: RequestHeader) => {
-    val chain = filters.reverse.foldLeft(action) { (a, i) =>
-      i(a)
-    }
+    val chain = filters.reverse.foldLeft(action) { (a, i) => i(a) }
     chain(rh)
   }
 }

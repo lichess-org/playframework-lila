@@ -201,7 +201,7 @@ case class Result(
    *
    * For example:
    * {{{
-   * Redirect(routes.Application.index()).discardingCookies("theme")
+   * Redirect(routes.Application.index()).discardingCookies(DiscardingCookie("theme"))
    * }}}
    *
    * @param cookies the cookies to discard along to this result
@@ -341,9 +341,7 @@ case class Result(
         if (data.isEmpty) sessionBaker.discard.toCookie else sessionBaker.encodeAsCookie(data)
       }
       val flash = newFlash
-        .map { data =>
-          if (data.isEmpty) flashBaker.discard.toCookie else flashBaker.encodeAsCookie(data)
-        }
+        .map { data => if (data.isEmpty) flashBaker.discard.toCookie else flashBaker.encodeAsCookie(data) }
         .orElse {
           if (requestHasFlash) Some(flashBaker.discard.toCookie) else None
         }
@@ -589,9 +587,7 @@ trait Results {
     )(implicit ec: ExecutionContext, fileMimeTypes: FileMimeTypes): Result = {
       val io = FileIO
         .fromPath(content)
-        .mapMaterializedValue(_.onComplete { _ =>
-          onClose()
-        })
+        .mapMaterializedValue(_.onComplete { _ => onClose() })
       streamFile(io, fileName(content), Some(Files.size(content)), inline)
     }
 
@@ -617,9 +613,7 @@ trait Results {
       val stream = classLoader.getResourceAsStream(resource)
       val io = StreamConverters
         .fromInputStream(() => stream)
-        .mapMaterializedValue(_.onComplete { _ =>
-          onClose()
-        })
+        .mapMaterializedValue(_.onComplete { _ => onClose() })
       streamFile(io, fileName(resource), Some(stream.available()), inline)
     }
 

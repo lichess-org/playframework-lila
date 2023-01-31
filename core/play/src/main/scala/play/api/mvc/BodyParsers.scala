@@ -188,8 +188,24 @@ object MultipartFormData {
       contentType: Option[String],
       ref: A,
       fileSize: Long = -1,
-      dispositionType: String = "form-data"
-  ) extends Part[A]
+      dispositionType: String = "form-data",
+      refToBytes: A => Option[ByteString] = (a: A) => None
+  ) extends Part[A] {
+    def transformRefToBytes(): ByteString =
+      refToBytes(ref)
+        .orElse(ref match {
+          // Out of the box Play can help transforming objects to bytes it knows about to make life easier for users
+          case stf: play.api.libs.Files.TemporaryFile => Some(ByteString.fromArray(Files.readAllBytes(stf.path)))
+          case file: java.io.File                     => Some(ByteString.fromArray(Files.readAllBytes(file.toPath)))
+          case path: java.nio.file.Path               => Some(ByteString.fromArray(Files.readAllBytes(path)))
+          case _                                      => None
+        })
+        .getOrElse(
+          throw new RuntimeException(
+            s"To be able to convert this FilePart's ref to bytes you need to define refToBytes of FilePart[${ref.getClass.getName}]"
+          )
+        )
+  }
 
   /**
    * A part that has not been properly parsed.
@@ -305,9 +321,7 @@ trait BodyParserUtils {
    */
   def empty: BodyParser[Unit] = ignore(())
 
-  def ignore[A](body: A): BodyParser[A] = BodyParser("ignore") { request =>
-    Accumulator.done(Right(body))
-  }
+  def ignore[A](body: A): BodyParser[A] = BodyParser("ignore") { request => Accumulator.done(Right(body)) }
 
   /**
    * A body parser that always returns an error.
@@ -614,12 +628,8 @@ trait PlayBodyParsers extends BodyParserUtils {
               )
             }, {
               val buffer = RawBuffer(memoryThreshold, temporaryFileCreator)
-              val sink = Sink.fold[RawBuffer, ByteString](buffer) { (bf, bs) =>
-                bf.push(bs); bf
-              }
-              sink.mapMaterializedValue { future =>
-                future.andThen { case _ => buffer.close() }
-              }
+              val sink   = Sink.fold[RawBuffer, ByteString](buffer) { (bf, bs) => bf.push(bs); bf }
+              sink.mapMaterializedValue { future => future.andThen { case _ => buffer.close() } }
             }
           )
           .map(buffer => Right(buffer))
@@ -698,9 +708,7 @@ trait PlayBodyParsers extends BodyParserUtils {
         case Right(jsValue) =>
           jsValue
             .validate(reader)
-            .map { a =>
-              Future.successful(Right(a))
-            }
+            .map { a => Future.successful(Right(a)) }
             .recoverTotal { jsError =>
               val msg = s"Json validation error ${JsError.toFlatForm(jsError)}"
               createBadResult(msg)(request).map(Left.apply)
@@ -772,9 +780,7 @@ trait PlayBodyParsers extends BodyParserUtils {
             // Otherwise, there should be no default, it will be detected by the XML parser.
           }
         )
-        .foreach { charset =>
-          inputSource.setEncoding(charset)
-        }
+        .foreach { charset => inputSource.setEncoding(charset) }
       Play.XML.load(inputSource)
     }
 
@@ -926,6 +932,7 @@ trait PlayBodyParsers extends BodyParserUtils {
       case Some("text/plain") =>
         logger.trace("Parsing AnyContent as text")
         text(maxLengthOrDefault)(request).map(_.map(s => AnyContentAsText(s)))
+
       case Some("text/xml") | Some("application/xml") | Some(ApplicationXmlMatcher()) =>
         logger.trace("Parsing AnyContent as xml")
         xml(maxLengthOrDefault)(request).map(_.map(x => AnyContentAsXml(x)))
@@ -1026,8 +1033,7 @@ trait PlayBodyParsers extends BodyParserUtils {
   }
 
   protected def createBadResult(msg: String, statusCode: Int = BAD_REQUEST): RequestHeader => Future[Result] = {
-    request =>
-      errorHandler.onClientError(request, statusCode, msg)
+    request => errorHandler.onClientError(request, statusCode, msg)
   }
 
   /**
@@ -1141,15 +1147,18 @@ object BodyParsers {
       var pushedBytes: Long = 0
 
       val logic = new GraphStageLogic(shape) {
-        setHandler(out, new OutHandler {
-          override def onPull(): Unit = {
-            pull(in)
+        setHandler(
+          out,
+          new OutHandler {
+            override def onPull(): Unit = {
+              pull(in)
+            }
+            override def onDownstreamFinish(): Unit = {
+              status.success(MaxSizeNotExceeded)
+              completeStage()
+            }
           }
-          override def onDownstreamFinish(): Unit = {
-            status.success(MaxSizeNotExceeded)
-            completeStage()
-          }
-        })
+        )
         setHandler(
           in,
           new InHandler {

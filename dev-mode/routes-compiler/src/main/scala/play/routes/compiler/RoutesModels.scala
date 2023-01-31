@@ -65,9 +65,7 @@ case class HandlerCall(
   lazy val passJavaRequest: Boolean    = parameters.getOrElse(Nil).exists(_.isJavaRequest)
   override def toString =
     dynamic + packageName.map(_ + ".").getOrElse("") + controller + dynamic + "." + method + parameters
-      .map { params =>
-        "(" + params.mkString(", ") + ")"
-      }
+      .map { params => "(" + params.mkString(", ") + ")" }
       .getOrElse("")
 }
 
@@ -128,7 +126,7 @@ trait PathPart
  * @param encode Whether this part should be encoded or not.
  */
 case class DynamicPart(name: String, constraint: String, encode: Boolean) extends PathPart with Positional {
-  override def toString = """DynamicPart("""" + name + "\", \"\"\"" + constraint + "\"\"\"," + encode + ")" //"
+  override def toString = """DynamicPart("""" + name + "\", \"\"\"" + constraint + "\"\"\"," + encode + ")" // "
 }
 
 /**

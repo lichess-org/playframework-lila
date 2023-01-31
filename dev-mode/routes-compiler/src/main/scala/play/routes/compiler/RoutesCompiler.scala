@@ -9,7 +9,7 @@ import java.nio.charset.Charset
 import java.nio.charset.MalformedInputException
 import java.nio.file.Files
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 
 import scala.io.Codec
 

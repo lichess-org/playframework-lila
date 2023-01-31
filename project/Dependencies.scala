@@ -13,9 +13,9 @@ object Dependencies {
 
   val playJsonVersion = "2.10.0-RC7"
 
-  val logback = "ch.qos.logback" % "logback-classic" % "1.4.4"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
-  val specs2Version = "4.17.0"
+  val specs2Version = "4.19.0"
   val specs2CoreDeps = Seq(
     "specs2-core",
     "specs2-junit"
@@ -29,8 +29,8 @@ object Dependencies {
     "org.scalacheck" %% "scalacheck"        % "1.17.0"      % Test
   )
 
-  val jacksonVersion  = "2.13.4"
-  val jacksonDatabind = Seq("com.fasterxml.jackson.core" % "jackson-databind" % "2.13.4.2")
+  val jacksonVersion  = "2.14.1"
+  val jacksonDatabind = Seq("com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion)
   val jacksons = Seq(
     "com.fasterxml.jackson.core"     % "jackson-core",
     "com.fasterxml.jackson.core"     % "jackson-annotations",
@@ -44,18 +44,20 @@ object Dependencies {
   val akkaSerializationJacksonOverrides = Seq(
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor",
     "com.fasterxml.jackson.module"     % "jackson-module-parameter-names",
-    "com.fasterxml.jackson.module"     %% "jackson-module-scala",
+    "com.fasterxml.jackson.module"    %% "jackson-module-scala",
   ).map(_ % jacksonVersion)
 
   val playJson = "com.typesafe.play" %% "play-json" % playJsonVersion
 
-  val slf4jVersion = "2.0.3"
+  val slf4jVersion = "2.0.6"
   val slf4j        = Seq("slf4j-api", "jul-to-slf4j", "jcl-over-slf4j").map("org.slf4j" % _ % slf4jVersion)
+  val slf4jApi     = "org.slf4j" % "slf4j-api"    % slf4jVersion
   val slf4jSimple  = "org.slf4j" % "slf4j-simple" % slf4jVersion
 
   val guava      = "com.google.guava"         % "guava"        % "31.1-jre"
   val findBugs   = "com.google.code.findbugs" % "jsr305"       % "3.0.2" // Needed by guava
-  val mockitoAll = "org.mockito"              % "mockito-core" % "4.8.0"
+  val mockitoAll = "org.mockito"              % "mockito-core" % "4.11.0"
+  val javaxInject = "javax.inject" % "javax.inject" % "1"
 
   def scalaParserCombinators(scalaVersion: String) =
     Seq("org.scala-lang.modules" %% "scala-parser-combinators" % {
@@ -65,11 +67,11 @@ object Dependencies {
       }
     })
 
-  val springFrameworkVersion = "5.3.23"
+  val springFrameworkVersion = "5.3.25"
 
   val joda = Seq(
-    "joda-time" % "joda-time"    % "2.11.2",
-    "org.joda"  % "joda-convert" % "2.2.2"
+    "joda-time" % "joda-time"    % "2.12.2",
+    "org.joda"  % "joda-convert" % "2.2.3"
   )
 
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
@@ -86,15 +88,15 @@ object Dependencies {
       Seq(
         playJson,
         guava,
-        "javax.inject" % "javax.inject" % "1",
+        javaxInject,
         mailer
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
-  val nettyVersion = "4.1.84.Final"
+  val nettyVersion = "4.1.87.Final"
 
   val netty = Seq(
-    "com.typesafe.netty" % "netty-reactive-streams-http" % "2.0.7",
-    ("io.netty" % "netty-transport-native-epoll" % nettyVersion).classifier("linux-x86_64")
+    "com.typesafe.netty" % "netty-reactive-streams-http"  % "2.0.8",
+    ("io.netty"          % "netty-transport-native-epoll" % nettyVersion).classifier("linux-x86_64")
   ) ++ specs2Deps.map(_ % Test)
 
   val akkaHttp = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
@@ -106,7 +108,9 @@ object Dependencies {
   val jimfs = "com.google.jimfs" % "jimfs" % "1.2"
 
   def routesCompilerDependencies(scalaVersion: String) = {
-    specs2CoreDeps.map(_ % Test) ++ Seq(specsMatcherExtra % Test) ++ scalaParserCombinators(scalaVersion) ++ (logback % Test :: Nil)
+    specs2CoreDeps.map(_ % Test) ++ Seq(specsMatcherExtra % Test) ++ scalaParserCombinators(
+      scalaVersion
+    ) ++ (logback % Test :: Nil)
   }
 
   private def sbtPluginDep(moduleId: ModuleID, sbtVersion: String, scalaVersion: String) = {
@@ -140,7 +144,7 @@ object Dependencies {
     logback % Test
   )
 
-  val caffeineVersion = "3.0.6"
+  val caffeineVersion = "3.1.2"
   val playCaffeineDeps = Seq(
     "com.github.ben-manes.caffeine" % "caffeine" % caffeineVersion,
     "com.github.ben-manes.caffeine" % "jcache"   % caffeineVersion
@@ -152,7 +156,7 @@ object Dependencies {
     "com.typesafe.play" %% "play-ws-standalone-xml"  % playWsStandaloneVersion,
     "com.typesafe.play" %% "play-ws-standalone-json" % playWsStandaloneVersion,
     // Update transitive Akka version as needed:
-    "com.typesafe.akka"                        %% "akka-stream" % akkaVersion
+    "com.typesafe.akka" %% "akka-stream" % akkaVersion
   ) ++ (specs2Deps :+ specsMatcherExtra).map(_ % Test) :+ mockitoAll % Test
 
   // Must use a version of ehcache that supports jcache 1.0.0

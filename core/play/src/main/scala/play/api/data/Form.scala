@@ -1057,9 +1057,7 @@ trait ObjectMapping {
    */
   def merge(results: Either[Seq[FormError], Any]*): Either[Seq[FormError], Seq[Any]] = {
     val all: Seq[Either[Seq[FormError], Seq[Any]]] = results.map(_.map(Seq(_)))
-    all.fold(Right(Nil)) { (s, i) =>
-      merge2(s, i)
-    }
+    all.fold(Right(Nil)) { (s, i) => merge2(s, i) }
   }
 }
 

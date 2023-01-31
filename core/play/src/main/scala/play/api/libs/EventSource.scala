@@ -56,9 +56,9 @@ object EventSource {
     Flow[E].map(Event(_))
   }
 
-  //------------------
+  // ------------------
   // Event
-  //------------------
+  // ------------------
 
   /**
    * An event encoded with the SSE protocol..
@@ -88,11 +88,9 @@ object EventSource {
      * If no extractor is available, the implicit conversion in the low priority traits will be used.
      * For the EventDataExtractor, this means `String` or `JsValue` will be automatically mapped,
      * and the nameExtractor and idExtractor will implicitly resolve to `None`.
-     *
      */
     def apply[A](a: A)(
-        implicit
-        dataExtractor: EventDataExtractor[A],
+        implicit dataExtractor: EventDataExtractor[A],
         nameExtractor: EventNameExtractor[A],
         idExtractor: EventIdExtractor[A]
     ): Event = {
@@ -108,9 +106,9 @@ object EventSource {
     }
   }
 
-  //------------------
+  // ------------------
   // Event Data Extractor
-  //------------------
+  // ------------------
 
   case class EventDataExtractor[A](eventData: A => String)
 
@@ -122,9 +120,9 @@ object EventSource {
 
   object EventDataExtractor extends LowPriorityEventEncoder
 
-  //------------------
+  // ------------------
   // Event ID Extractor
-  //------------------
+  // ------------------
 
   case class EventIdExtractor[E](eventId: E => Option[String])
 
@@ -134,9 +132,9 @@ object EventSource {
 
   object EventIdExtractor extends LowPriorityEventIdExtractor
 
-  //------------------
+  // ------------------
   // Event Name Extractor
-  //------------------
+  // ------------------
 
   case class EventNameExtractor[E](eventName: E => Option[String])
 

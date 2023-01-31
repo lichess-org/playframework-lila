@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Provider
 import javax.inject.Singleton
 import org.slf4j.LoggerFactory
-import play.api.*
+import play.api._
 import play.api.libs.Codecs
 import play.api.mvc.Cookie.SameSite
 import play.core.cookie.encoding.ClientCookieDecoder
@@ -19,7 +19,7 @@ import play.core.cookie.encoding.ServerCookieDecoder
 import play.core.cookie.encoding.ServerCookieEncoder
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration.*
+import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 
@@ -193,8 +193,8 @@ object HttpConfiguration {
 
           case _ => // "foo=bar".span(_ != '=') -> (foo,=bar)
             line.span(_ != '=') match {
-              case (key, v) => Some(key -> v.drop(1)) // '=' prefix
-              case null     => Option.empty[(String, String)] // skip invalid
+              case (key, v) => Some(key -> v.drop(1))         // '=' prefix
+              case _        => Option.empty[(String, String)] // skip invalid
             }
         }
       }

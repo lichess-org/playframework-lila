@@ -55,12 +55,27 @@ object Multipart {
    *                                  <a href="https://tools.ietf.org/html/rfc2046#section-5.1.1">rfc2046</a>
    */
   def randomBoundary(length: Int = 18, random: java.util.Random = ThreadLocalRandom.current()): String = {
-    if (length < 1 && length > 70) throw new IllegalArgumentException("length can't be greater than 70 or less than 1")
+    if (length < 1 || length > 70) throw new IllegalArgumentException("length can't be greater than 70 or less than 1")
     val bytes: Seq[Byte] = for (byte <- 1 to length) yield {
       alphabet(random.nextInt(alphabet.length))
     }
     new String(bytes.toArray, US_ASCII)
   }
+
+  /**
+   * Helper function to escape a single header parameter using the HTML5 strategy.
+   * (The alternative would be the strategy defined by RFC5987)
+   * Particularly useful for Content-Disposition header parameters which might contain
+   * non-ASCII values, like file names.
+   * This follows the "WHATWG HTML living standard" section 4.10.21.8 and matches
+   * the behavior of curl and modern browsers.
+   * See https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
+   */
+  def escapeParamWithHTML5Strategy(value: String) =
+    value
+      .replace("\"", "%22")
+      .replace("\r", "%0D")
+      .replace("\n", "%0A")
 
   private sealed trait Formatter {
     def ~~(ch: Char): this.type
@@ -144,13 +159,13 @@ object Multipart {
             val bodyPart = grab(in)
 
             def bodyPartChunks(data: Source[ByteString, Any]): Source[ByteString, Any] = {
-              (Source.single(f.get) ++ data).mapMaterializedValue((_) => ())
+              (Source.single(f.get) ++ data).mapMaterializedValue(_ => ())
             }
 
             def completePartFormatting(): Source[ByteString, Any] = bodyPart match {
-              case MultipartFormData.DataPart(_, data)            => Source.single((f ~~ ByteString(data)).get)
-              case MultipartFormData.FilePart(_, _, _, ref, _, _) => bodyPartChunks(ref)
-              case _                                              => throw new UnsupportedOperationException()
+              case MultipartFormData.DataPart(_, data)               => Source.single((f ~~ ByteString(data)).get)
+              case MultipartFormData.FilePart(_, _, _, ref, _, _, _) => bodyPartChunks(ref)
+              case _                                                 => throw new UnsupportedOperationException()
             }
 
             renderBoundary(f, boundary, suppressInitialCrLf = !firstBoundaryRendered)
@@ -158,14 +173,20 @@ object Multipart {
 
             val (key, filename, contentType, dispositionType) = bodyPart match {
               case MultipartFormData.DataPart(innerKey, _) => (innerKey, None, Option("text/plain"), "form-data")
-              case MultipartFormData.FilePart(innerKey, innerFilename, innerContentType, _, _, innerDispositionType) =>
+              case MultipartFormData.FilePart(
+                    innerKey,
+                    innerFilename,
+                    innerContentType,
+                    _,
+                    _,
+                    innerDispositionType,
+                    _
+                  ) =>
                 (innerKey, Option(innerFilename), innerContentType, innerDispositionType)
               case _ => throw new UnsupportedOperationException()
             }
             renderDisposition(f, dispositionType, key, filename)
-            contentType.foreach { ct =>
-              renderContentType(f, ct)
-            }
+            contentType.foreach { ct => renderContentType(f, ct) }
             renderBuffer(f)
             push(out, completePartFormatting())
           }
@@ -206,10 +227,10 @@ object Multipart {
       contentDisposition: String,
       filename: Option[String]
   ): Unit = {
-    f ~~ "Content-Disposition: " ~~ dispositionType ~~ "; name=" ~~ '"' ~~ contentDisposition ~~ '"'
-    filename.foreach { name =>
-      f ~~ "; filename=" ~~ '"' ~~ name ~~ '"'
-    }
+    f ~~ "Content-Disposition: " ~~ dispositionType ~~ "; name=" ~~ '"' ~~ escapeParamWithHTML5Strategy(
+      contentDisposition
+    ) ~~ '"'
+    filename.foreach { name => f ~~ "; filename=" ~~ '"' ~~ escapeParamWithHTML5Strategy(name) ~~ '"' }
     f ~~ CrLf
   }
 
