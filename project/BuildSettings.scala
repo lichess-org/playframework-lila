@@ -18,7 +18,7 @@ import scala.util.control.NonFatal
 
 object BuildSettings {
 
-  val playVersion = "2.8.18-lila_3.9"
+  val playVersion = "2.8.18-lila_3.10"
 
   def evictionSettings: Seq[Setting[_]] = Seq(
     // This avoids a lot of dependency resolution warnings to be showed.
@@ -31,7 +31,7 @@ object BuildSettings {
 
   /** These settings are used by all projects. */
   def playCommonSettings: Seq[Setting[_]] = Def.settings(
-    scalaVersion := "3.2.1",
+    scalaVersion    := "3.3.0-RC6",
     ivyLoggingLevel := UpdateLogging.DownloadOnly,
     resolvers ++= Resolver.sonatypeOssRepos("releases"), // sync ScriptedTools.scala
     resolvers ++= Seq(
@@ -43,9 +43,9 @@ object BuildSettings {
     ivyConfigurations ++= Seq(SourcesApplication),
     javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation"),
     (Compile / doc / scalacOptions) := Seq("-no-java-comments"),
-    (Test / fork) := true,
-    (Test / parallelExecution) := false,
-    (Test / test / testListeners) := Nil,
+    (Test / fork)                   := true,
+    (Test / parallelExecution)      := false,
+    (Test / test / testListeners)   := Nil,
     (Test / javaOptions) ++= Seq("-XX:MaxMetaspaceSize=384m", "-Xmx512m", "-Xms128m"),
     testOptions ++= Seq(
       Tests.Argument(TestFrameworks.Specs2, "showtimes"),
@@ -67,7 +67,7 @@ object BuildSettings {
       (organization.value %% moduleName.value % version).cross(cross)
     }.toSet,
     mimaBinaryIssueFilters ++= Seq(
-      //Remove deprecated methods from Http
+      // Remove deprecated methods from Http
       ProblemFilters.exclude[DirectMissingMethodProblem]("play.mvc.Http#RequestImpl.this"),
       // Remove deprecated methods from HttpRequestHandler
       ProblemFilters.exclude[DirectMissingMethodProblem]("play.api.http.DefaultHttpRequestHandler.filterHandler"),
@@ -115,7 +115,7 @@ object BuildSettings {
       .settings(playRuntimeSettings: _*)
       .settings(
         autoScalaLibrary := false,
-        crossPaths := false,
+        crossPaths       := false,
       )
   }
 
@@ -143,7 +143,7 @@ object BuildSettings {
     // * run a publishLocal in the root project to get everything
     // * run a publishLocal in the changes projects for fast feedback loops
     scriptedDependencies := (()), // drop Test/compile & publishLocal
-    scriptedBufferLog := false,
+    scriptedBufferLog    := false,
     scriptedLaunchOpts ++= Seq(
       s"-Dsbt.boot.directory=${file(sys.props("user.home")) / ".sbt" / "boot"}",
       "-Xmx512m",
@@ -156,7 +156,7 @@ object BuildSettings {
 
   def disablePublishing = Def.settings(
     (publish / skip) := true,
-    publishLocal := {},
+    publishLocal     := {},
   )
 
   /** A project that runs in the sbt runtime. */
@@ -176,7 +176,7 @@ object BuildSettings {
       .settings(
         playCommonSettings,
         playScriptedSettings,
-        (Test / fork) := false,
+        (Test / fork)         := false,
         mimaPreviousArtifacts := Set.empty,
       )
   }

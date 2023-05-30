@@ -11,11 +11,11 @@ object Dependencies {
   val akkaVersion: String = sys.props.getOrElse("akka.version", "2.6.20")
   val akkaHttpVersion     = sys.props.getOrElse("akka.http.version", "10.2.10")
 
-  val playJsonVersion = "2.10.0-RC7"
+  val playJsonVersion = "2.10.0-RC8"
 
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
-  val specs2Version = "4.19.0"
+  val specs2Version = "4.20.0"
   val specs2CoreDeps = Seq(
     "specs2-core",
     "specs2-junit"
@@ -29,7 +29,7 @@ object Dependencies {
     "org.scalacheck" %% "scalacheck"        % "1.17.0"      % Test
   )
 
-  val jacksonVersion  = "2.14.1"
+  val jacksonVersion  = "2.14.3"
   val jacksonDatabind = Seq("com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion)
   val jacksons = Seq(
     "com.fasterxml.jackson.core"     % "jackson-core",
@@ -49,30 +49,25 @@ object Dependencies {
 
   val playJson = "com.typesafe.play" %% "play-json" % playJsonVersion
 
-  val slf4jVersion = "2.0.6"
+  val slf4jVersion = "2.0.7"
   val slf4j        = Seq("slf4j-api", "jul-to-slf4j", "jcl-over-slf4j").map("org.slf4j" % _ % slf4jVersion)
   val slf4jApi     = "org.slf4j" % "slf4j-api"    % slf4jVersion
   val slf4jSimple  = "org.slf4j" % "slf4j-simple" % slf4jVersion
 
-  val guava      = "com.google.guava"         % "guava"        % "31.1-jre"
-  val findBugs   = "com.google.code.findbugs" % "jsr305"       % "3.0.2" // Needed by guava
-  val mockitoAll = "org.mockito"              % "mockito-core" % "4.11.0"
-  val javaxInject = "javax.inject" % "javax.inject" % "1"
+  val guava       = "com.google.guava"         % "guava"        % "31.1-jre"
+  val findBugs    = "com.google.code.findbugs" % "jsr305"       % "3.0.2" // Needed by guava
+  val mockitoAll  = "org.mockito"              % "mockito-core" % "4.11.0"
+  val javaxInject = "javax.inject"             % "javax.inject" % "1"
 
   def scalaParserCombinators(scalaVersion: String) =
-    Seq("org.scala-lang.modules" %% "scala-parser-combinators" % {
-      CrossVersion.partialVersion(scalaVersion) match {
-        case Some((2, _)) => "1.1.2"
-        case _            => "2.1.1"
-      }
-    })
+    Seq("org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1")
 
-  val springFrameworkVersion = "5.3.25"
+  val springFrameworkVersion = "5.3.27"
 
-  val joda = Seq(
-    "joda-time" % "joda-time"    % "2.12.2",
-    "org.joda"  % "joda-convert" % "2.2.3"
-  )
+  // val joda = Seq(
+  //   "joda-time" % "joda-time"    % "2.12.2",
+  //   "org.joda"  % "joda-convert" % "2.2.3"
+  // )
 
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
   val junit          = "junit"          % "junit"           % "4.13.2"
@@ -89,10 +84,9 @@ object Dependencies {
         playJson,
         guava,
         javaxInject,
-        mailer
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
-  val nettyVersion = "4.1.87.Final"
+  val nettyVersion = "4.1.93.Final"
 
   val netty = Seq(
     "com.typesafe.netty" % "netty-reactive-streams-http"  % "2.0.8",
@@ -130,13 +124,13 @@ object Dependencies {
       typesafeConfig,
       slf4jSimple,
       sbtDep("com.typesafe.play" % "sbt-twirl" % BuildInfo.sbtTwirlVersion),
-      logback             % Test
+      logback % Test
     ) ++ specs2Deps.map(_ % Test)
   }
 
   val streamsDependencies = Seq(
-    "org.reactivestreams"   % "reactive-streams" % "1.0.4",
-    "com.typesafe.akka"     %% "akka-stream" % akkaVersion,
+    "org.reactivestreams" % "reactive-streams" % "1.0.4",
+    "com.typesafe.akka"  %% "akka-stream"      % akkaVersion,
   ) ++ specs2CoreDeps.map(_ % Test)
 
   val playServerDependencies = specs2Deps.map(_ % Test) ++ Seq(
@@ -144,13 +138,13 @@ object Dependencies {
     logback % Test
   )
 
-  val caffeineVersion = "3.1.2"
+  val caffeineVersion = "3.1.6"
   val playCaffeineDeps = Seq(
     "com.github.ben-manes.caffeine" % "caffeine" % caffeineVersion,
     "com.github.ben-manes.caffeine" % "jcache"   % caffeineVersion
   )
 
-  val playWsStandaloneVersion = "2.2.0-M2"
+  val playWsStandaloneVersion = "2.2.0-M3"
   val playWsDeps = Seq(
     "com.typesafe.play" %% "play-ws-standalone"      % playWsStandaloneVersion,
     "com.typesafe.play" %% "play-ws-standalone-xml"  % playWsStandaloneVersion,
@@ -161,11 +155,9 @@ object Dependencies {
 
   // Must use a version of ehcache that supports jcache 1.0.0
   val playAhcWsDeps = Seq(
-    "com.typesafe.play"             %% "play-ahc-ws-standalone" % playWsStandaloneVersion,
-    "com.typesafe.play"             % "shaded-asynchttpclient"  % playWsStandaloneVersion,
-    "com.typesafe.play"             % "shaded-oauth"            % playWsStandaloneVersion,
-    "com.github.ben-manes.caffeine" % "jcache"                  % caffeineVersion % Test,
+    "com.typesafe.play"            %% "play-ahc-ws-standalone" % playWsStandaloneVersion,
+    "com.typesafe.play"             % "shaded-asynchttpclient" % playWsStandaloneVersion,
+    "com.typesafe.play"             % "shaded-oauth"           % playWsStandaloneVersion,
+    "com.github.ben-manes.caffeine" % "jcache"                 % caffeineVersion % Test,
   )
-
-  val mailer = "org.apache.commons" % "commons-email" % "1.5"
 }
