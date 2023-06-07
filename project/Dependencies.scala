@@ -11,7 +11,7 @@ object Dependencies {
   val akkaVersion: String = sys.props.getOrElse("akka.version", "2.6.20")
   val akkaHttpVersion     = sys.props.getOrElse("akka.http.version", "10.2.10")
 
-  val playJsonVersion = "2.10.0-RC8"
+  val playJsonVersion = "2.10.0-RC9"
 
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
@@ -144,7 +144,7 @@ object Dependencies {
     "com.github.ben-manes.caffeine" % "jcache"   % caffeineVersion
   )
 
-  val playWsStandaloneVersion = "2.2.0-M3"
+  val playWsStandaloneVersion = "2.2.0-M4"
   val playWsDeps = Seq(
     "com.typesafe.play" %% "play-ws-standalone"      % playWsStandaloneVersion,
     "com.typesafe.play" %% "play-ws-standalone-xml"  % playWsStandaloneVersion,
