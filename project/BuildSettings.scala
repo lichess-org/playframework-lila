@@ -41,7 +41,7 @@ object BuildSettings {
     ),
     evictionSettings,
     ivyConfigurations ++= Seq(SourcesApplication),
-    javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation"),
+    javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation", "--release", "21"),
     (Compile / doc / scalacOptions) := Seq("-no-java-comments"),
     (Test / fork)                   := true,
     (Test / parallelExecution)      := false,

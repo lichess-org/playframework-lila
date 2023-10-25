@@ -14,7 +14,7 @@ scalacOptions ++= Seq(
   "-Xcheck-macros",
   "-source:future-migration",
   "-rewrite",
-  "-Xtarget:12"
+  "-release:21",
 )
 
 lazy val RoutesCompilerProject = PlayDevelopmentProject("Routes-Compiler", "dev-mode/routes-compiler")
