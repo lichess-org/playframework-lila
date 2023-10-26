@@ -4,9 +4,7 @@
 
 package play.api
 
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 import java.net.URL
@@ -22,6 +20,8 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.io.Codec
 import scala.util.control.NonFatal
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 
 /**
  * This object provides a set of operations to create `Configuration` values.
@@ -226,6 +226,20 @@ case class Configuration(underlying: Config) {
    */
   def withFallback(other: Configuration): Configuration = {
     Configuration(underlying.withFallback(other.underlying))
+  }
+
+  /**
+   * Reads a value from the underlying implementation.
+   * If the value is not set this will return None, otherwise returns Some.
+   *
+   * Does not check neither for incorrect type nor null value, but catches and wraps the error.
+   */
+  private def readValue[T](path: String, v: => T): Option[T] = {
+    try {
+      if (underlying.hasPathOrNull(path)) Some(v) else None
+    } catch {
+      case NonFatal(e) => throw reportError(path, e.getMessage, Some(e))
+    }
   }
 
   /**
@@ -464,6 +478,11 @@ object ConfigLoader {
   // Note: this does not support null values but it added for convenience
   implicit val seqDurationLoader: ConfigLoader[Seq[Duration]] =
     seqFiniteDurationLoader.map(identity[Seq[Duration]])
+
+  implicit val javaDurationLoader: ConfigLoader[java.time.Duration] = ConfigLoader(_.getDuration)
+
+  implicit val javaSeqDurationLoader: ConfigLoader[Seq[java.time.Duration]] =
+    ConfigLoader(_.getDurationList).map(_.asScala.toSeq)
 
   implicit val periodLoader: ConfigLoader[Period] = ConfigLoader(_.getPeriod)
 

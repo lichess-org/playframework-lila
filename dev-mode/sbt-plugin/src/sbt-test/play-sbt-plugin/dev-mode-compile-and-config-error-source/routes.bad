@@ -1,4 +1,0 @@
-# Missing the path (slash):
-GET                           controllers.HomeController.index()
-# Correct would be:
-#GET              /           controllers.HomeController.index()

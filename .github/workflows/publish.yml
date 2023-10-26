@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: Publish
 
 on:
@@ -16,3 +17,26 @@ jobs:
     name: Publish / Artifacts
     uses: playframework/.github/.github/workflows/publish.yml@v3
     secrets: inherit
+||||||| ecd2a32c0b
+=======
+name: Publish
+
+on:
+  push:
+    branches: # Snapshots
+      - 2.8.x
+    tags: ["**"] # Releases
+  release:
+    types: [published]
+
+permissions:
+  contents: read # for checkout
+
+jobs:
+  publish-artifacts:
+    name: Publish / Artifacts
+    uses: playframework/.github/.github/workflows/publish.yml@v3
+    secrets: inherit
+    with:
+      java: 8
+>>>>>>> upstream/2.8.x

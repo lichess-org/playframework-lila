@@ -24,14 +24,6 @@ lazy val RoutesCompilerProject = PlayDevelopmentProject("Routes-Compiler", "dev-
     TwirlKeys.templateFormats := Map("twirl" -> "play.routes.compiler.ScalaFormat")
   )
 
-// lazy val SbtRoutesCompilerProject = PlaySbtProject("Sbt-Routes-Compiler", "dev-mode/routes-compiler")
-//   .enablePlugins(SbtTwirl)
-//   .settings(
-//     target := target.value / "sbt-routes-compiler",
-//     libraryDependencies ++= routesCompilerDependencies(scalaVersion.value),
-//     TwirlKeys.templateFormats := Map("twirl" -> "play.routes.compiler.ScalaFormat")
-//   )
-
 lazy val StreamsProject = PlayCrossBuiltProject("Play-Streams", "core/play-streams")
   .settings(libraryDependencies ++= streamsDependencies)
 
@@ -42,7 +34,7 @@ lazy val PlayProject = PlayCrossBuiltProject("Play", "core/play")
   .settings(
     libraryDependencies ++= runtime(scalaVersion.value) ++ scalacheckDependencies ++ cookieEncodingDependencies :+
       jimfs % Test,
-    (Compile / sourceGenerators) += Def
+    (sourceGenerators in Compile) += Def
       .task(
         PlayVersion(
           version.value,
@@ -50,7 +42,7 @@ lazy val PlayProject = PlayCrossBuiltProject("Play", "core/play")
           sbtVersion.value,
           Dependencies.akkaVersion,
           Dependencies.akkaHttpVersion,
-          (Compile / sourceManaged).value
+          (sourceManaged in Compile).value
         )
       )
       .taskValue
@@ -67,30 +59,12 @@ lazy val PlayNettyServerProject = PlayCrossBuiltProject("Play-Netty-Server", "tr
   .settings(libraryDependencies ++= netty)
   .dependsOn(PlayServerProject)
 
-// lazy val SbtPluginProject = PlaySbtPluginProject("Sbt-Plugin", "dev-mode/sbt-plugin")
-//   .enablePlugins(SbtPlugin)
-//   .settings(
-//     scalaVersion := "2.12.17",
-//     libraryDependencies ++= sbtDependencies((pluginCrossBuild / sbtVersion).value, "2.12.17"),
-//     (Compile / sourceGenerators) += Def.task {
-//       PlayVersion(
-//         version.value,
-//         (PlayProject / scalaVersion).value,
-//         sbtVersion.value,
-//         Dependencies.akkaVersion,
-//         Dependencies.akkaHttpVersion,
-//         (Compile / sourceManaged).value
-//       )
-//     }.taskValue
-//   )
-//   .dependsOn(SbtRoutesCompilerProject, PlayExceptionsProject)
-
 lazy val PlayLogback = PlayCrossBuiltProject("Play-Logback", "core/play-logback")
   .settings(
     libraryDependencies += logback,
-    (Test / parallelExecution) := false,
+    parallelExecution in Test := false,
     // quieten deprecation warnings in tests
-    (Test / scalacOptions) := (Test / scalacOptions).value.diff(Seq("-deprecation"))
+    scalacOptions in Test := (scalacOptions in Test).value.diff(Seq("-deprecation"))
   )
   .dependsOn(PlayProject)
 
@@ -100,7 +74,7 @@ lazy val PlayConfiguration = PlayCrossBuiltProject("Play-Configuration", "core/p
     (Test / parallelExecution) := false,
     mimaPreviousArtifacts      := Set.empty,
     // quieten deprecation warnings in tests
-    (Test / scalacOptions) := (Test / scalacOptions).value.diff(Seq("-deprecation"))
+    (scalacOptions in Test) := (scalacOptions in Test).value.diff(Seq("-deprecation"))
   )
   .dependsOn(PlayExceptionsProject)
 
@@ -129,10 +103,10 @@ lazy val PlayFramework = Project("Play-Framework", file("."))
   .enablePlugins(PlayRootProject)
   .settings(
     playCommonSettings,
-    scalaVersion                    := (PlayProject / scalaVersion).value,
+    scalaVersion                    := (scalaVersion in PlayProject).value,
     crossScalaVersions              := Nil,
-    (ThisBuild / playBuildRepoName) := "playframework",
-    (Global / concurrentRestrictions) += Tags.limit(Tags.Test, 1),
+    (playBuildRepoName in ThisBuild) := "playframework",
+    (concurrentRestrictions in Global) += Tags.limit(Tags.Test, 1),
     libraryDependencies ++= runtime(scalaVersion.value),
     mimaReportBinaryIssues := (()),
     commands += Commands.quickPublish,

@@ -1,7 +1,0 @@
-# Useful so we know if the CI jobs use the expected versions
-# ==========================================================
-
-> crossScalaVersions
-> scalaVersion
-> crossSbtVersions
-> sbtVersion

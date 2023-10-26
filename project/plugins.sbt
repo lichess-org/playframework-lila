@@ -8,8 +8,8 @@ enablePlugins(BuildInfoPlugin)
 
 val mima              = "1.1.1"
 val scalafmt          = "2.4.6"
-val sbtTwirl: String  = sys.props.getOrElse("twirl.version", "1.6.0-M7") // sync with documentation/project/plugins.sbt
-val interplay: String = sys.props.getOrElse("interplay.version", "3.1.0-RC6")
+val sbtTwirl: String  = sys.props.getOrElse("twirl.version", "1.6.1") // sync with documentation/project/plugins.sbt
+val interplay: String = sys.props.getOrElse("interplay.version", "3.1.7")
 
 buildInfoKeys := Seq[BuildInfoKey](
   "sbtTwirlVersion" -> sbtTwirl,

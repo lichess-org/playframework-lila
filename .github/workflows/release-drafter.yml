@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: Release Drafter
 
 on:
@@ -21,3 +22,29 @@ jobs:
           commitish: ${{ env.GITHUB_REF_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+||||||| ecd2a32c0b
+=======
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - 2.8.x
+
+permissions: {}
+jobs:
+  update_release_draft:
+    permissions:
+      pull-requests: write # to add label to PR (release-drafter/release-drafter)
+      contents: write # to create a github release (release-drafter/release-drafter)
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v5
+        with:
+          name: "Play $RESOLVED_VERSION"
+          config-name: release-drafts/increasing-patch-version.yml # located in .github/ in the default branch within this or the .github repo
+          commitish: ${{ env.GITHUB_REF_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+>>>>>>> upstream/2.8.x

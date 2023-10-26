@@ -8,10 +8,10 @@ import Keys._
 import buildinfo.BuildInfo
 
 object Dependencies {
-  val akkaVersion: String = sys.props.getOrElse("akka.version", "2.6.20")
+  val akkaVersion: String = sys.props.getOrElse("akka.version", "2.6.21")
   val akkaHttpVersion     = sys.props.getOrElse("akka.http.version", "10.2.10")
 
-  val playJsonVersion = "2.10.0-RC9"
+  val playJsonVersion = "2.10.1"
 
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
@@ -54,20 +54,15 @@ object Dependencies {
   val slf4jApi     = "org.slf4j" % "slf4j-api"    % slf4jVersion
   val slf4jSimple  = "org.slf4j" % "slf4j-simple" % slf4jVersion
 
-  val guava       = "com.google.guava"         % "guava"        % "31.1-jre"
+  val guava       = "com.google.guava"         % "guava"        % "32.1.3-jre"
   val findBugs    = "com.google.code.findbugs" % "jsr305"       % "3.0.2" // Needed by guava
   val mockitoAll  = "org.mockito"              % "mockito-core" % "4.11.0"
   val javaxInject = "javax.inject"             % "javax.inject" % "1"
 
   def scalaParserCombinators(scalaVersion: String) =
-    Seq("org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1")
+    Seq("org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0")
 
   val springFrameworkVersion = "5.3.27"
-
-  // val joda = Seq(
-  //   "joda-time" % "joda-time"    % "2.12.2",
-  //   "org.joda"  % "joda-convert" % "2.2.3"
-  // )
 
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
   val junit          = "junit"          % "junit"           % "4.13.2"
@@ -86,10 +81,10 @@ object Dependencies {
         javaxInject,
       ) ++ scalaParserCombinators(scalaVersion) ++ specs2Deps.map(_ % Test)
 
-  val nettyVersion = "4.1.93.Final"
+  val nettyVersion = "4.1.100.Final"
 
   val netty = Seq(
-    "com.typesafe.netty" % "netty-reactive-streams-http"  % "2.0.8",
+    "com.typesafe.netty" % "netty-reactive-streams-http"  % "2.0.10",
     ("io.netty"          % "netty-transport-native-epoll" % nettyVersion).classifier("linux-x86_64")
   ) ++ specs2Deps.map(_ % Test)
 
@@ -138,13 +133,13 @@ object Dependencies {
     logback % Test
   )
 
-  val caffeineVersion = "3.1.6"
+  val caffeineVersion = "3.1.8"
   val playCaffeineDeps = Seq(
     "com.github.ben-manes.caffeine" % "caffeine" % caffeineVersion,
     "com.github.ben-manes.caffeine" % "jcache"   % caffeineVersion
   )
 
-  val playWsStandaloneVersion = "2.2.0-M4"
+  val playWsStandaloneVersion = "3.0.0"
   val playWsDeps = Seq(
     "com.typesafe.play" %% "play-ws-standalone"      % playWsStandaloneVersion,
     "com.typesafe.play" %% "play-ws-standalone-xml"  % playWsStandaloneVersion,

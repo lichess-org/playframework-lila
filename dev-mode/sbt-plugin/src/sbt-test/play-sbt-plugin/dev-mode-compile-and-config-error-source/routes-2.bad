@@ -1,3 +1,0 @@
-GET              /           controllers.HomeController.index()
-# Action method foo() does not exist:
-GET              /           controllers.HomeController.foo()
