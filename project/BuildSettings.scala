@@ -18,7 +18,7 @@ import scala.util.control.NonFatal
 
 object BuildSettings {
 
-  val playVersion = "2.8.18-lila_3.15"
+  val playVersion = "2.8.18-lila_3.16"
 
   def evictionSettings: Seq[Setting[_]] = Seq(
     // This avoids a lot of dependency resolution warnings to be showed.
@@ -41,7 +41,7 @@ object BuildSettings {
     ),
     evictionSettings,
     ivyConfigurations ++= Seq(SourcesApplication),
-    javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation", "--release", "21"),
+    javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation"),
     (Compile / doc / scalacOptions) := Seq("-no-java-comments"),
     (Test / fork)                   := true,
     (Test / parallelExecution)      := false,
