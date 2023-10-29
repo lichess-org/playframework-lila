@@ -11,8 +11,6 @@ object Dependencies {
   val akkaVersion: String = sys.props.getOrElse("akka.version", "2.6.21")
   val akkaHttpVersion     = sys.props.getOrElse("akka.http.version", "10.2.10")
 
-  val playJsonVersion = "2.10.1"
-
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
   val specs2Version = "4.20.0"
@@ -47,7 +45,7 @@ object Dependencies {
     "com.fasterxml.jackson.module"    %% "jackson-module-scala",
   ).map(_ % jacksonVersion)
 
-  val playJson = "com.typesafe.play" %% "play-json" % playJsonVersion
+  val playJson = "org.playframework" %% "play-json" % "3.0.0"
 
   val slf4jVersion = "2.0.7"
   val slf4j        = Seq("slf4j-api", "jul-to-slf4j", "jcl-over-slf4j").map("org.slf4j" % _ % slf4jVersion)
