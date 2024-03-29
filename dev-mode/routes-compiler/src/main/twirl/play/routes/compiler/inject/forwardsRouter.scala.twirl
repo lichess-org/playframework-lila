@@ -28,13 +28,13 @@ final class Routes(
 @for((dep, index) <- rules.zipWithIndex){@dep.rule match {
 case route @ Route(verb, path, call, comments, modifiers) => {
   @markLines(route)
-  private[this] val @routeIdentifier(route, pathIndex, index) = Route("@verb.value",
+  private val @routeIdentifier(route, pathIndex, index) = Route("@verb.value",
     PathPattern(List(@path.parts.map(_.toString).mkString(", ")))
   )
 }
 case include @ Include(path, router) => {
   @markLines(include)
-  private[this] val prefixed_@(dep.ident)_@(pathIndex * 1000 + index) = Include(@(dep.ident))
+  private val prefixed_@(dep.ident)_@(pathIndex * 1000 + index) = Include(@(dep.ident))
 }}}}
 
   val pathRouters: Map[String, PartialFunction[RequestHeader, Handler]] = Map(
@@ -60,7 +60,7 @@ case include @ Include(path, router) => {
   )
 
   val routes: PartialFunction[RequestHeader, Handler] =
-    @if(pathRules.isEmpty) { Map.empty } else {@ob 
+    @if(pathRules.isEmpty) { Map.empty } else {@ob
       val emptyPathRouter = pathRouters get ""
       Function unlift @ob (req: RequestHeader) =>
         pathRouters.get(req.path.drop(1).takeWhile(_ != '/')).orElse(emptyPathRouter).flatMap(_ lift req)
