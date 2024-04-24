@@ -25,6 +25,10 @@ object RoutesKeys {
   val routes              = TaskKey[Seq[File]]("playRoutes", "Compile the routes files")
   val routesImport        = SettingKey[Seq[String]]("playRoutesImports", "Imports for the router")
   val routesGenerator     = SettingKey[RoutesGenerator]("playRoutesGenerator", "The routes generator")
+  val generateForwardRouter = SettingKey[Boolean](
+    "playGenerateForwardRouter",
+    "Whether the forward router should be generated. Setting to false may reduce compile times if it's not needed."
+  )
   val generateReverseRouter = SettingKey[Boolean](
     "playGenerateReverseRouter",
     "Whether the reverse router should be generated. Setting to false may reduce compile times if it's not needed."
@@ -72,6 +76,7 @@ object RoutesCompiler extends AutoPlugin {
     routes / sources := Nil,
     routesCompilerTasks := Def.taskDyn {
       val generateReverseRouterValue  = generateReverseRouter.value
+      val generateForwardRouterValue  = generateForwardRouter.value
       val namespaceReverseRouterValue = namespaceReverseRouter.value
       val sourcesInRoutes             = (routes / sources).value
       val routesImportValue           = routesImport.value
@@ -94,7 +99,7 @@ object RoutesCompiler extends AutoPlugin {
               RoutesCompilerTask(
                 file,
                 routesImportValue,
-                forwardsRouter = true,
+                forwardsRouter = generateForwardRouterValue,
                 reverseRouter = generateReverseRouterValue,
                 namespaceReverseRouter = namespaceReverseRouterValue
               )
