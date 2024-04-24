@@ -1,6 +1,6 @@
 @import play.routes.compiler._
 @import play.routes.compiler.templates._
-@(sourceInfo: RoutesSourceInfo, pkg: Option[String], imports: Seq[String], packageName: Option[String], routes: Seq[Route], namespaceReverseRouter: Boolean, useInjector: Route => Boolean)
+@(sourceInfo: RoutesSourceInfo, pkg: Option[String], imports: Seq[String], routes: Seq[Route], namespaceReverseRouter: Boolean, useInjector: Route => Boolean)
 // @@GENERATOR:play-routes-compiler
 // @@SOURCE:@sourceInfo.source
 
@@ -11,7 +11,8 @@ import play.core.routing.{dynamicString, queryString}
 import @if(!i.startsWith("_root_.")){_root_.}@i}
 
 @markLines(routes: _*)
-@{packageName.map("package " + _ + ".routes ").getOrElse("")}@if(packageName.isDefined){@ob}
+package routes @ob
+
 @for((controller, routes) <- groupRoutesByController(routes)) {
   @markLines(routes: _*)
   object @(controller.replace(".", "_")) @ob
@@ -41,5 +42,4 @@ import @if(!i.startsWith("_root_.")){_root_.}@i}
   }}}
   @cb
 }
-
-@if(packageName.isDefined){@cb}
+@cb

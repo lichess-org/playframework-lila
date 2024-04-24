@@ -183,17 +183,13 @@ object InjectedRoutesGenerator extends RoutesGenerator {
   ) = {
     routes.groupBy(_.call.packageName.map(_.stripPrefix("_root_."))).map {
       case (pn, routes) =>
-        val packageName = namespace
-          .filter(_ => namespaceReverseRouter)
-          .map(_ + pn.map("." + _).getOrElse(""))
-          .orElse(pn.orElse(namespace))
+        val packageName = pn.map(_.replace("controllers", "").dropWhile('.' == _))
         (packageName.map(_.replace(".", "/") + "/").getOrElse("") + ReverseRoutesFile) ->
           static.twirl
             .reverseRouter(
               sourceInfo,
               namespace,
               additionalImports,
-              packageName,
               routes,
               namespaceReverseRouter,
               _ => true
