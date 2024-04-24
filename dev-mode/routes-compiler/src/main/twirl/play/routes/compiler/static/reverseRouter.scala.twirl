@@ -4,7 +4,8 @@
 // @@GENERATOR:play-routes-compiler
 // @@SOURCE:@sourceInfo.source
 
-import play.api.mvc.Call
+import play.api.mvc.{Call, PathBindable, QueryStringBindable}
+import play.core.routing.{dynamicString, queryString}
 
 @for(i <- imports) {
 import @if(!i.startsWith("_root_.")){_root_.}@i}

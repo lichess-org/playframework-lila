@@ -316,9 +316,12 @@ package object templates {
                 .find(_.name == name)
                 .map { param =>
                   val paramName: String = paramNameOnQueryString(param.name)
-                  val unbound = s"""implicitly[play.api.mvc.PathBindable[${param.typeName}]]""" +
-                    s""".unbind("$paramName", ${safeKeyword(localNames.getOrElse(param.name, param.name))})"""
-                  if (encode) s"play.core.routing.dynamicString($unbound)" else unbound
+                  val unbound =
+                    if (param.typeName == "String") param.name
+                    else
+                      s"""implicitly[PathBindable[${param.typeName}]]""" +
+                        s""".unbind("$paramName", ${safeKeyword(localNames.getOrElse(param.name, param.name))})"""
+                  if (encode) s"dynamicString($unbound)" else unbound
                 }
                 .getOrElse {
                   throw new Error("missing key " + name)
@@ -338,10 +341,10 @@ package object templates {
     val callQueryString = if (queryParams.isEmpty) {
       ""
     } else {
-      """ + play.core.routing.queryString(List(%s))""".format(
+      """ + queryString(List(%s))""".format(
         queryParams
           .map { p =>
-            ("""implicitly[play.api.mvc.QueryStringBindable[""" + p.typeName + """]].unbind("""" + paramNameOnQueryString(
+            ("""implicitly[QueryStringBindable[""" + p.typeName + """]].unbind("""" + paramNameOnQueryString(
               p.name
             ) + """", """ + safeKeyword(localNames.getOrElse(p.name, p.name)) + """)""") -> p
           }
