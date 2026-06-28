@@ -33,8 +33,8 @@ import play.api.mvc.Codec
  *   foo({...});
  * }}}
  *
- * Another example, showing how to serve either JSON or JSONP from the same action, according to the presence of
- * a “callback” parameter in the query string:
+ * Another example, showing how to serve either JSON or JSONP from the same action, according to the presence
+ * of a “callback” parameter in the query string:
  * {{{
  *   def myService = Action { implicit request =>
  *     val json = ...
@@ -47,12 +47,10 @@ import play.api.mvc.Codec
  */
 case class Jsonp(padding: String, json: JsValue)
 
-object Jsonp {
-  implicit def contentTypeOf_Jsonp(using codec: Codec): ContentTypeOf[Jsonp] = {
+object Jsonp:
+  implicit def contentTypeOf_Jsonp(using codec: Codec): ContentTypeOf[Jsonp] =
     ContentTypeOf[Jsonp](Some(ContentTypes.JAVASCRIPT))
-  }
 
   implicit def writeableOf_Jsonp(using codec: Codec): Writeable[Jsonp] = Writeable { jsonp =>
     codec.encode("%s(%s);".format(jsonp.padding, jsonp.json))
   }
-}

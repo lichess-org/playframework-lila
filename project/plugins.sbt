@@ -8,14 +8,12 @@ enablePlugins(BuildInfoPlugin)
 val sbtTwirl: String = "1.6.1"
 
 buildInfoKeys := Seq[BuildInfoKey](
-  "sbtTwirlVersion" -> sbtTwirl,
+  "sbtTwirlVersion" -> sbtTwirl
 )
 
 logLevel := Level.Warn
 
 scalacOptions ++= Seq("-deprecation", "-language:_")
 
-addSbtPlugin("com.typesafe.play" % "sbt-twirl"    % sbtTwirl)
-addSbtPlugin("org.scalameta"     % "sbt-scalafmt" % "2.6.1")
-
-
+addSbtPlugin("com.typesafe.play" % "sbt-twirl" % sbtTwirl)
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.1")

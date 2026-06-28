@@ -12,11 +12,10 @@ import scala.concurrent.ExecutionContextExecutor
 /**
  * This class defines a custom execution context that delegates to an akka.actor.ActorSystem.
  *
- * It is very useful for situations in which the default execution context should not
- * be used, for example if a database or blocking I/O is being used.
+ * It is very useful for situations in which the default execution context should not be used, for example if
+ * a database or blocking I/O is being used.
  *
- * To define a custom context, subclass CustomExecutionContext with the dispatcher
- * name:
+ * To define a custom context, subclass CustomExecutionContext with the dispatcher name:
  *
  * {{{
  * @Singleton
@@ -38,16 +37,19 @@ import scala.concurrent.ExecutionContextExecutor
  * }
  * }}}
  *
- * @see <a href="http://doc.akka.io/docs/akka/2.6/scala/dispatchers.html">Dispatchers</a>
- * @see <a href="https://www.playframework.com/documentation/latest/ThreadPools">Thread Pools</a>
+ * @see
+ *   <a href="http://doc.akka.io/docs/akka/2.6/scala/dispatchers.html">Dispatchers</a>
+ * @see
+ *   <a href="https://www.playframework.com/documentation/latest/ThreadPools">Thread Pools</a>
  *
- * @param system the actor system
- * @param name   the full path of the dispatcher name in Typesafe Config.
+ * @param system
+ *   the actor system
+ * @param name
+ *   the full path of the dispatcher name in Typesafe Config.
  */
-abstract class CustomExecutionContext(system: ActorSystem, name: String) extends ExecutionContextExecutor {
+abstract class CustomExecutionContext(system: ActorSystem, name: String) extends ExecutionContextExecutor:
   private val dispatcher: MessageDispatcher = system.dispatchers.lookup(name)
 
   override def execute(command: Runnable) = dispatcher.execute(command)
 
   override def reportFailure(cause: Throwable) = dispatcher.reportFailure(cause)
-}

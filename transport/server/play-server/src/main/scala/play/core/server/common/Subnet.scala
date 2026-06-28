@@ -8,19 +8,18 @@ import java.net.InetAddress
 
 import com.google.common.net.InetAddresses
 
-private[common] case class Subnet(ip: InetAddress, cidr: Option[Int] = None) {
+private[common] case class Subnet(ip: InetAddress, cidr: Option[Int] = None):
   private def remainderOfMask =
     for
-      m      <- cidr
+      m <- cidr
       result <- maskBits(m % 8)
     yield result
 
-  private def maskBits(leadingBits: Int) = leadingBits match {
+  private def maskBits(leadingBits: Int) = leadingBits match
     case i if i < 1 || i > 7 => None
-    case i                   => Some(~(0xff >>> leadingBits))
-  }
+    case i => Some(~(0xff >>> leadingBits))
 
-  def isInRange(otherIp: InetAddress) = {
+  def isInRange(otherIp: InetAddress) =
     val mask = cidr.getOrElse(ip.getAddress.length * 8)
     ip.getClass == otherIp.getClass &&
     ip.getAddress.take(mask / 8).toList.equals(otherIp.getAddress.take(mask / 8).toList) &&
@@ -29,15 +28,11 @@ private[common] case class Subnet(ip: InetAddress, cidr: Option[Int] = None) {
       b <- otherIp.getAddress.drop(mask / 8).headOption
       c <- remainderOfMask
     yield (a & c) == (b & c)).getOrElse(true)
-  }
-}
 
-private[common] object Subnet {
-  def apply(s: String): Subnet = s.split("/") match {
+private[common] object Subnet:
+  def apply(s: String): Subnet = s.split("/") match
     case Array(ip, subnet) => Subnet(InetAddresses.forString(ip), Some(subnet.toInt))
-    case Array(ip)         => Subnet(InetAddresses.forString(ip))
-    case _                 => throw new IllegalArgumentException(s"$s contains more than one '/'.")
-  }
+    case Array(ip) => Subnet(InetAddresses.forString(ip))
+    case _ => throw new IllegalArgumentException(s"$s contains more than one '/'.")
 
   def toString(b: Int) = Integer.toBinaryString(b)
-}

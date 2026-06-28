@@ -27,24 +27,21 @@ import play.api.http.Status.*
 // considering that Long.MAX_VALUE is 9223372036854775807 which
 // would be enough to represent Petabytes files. Also, consider
 // that Files.size(...) returns a long value.
-private[mvc] case class ByteRange(start: Long, end: Long) extends Ordered[ByteRange] {
-  override def compare(that: ByteRange): Int = {
+private[mvc] case class ByteRange(start: Long, end: Long) extends Ordered[ByteRange]:
+  override def compare(that: ByteRange): Int =
     val startCompare = this.start - that.start
     if startCompare != 0 then startCompare.toInt
     else (this.end - that.end).toInt
-  }
 
   def length: Long = this.end - this.start
 
-  def distance(other: ByteRange): Long = {
+  def distance(other: ByteRange): Long =
     mergedEnd(other) - mergedStart(other) - (length + other.length)
-  }
 
   private def mergedStart(other: ByteRange) = math.min(start, other.start)
-  private def mergedEnd(other: ByteRange)   = math.max(end, other.end)
-}
+  private def mergedEnd(other: ByteRange) = math.max(end, other.end)
 
-private[mvc] trait Range extends Ordered[Range] {
+private[mvc] trait Range extends Ordered[Range]:
   def start: Option[Long]
 
   def end: Option[Long]
@@ -60,7 +57,8 @@ private[mvc] trait Range extends Ordered[Range] {
 
   def merge(other: Range): Range
 
-  def length: Option[Long] = getEntityLength.map(entityLen => byteRange.length + 1) // the range end is inclusive
+  def length: Option[Long] =
+    getEntityLength.map(entityLen => byteRange.length + 1) // the range end is inclusive
 
   // RFC 7233:
   // 1. A byte-range-spec is invalid if the last-byte-pos value is present
@@ -68,25 +66,22 @@ private[mvc] trait Range extends Ordered[Range] {
   // 2. For byte ranges, failing to overlap the current extent means that the
   //    first-byte-pos of all of the byte-range-spec values were greater than
   //    the current length of the selected representation.
-  def isValid: Boolean = getEntityLength match {
+  def isValid: Boolean = getEntityLength match
     case Some(entityLen) =>
       val br = this.byteRange
       br.start <= br.end && br.start < entityLen
     case None =>
       val br = this.byteRange
       br.start <= br.end
-  }
 
-  override def toString: String = {
+  override def toString: String =
     val br = this.byteRange
     s"${br.start}-${br.end}"
-  }
 
   override def compare(that: Range): Int = this.byteRange.compare(that.byteRange)
-}
 
 private[mvc] case class WithEntityLengthRange(entityLength: Long, start: Option[Long], end: Option[Long])
-    extends Range {
+    extends Range:
   override def getEntityLength = Some(entityLength)
 
   // Rules according to RFC 7233:
@@ -98,49 +93,41 @@ private[mvc] case class WithEntityLengthRange(entityLength: Long, start: Option[
   // 2. A client can request the last N bytes of the selected representation
   //    using a suffix-byte-range-spec. If the selected representation is shorter
   //    than the specified suffix-length, the entire representation is used.
-  lazy val byteRange: ByteRange = {
-    (start, end) match {
+  lazy val byteRange: ByteRange =
+    (start, end) match
       case (Some(_start), Some(_end)) => ByteRange(_start, math.min(_end, entityLength - 1))
-      case (Some(_start), None)       => ByteRange(_start, entityLength - 1)
-      case (None, Some(_end))         => ByteRange(math.max(0, entityLength - _end), entityLength - 1)
-      case (None, None)               => ByteRange(0, 0)
-    }
-  }
+      case (Some(_start), None) => ByteRange(_start, entityLength - 1)
+      case (None, Some(_end)) => ByteRange(math.max(0, entityLength - _end), entityLength - 1)
+      case (None, None) => ByteRange(0, 0)
 
-  def merge(other: Range): Range = {
-    val thisByteRange  = this.byteRange
+  def merge(other: Range): Range =
+    val thisByteRange = this.byteRange
     val otherByteRange = other.byteRange
     WithEntityLengthRange(
       entityLength,
       Some(math.min(thisByteRange.start, otherByteRange.start)),
       Some(math.max(thisByteRange.end, otherByteRange.end))
     )
-  }
-}
 
-private[mvc] case class WithoutEntityLengthRange(start: Option[Long], end: Option[Long]) extends Range {
+private[mvc] case class WithoutEntityLengthRange(start: Option[Long], end: Option[Long]) extends Range:
   override def getEntityLength: Option[Long] = None
 
   override def isValid: Boolean = start.nonEmpty && end.nonEmpty && super.isValid
 
-  override def merge(other: Range): Range = {
-    val thisByteRange  = this.byteRange
+  override def merge(other: Range): Range =
+    val thisByteRange = this.byteRange
     val otherByteRange = other.byteRange
     WithoutEntityLengthRange(
       Some(math.min(thisByteRange.start, otherByteRange.start)),
       Some(math.max(thisByteRange.end, otherByteRange.end))
     )
-  }
 
-  override def byteRange: ByteRange = {
-    (start, end) match {
+  override def byteRange: ByteRange =
+    (start, end) match
       case (Some(_start), Some(_end)) => ByteRange(_start, _end)
-      case (_, _)                     => ByteRange(0, 0)
-    }
-  }
-}
+      case (_, _) => ByteRange(0, 0)
 
-private[mvc] object Range {
+private[mvc] object Range:
   // Since the typical overhead between parts of a multipart/byteranges
   // payload is around 80 bytes, depending on the selected representation's
   // media type and the chosen boundary parameter length, it can be less
@@ -157,10 +144,10 @@ private[mvc] object Range {
 
   val RangePattern = """(\d*)-(\d*)""".r
 
-  def apply(entityLength: Option[Long], range: String): Option[Range] = range match {
+  def apply(entityLength: Option[Long], range: String): Option[Range] = range match
     case RangePattern(first, last) =>
       val firstByte = asOptionLong(first)
-      val lastByte  = asOptionLong(last)
+      val lastByte = asOptionLong(last)
 
       if (firstByte ++ lastByte).isEmpty then return None // unsatisfiable range
 
@@ -168,12 +155,10 @@ private[mvc] object Range {
         .map(entityLen => WithEntityLengthRange(entityLen, firstByte, lastByte))
         .orElse(Some(WithoutEntityLengthRange(firstByte, lastByte)))
     case _ => None // unsatisfiable range
-  }
 
   private def asOptionLong(string: String) = if string.isEmpty then None else Some(string.toLong)
-}
 
-private[mvc] trait RangeSet {
+private[mvc] trait RangeSet:
   def ranges: Seq[Option[Range]]
 
   def entityLength: Option[Long]
@@ -199,58 +184,53 @@ private[mvc] trait RangeSet {
   //    byte-range-spec appeared in the received Range header field,
   //    excluding those ranges that were deemed unsatisfiable or that were
   //    coalesced into other ranges.
-  def normalize: RangeSet = {
-    if isValid then {
-      flattenRanges.sorted match {
+  def normalize: RangeSet =
+    if isValid then
+      flattenRanges.sorted match
         case seq if seq.isEmpty => UnsatisfiableRangeSet(entityLength)
-        case seq                => SatisfiableRangeSet(entityLength, ranges = coalesce(seq.toList).map(Option.apply))
-      }
-    } else {
-      UnsatisfiableRangeSet(entityLength)
-    }
-  }
+        case seq => SatisfiableRangeSet(entityLength, ranges = coalesce(seq.toList).map(Option.apply))
+    else UnsatisfiableRangeSet(entityLength)
 
-  private def coalesce(rangeSeq: List[Range]): List[Range] = {
+  private def coalesce(rangeSeq: List[Range]): List[Range] =
     rangeSeq.foldLeft(List.empty[Range]) { (coalesced, current) =>
       val (mergeCandidates, otherCandidates) =
         coalesced.partition(_.byteRange.distance(current.byteRange) <= Range.minimumDistance)
       val merged = mergeCandidates.foldLeft(current)(_.merge(_))
       otherCandidates :+ merged
     }
-  }
 
-  def first: Range = ranges.head match {
+  def first: Range = ranges.head match
     case Some(r) => r
     case None =>
       entityLength
-        .map(entityLen => WithEntityLengthRange(entityLength = entityLen, start = Some(0), end = Some(entityLen)))
+        .map(entityLen =>
+          WithEntityLengthRange(entityLength = entityLen, start = Some(0), end = Some(entityLen))
+        )
         .getOrElse(WithoutEntityLengthRange(start = Some(0), end = None))
-  }
 
   private def isValid: Boolean = !flattenRanges.exists(!_.isValid)
 
   private def flattenRanges = ranges.filter(_.isDefined).flatten
 
-  override def toString = {
+  override def toString =
     val entityLen = entityLength.map(_.toString).getOrElse("*")
     s"bytes ${flattenRanges.mkString(",")}/$entityLen"
-  }
-}
 
-private[mvc] abstract class DefaultRangeSet(entityLength: Option[Long]) extends RangeSet {
+private[mvc] abstract class DefaultRangeSet(entityLength: Option[Long]) extends RangeSet:
   override def ranges: Seq[Option[Range]] = Seq.empty
-}
 
-private[mvc] case class SatisfiableRangeSet(entityLength: Option[Long], override val ranges: Seq[Option[Range]])
-    extends DefaultRangeSet(entityLength)
+private[mvc] case class SatisfiableRangeSet(
+    entityLength: Option[Long],
+    override val ranges: Seq[Option[Range]]
+) extends DefaultRangeSet(entityLength)
 
-private[mvc] case class UnsatisfiableRangeSet(entityLength: Option[Long]) extends DefaultRangeSet(entityLength) {
+private[mvc] case class UnsatisfiableRangeSet(entityLength: Option[Long])
+    extends DefaultRangeSet(entityLength):
   override def toString: String = s"""bytes */${entityLength.getOrElse("*")}"""
-}
 
 private[mvc] case class NoHeaderRangeSet(entityLength: Option[Long]) extends DefaultRangeSet(entityLength)
 
-private[mvc] object RangeSet {
+private[mvc] object RangeSet:
   // Play accepts only bytes as the range unit. According to RFC 7233:
   //
   //     An origin server MUST ignore a Range header field that contains a
@@ -260,58 +240,61 @@ private[mvc] object RangeSet {
 
   val WithoutEntityLengthRangeSetPattern = """^bytes=([0-9]+-[0-9]+,?)+""".r
 
-  def apply(entityLength: Option[Long], rangeHeader: Option[String]): RangeSet = rangeHeader match {
+  def apply(entityLength: Option[Long], rangeHeader: Option[String]): RangeSet = rangeHeader match
     case Some(header) =>
       entityLength
-        .map(entityLen => {
-          header match {
+        .map(entityLen =>
+          header match
             case WithEntityLengthRangeSetPattern() => headerToRanges(entityLength, header)
-            case _                                 => NoHeaderRangeSet(entityLength)
-          }
-        })
+            case _ => NoHeaderRangeSet(entityLength)
+        )
         .getOrElse(
-          header match {
+          header match
             case WithoutEntityLengthRangeSetPattern(_) => headerToRanges(entityLength, header)
-            case _                                     => NoHeaderRangeSet(entityLength)
-          }
+            case _ => NoHeaderRangeSet(entityLength)
         )
         .normalize
     case None => NoHeaderRangeSet(entityLength)
-  }
 
-  private def headerToRanges(entityLength: Option[Long], header: String): RangeSet = {
+  private def headerToRanges(entityLength: Option[Long], header: String): RangeSet =
     val ranges = header.split("=")(1).split(",").map { r => Range(entityLength, r) }
     SatisfiableRangeSet(entityLength, ranges.toSeq)
-  }
-}
 
-object RangeResult {
+object RangeResult:
 
   /**
    * Stream inputStream using range headers.
    *
-   * @param stream The input stream.
-   * @param rangeHeader The HTTP Range header from user's request.
-   * @param fileName The file name for the HTTP Content-Disposition header as attachment attribute.
-   * @param contentType The HTTP Content Type header for the response.
+   * @param stream
+   *   The input stream.
+   * @param rangeHeader
+   *   The HTTP Range header from user's request.
+   * @param fileName
+   *   The file name for the HTTP Content-Disposition header as attachment attribute.
+   * @param contentType
+   *   The HTTP Content Type header for the response.
    */
   def ofStream(
       stream: java.io.InputStream,
       rangeHeader: Option[String],
       fileName: String,
       contentType: Option[String]
-  ): Result = {
+  ): Result =
     ofSource(None, StreamConverters.fromInputStream(() => stream), rangeHeader, Option(fileName), contentType)
-  }
 
   /**
    * Stream inputStream using range headers.
    *
-   * @param entityLength The entity length
-   * @param stream The input stream.
-   * @param rangeHeader The HTTP Range header from user's request.
-   * @param fileName The file name for the HTTP Content-Disposition header as attachment attribute.
-   * @param contentType The HTTP Content Type header for the response.
+   * @param entityLength
+   *   The entity length
+   * @param stream
+   *   The input stream.
+   * @param rangeHeader
+   *   The HTTP Range header from user's request.
+   * @param fileName
+   *   The file name for the HTTP Content-Disposition header as attachment attribute.
+   * @param contentType
+   *   The HTTP Content Type header for the response.
    */
   def ofStream(
       entityLength: Long,
@@ -319,62 +302,82 @@ object RangeResult {
       rangeHeader: Option[String],
       fileName: String,
       contentType: Option[String]
-  ): Result = {
-    ofSource(entityLength, StreamConverters.fromInputStream(() => stream), rangeHeader, Option(fileName), contentType)
-  }
+  ): Result =
+    ofSource(
+      entityLength,
+      StreamConverters.fromInputStream(() => stream),
+      rangeHeader,
+      Option(fileName),
+      contentType
+    )
 
   /**
    * Stream path using range headers.
    *
-   * @param path The path.
-   * @param rangeHeader The HTTP Range header from user's request.
-   * @param contentType The HTTP Content Type header for the response.
+   * @param path
+   *   The path.
+   * @param rangeHeader
+   *   The HTTP Range header from user's request.
+   * @param contentType
+   *   The HTTP Content Type header for the response.
    */
-  def ofPath(path: java.nio.file.Path, rangeHeader: Option[String], contentType: Option[String]): Result = {
+  def ofPath(path: java.nio.file.Path, rangeHeader: Option[String], contentType: Option[String]): Result =
     ofPath(path, rangeHeader, path.getFileName.toString, contentType)
-  }
 
   /**
    * Stream path using range headers.
    *
-   * @param path The path.
-   * @param rangeHeader The HTTP Range header from user's request.
-   * @param fileName The file name for the HTTP Content-Disposition header as attachment attribute.
-   * @param contentType The HTTP Content Type header for the response.
+   * @param path
+   *   The path.
+   * @param rangeHeader
+   *   The HTTP Range header from user's request.
+   * @param fileName
+   *   The file name for the HTTP Content-Disposition header as attachment attribute.
+   * @param contentType
+   *   The HTTP Content Type header for the response.
    */
   def ofPath(
       path: java.nio.file.Path,
       rangeHeader: Option[String],
       fileName: String,
       contentType: Option[String]
-  ): Result = {
+  ): Result =
     // 8192 is the default chunkSize used by Akka Streams
     val source = (start: Long) => (start, FileIO.fromPath(path, chunkSize = 8192, startPosition = start))
     ofSource(Some(Files.size(path)), source, rangeHeader, Option(fileName), contentType)
-  }
 
   /**
    * Stream file using range headers.
    *
-   * @param file The file.
-   * @param rangeHeader The HTTP Range header from user's request.
-   * @param contentType The HTTP Content Type header for the response.
+   * @param file
+   *   The file.
+   * @param rangeHeader
+   *   The HTTP Range header from user's request.
+   * @param contentType
+   *   The HTTP Content Type header for the response.
    */
-  def ofFile(file: java.io.File, rangeHeader: Option[String], contentType: Option[String]): Result = {
+  def ofFile(file: java.io.File, rangeHeader: Option[String], contentType: Option[String]): Result =
     ofFile(file, rangeHeader, file.getName, contentType)
-  }
 
   /**
    * Stream file using range headers.
    *
-   * @param file The file.
-   * @param rangeHeader The HTTP Range header from user's request.
-   * @param fileName The file name for the HTTP Content-Disposition header as attachment attribute.
-   * @param contentType The HTTP Content Type header for the response.
+   * @param file
+   *   The file.
+   * @param rangeHeader
+   *   The HTTP Range header from user's request.
+   * @param fileName
+   *   The file name for the HTTP Content-Disposition header as attachment attribute.
+   * @param contentType
+   *   The HTTP Content Type header for the response.
    */
-  def ofFile(file: java.io.File, rangeHeader: Option[String], fileName: String, contentType: Option[String]): Result = {
+  def ofFile(
+      file: java.io.File,
+      rangeHeader: Option[String],
+      fileName: String,
+      contentType: Option[String]
+  ): Result =
     ofPath(file.toPath, rangeHeader, fileName, contentType)
-  }
 
   def ofSource(
       entityLength: Long,
@@ -382,9 +385,8 @@ object RangeResult {
       rangeHeader: Option[String],
       fileName: Option[String],
       contentType: Option[String]
-  ): Result = {
+  ): Result =
     ofSource(Some(entityLength), source, rangeHeader, fileName, contentType)
-  }
 
   def ofSource(
       entityLength: Option[Long],
@@ -407,8 +409,8 @@ object RangeResult {
       rangeHeader: Option[String],
       fileName: Option[String],
       contentType: Option[String]
-  ): Result = {
-    val commonHeaders = {
+  ): Result =
+    val commonHeaders =
       val buf = Map.newBuilder[String, String]
 
       buf += ACCEPT_RANGES -> "bytes"
@@ -416,12 +418,11 @@ object RangeResult {
       fileName.foreach { f => buf ++= Results.contentDispositionHeader(inline = false, fileName) }
 
       buf.result()
-    }
 
-    RangeSet(entityLength, rangeHeader) match {
+    RangeSet(entityLength, rangeHeader) match
       case rangeSet: SatisfiableRangeSet =>
         val firstRange = rangeSet.first
-        val byteRange  = firstRange.byteRange
+        val byteRange = firstRange.byteRange
 
         val (offset, source) = getSource(byteRange.start)
         // Really the only sensible values for offset are 0 or the requested byteRange,
@@ -458,60 +459,51 @@ object RangeResult {
           )
         )
       case _: NoHeaderRangeSet =>
-        entityLength match {
+        entityLength match
           case Some(entityLen) =>
-            if entityLen > 0 then {
+            if entityLen > 0 then
               val (_, source) = getSource(0L)
               Result(
                 ResponseHeader(status = OK, headers = commonHeaders),
                 HttpEntity.Streamed(source, Some(entityLen), contentType.orElse(Some(ContentTypes.BINARY)))
               )
-            } else {
-              Results.Ok.sendEntity(HttpEntity.Strict(ByteString.empty, contentType))
-            }
+            else Results.Ok.sendEntity(HttpEntity.Strict(ByteString.empty, contentType))
           case None =>
             val (_, source) = getSource(0L)
             Result(
               ResponseHeader(status = OK, headers = commonHeaders),
               HttpEntity.Streamed(source, None, contentType.orElse(Some(ContentTypes.BINARY)))
             )
-        }
-    }
-  }
 
   // See https://github.com/akka/akka-http/blob/main/akka-http-core/src/main/scala/akka/http/impl/util/StreamUtils.scala#L76
-  private def sliceBytesTransformer(start: Long, length: Option[Long]): Flow[ByteString, ByteString, NotUsed] = {
-    val transformer: GraphStage[FlowShape[ByteString, ByteString]] = new GraphStage[FlowShape[ByteString, ByteString]] {
-      val in: Inlet[ByteString]   = Inlet("Slicer.in")
-      val out: Outlet[ByteString] = Outlet("Slicer.out")
+  private def sliceBytesTransformer(
+      start: Long,
+      length: Option[Long]
+  ): Flow[ByteString, ByteString, NotUsed] =
+    val transformer: GraphStage[FlowShape[ByteString, ByteString]] =
+      new GraphStage[FlowShape[ByteString, ByteString]]:
+        val in: Inlet[ByteString] = Inlet("Slicer.in")
+        val out: Outlet[ByteString] = Outlet("Slicer.out")
 
-      override val shape: FlowShape[ByteString, ByteString] = FlowShape.of(in, out)
-      override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
-        new GraphStageLogic(shape) with InHandler with OutHandler {
-          var toSkip: Long    = start
-          var remaining: Long = length.getOrElse(Int.MaxValue)
+        override val shape: FlowShape[ByteString, ByteString] = FlowShape.of(in, out)
+        override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+          new GraphStageLogic(shape) with InHandler with OutHandler:
+            var toSkip: Long = start
+            var remaining: Long = length.getOrElse(Int.MaxValue)
 
-          override def onPush(): Unit = {
-            val element = grab(in)
-            if toSkip >= element.length then
+            override def onPush(): Unit =
+              val element = grab(in)
+              if toSkip >= element.length then pull(in)
+              else
+                val data = element.drop(toSkip.toInt).take(math.min(remaining, Int.MaxValue).toInt)
+                remaining -= data.size
+                push(out, data)
+                if remaining <= 0 then completeStage()
+              toSkip -= element.length
+
+            override def onPull(): Unit =
               pull(in)
-            else {
-              val data = element.drop(toSkip.toInt).take(math.min(remaining, Int.MaxValue).toInt)
-              remaining -= data.size
-              push(out, data)
-              if remaining <= 0 then completeStage()
-            }
-            toSkip -= element.length
-          }
 
-          override def onPull(): Unit = {
-            pull(in)
-          }
-
-          setHandlers(in, out, this)
-        }
-    }
+            setHandlers(in, out, this)
 
     Flow[ByteString].via(transformer).named("sliceBytes")
-  }
-}

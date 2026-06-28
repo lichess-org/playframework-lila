@@ -19,7 +19,7 @@ import play.api.mvc.*
  * GET   /xxx             controllers.Default.error
  * }}}
  */
-class Default @Inject() () extends ControllerHelpers {
+class Default @Inject() () extends ControllerHelpers:
   private val Action = new ActionBuilder.IgnoringBody()(using controllers.Execution.trampoline)
 
   /**
@@ -67,4 +67,3 @@ class Default @Inject() () extends ControllerHelpers {
   def error: Action[AnyContent] = Action {
     InternalServerError
   }
-}

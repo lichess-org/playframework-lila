@@ -12,10 +12,9 @@ import play.api.mvc.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-
 /**
- * Controller that serves static resources from an external folder.
- * It useful in development mode if you want to serve static assets that shouldn't be part of the build process.
+ * Controller that serves static resources from an external folder. It useful in development mode if you want
+ * to serve static assets that shouldn't be part of the build process.
  *
  * Note that this controller IS NOT intended to be used in production mode and can lead to security issues.
  * Therefore it is automatically disabled in production mode.
@@ -29,8 +28,10 @@ import scala.concurrent.Future
  * GET     /assets/\uFEFF*file               controllers.ExternalAssets.at(path="relativeToYourApp", file)
  * }}}
  */
-class ExternalAssets @Inject() (environment: Environment)(using ec: ExecutionContext, fileMimeTypes: FileMimeTypes)
-    extends ControllerHelpers {
+class ExternalAssets @Inject() (environment: Environment)(using
+    ec: ExecutionContext,
+    fileMimeTypes: FileMimeTypes
+) extends ControllerHelpers:
   val AbsolutePath = """^(/|[a-zA-Z]:\\).*""".r
 
   private val Action = new ActionBuilder.IgnoringBody()(using _root_.controllers.Execution.trampoline)
@@ -38,21 +39,20 @@ class ExternalAssets @Inject() (environment: Environment)(using ec: ExecutionCon
   /**
    * Generates an `Action` that serves a static resource from an external folder
    *
-   * @param rootPath the root folder for searching the static resource files such as `"/home/peter/public"`, `C:\external` or `relativeToYourApp`
-   * @param file the file part extracted from the URL
+   * @param rootPath
+   *   the root folder for searching the static resource files such as `"/home/peter/public"`, `C:\external`
+   *   or `relativeToYourApp`
+   * @param file
+   *   the file part extracted from the URL
    */
   def at(rootPath: String, file: String): Action[AnyContent] = Action.async { request =>
     Future {
-      val fileToServe = rootPath match {
+      val fileToServe = rootPath match
         case AbsolutePath(_) => new File(rootPath, file)
-        case _               => new File(environment.getFile(rootPath), file)
-      }
+        case _ => new File(environment.getFile(rootPath), file)
 
-      if fileToServe.exists then {
+      if fileToServe.exists then
         Ok.sendFile(fileToServe, inline = true).withHeaders(CACHE_CONTROL -> "max-age=3600")
-      } else {
-        NotFound
-      }
+      else NotFound
     }
   }
-}

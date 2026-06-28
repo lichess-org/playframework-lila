@@ -4,10 +4,8 @@
 
 package play.core
 
-private[play] object Execution {
+private[play] object Execution:
   def trampoline = play.api.libs.streams.Execution.trampoline
 
-  object Implicits {
+  object Implicits:
     implicit def trampoline: play.api.libs.streams.Execution.trampoline.type = Execution.trampoline
-  }
-}

@@ -21,7 +21,7 @@ import scala.language.postfixOps
 /**
  * Provides generic server behaviour for Play applications.
  */
-trait Server {
+trait Server:
   def mode: Mode
 
   def application: Application
@@ -31,7 +31,8 @@ trait Server {
   /**
    * Get the address of the server.
    *
-   * @return The address of the server.
+   * @return
+   *   The address of the server.
    */
   def mainAddress: java.net.InetSocketAddress
 
@@ -40,7 +41,8 @@ trait Server {
    *
    * This is useful when the port number has been automatically selected (by setting a port number of 0).
    *
-   * @return The HTTP port the server is bound to, if the HTTP connector is enabled.
+   * @return
+   *   The HTTP port the server is bound to, if the HTTP connector is enabled.
    */
   def httpPort: Int = serverEndpoint.port
 
@@ -48,26 +50,24 @@ trait Server {
    * Endpoint information for this server.
    */
   def serverEndpoint: ServerEndpoint
-}
 
 /**
  * Utilities for creating a server that runs around a block of code.
  */
-object Server {
+object Server:
 
   /**
-   * Try to get the handler for a request and return it as a `Right`. If we
-   * can't get the handler for some reason then return a result immediately
-   * as a `Left`. Reasons to return a `Left` value:
+   * Try to get the handler for a request and return it as a `Right`. If we can't get the handler for some
+   * reason then return a result immediately as a `Left`. Reasons to return a `Left` value:
    *
-   * - If there's a "web command" installed that intercepts the request.
-   *   i.e. if there's an error loading the application.
-   * - If an exception is thrown.
+   *   - If there's a "web command" installed that intercepts the request. i.e. if there's an error loading
+   *     the application.
+   *   - If an exception is thrown.
    */
   private[server] def getHandlerFor(
       request: RequestHeader,
-      application: Application,
-  ): (RequestHeader, Handler) = {
+      application: Application
+  ): (RequestHeader, Handler) =
     @inline def handleErrors(
         errorHandler: HttpErrorHandler,
         req: RequestHeader
@@ -92,44 +92,38 @@ object Server {
     } catch {
       handleErrors(application.errorHandler, enrichedRequest)
     }
-  }
 
   /**
    * Create a simple [[Handler]] which sends a [[Result]].
    */
-  private[server] def actionForResult(errorResult: Future[Result]): Handler = {
+  private[server] def actionForResult(errorResult: Future[Result]): Handler =
     EssentialAction(_ => Accumulator.done(errorResult))
-  }
 
   /**
-   * Parses the config setting `infinite` as `Long.MaxValue` otherwise uses Config's built-in
-   * parsing of byte values.
+   * Parses the config setting `infinite` as `Long.MaxValue` otherwise uses Config's built-in parsing of byte
+   * values.
    */
   private[server] def getPossiblyInfiniteBytes(
       config: Config,
       path: String,
       deprecatedPath: String = """"""""
-  ): Long = {
-    Configuration(config).getDeprecated[String](path, deprecatedPath) match {
+  ): Long =
+    Configuration(config).getDeprecated[String](path, deprecatedPath) match
       case "infinite" => Long.MaxValue
-      case _          => config.getBytes(if config.hasPath(deprecatedPath) then deprecatedPath else path)
-    }
-  }
+      case _ => config.getBytes(if config.hasPath(deprecatedPath) then deprecatedPath else path)
 
   case object ServerStoppedReason extends CoordinatedShutdown.Reason
-}
 
 /**
  * Components to create a Server instance.
  */
-trait ServerComponents {
+trait ServerComponents:
   def server: Server
 
   lazy val serverConfig: ServerConfig = ServerConfig()
 
-  lazy val environment: Environment                   = Environment.simple(mode = serverConfig.mode)
-  lazy val configuration: Configuration               = Configuration(ConfigFactory.load())
+  lazy val environment: Environment = Environment.simple(mode = serverConfig.mode)
+  lazy val configuration: Configuration = Configuration(ConfigFactory.load())
   lazy val applicationLifecycle: ApplicationLifecycle = new DefaultApplicationLifecycle
 
   def serverStopHook: () => Future[Unit] = () => Future.successful(())
-}

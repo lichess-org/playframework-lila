@@ -12,23 +12,20 @@ import play.api.mvc.Session
 /**
  * Keys to request attributes.
  */
-object RequestAttrKey {
+object RequestAttrKey:
 
   /**
-   * The key for the request attribute storing a [[Cell]] with
-   * [[play.api.mvc.Cookies]] in it.
+   * The key for the request attribute storing a [[Cell]] with [[play.api.mvc.Cookies]] in it.
    */
   val Cookies = TypedKey[Cell[Cookies]]("Cookies")
 
   /**
-   * The key for the request attribute storing a [[Cell]] with
-   * the [[play.api.mvc.Session]] cookie in it.
+   * The key for the request attribute storing a [[Cell]] with the [[play.api.mvc.Session]] cookie in it.
    */
   val Session = TypedKey[Cell[Session]]("Session")
 
   /**
-   * The key for the request attribute storing a [[Cell]] with
-   * the [[play.api.mvc.Flash]] cookie in it.
+   * The key for the request attribute storing a [[Cell]] with the [[play.api.mvc.Flash]] cookie in it.
    */
   val Flash = TypedKey[Cell[Flash]]("Flash")
 
@@ -41,4 +38,3 @@ object RequestAttrKey {
    * The CSP nonce key.
    */
   val CSPNonce: TypedKey[String] = TypedKey("CSP-Nonce")
-}

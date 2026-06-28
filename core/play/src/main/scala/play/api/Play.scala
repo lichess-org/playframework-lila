@@ -26,29 +26,36 @@ import scala.util.Try
 /**
  * High-level API to access Play global features.
  */
-object Play {
+object Play:
   private val logger = Logger(Play.getClass)
 
   private[play] val GlobalAppConfigKey = "play.allowGlobalApplication"
 
-  private[play] lazy val xercesSaxParserFactory = {
+  private[play] lazy val xercesSaxParserFactory =
     val saxParserFactory = SAXParserFactory.newInstance()
-    saxParserFactory.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_GENERAL_ENTITIES_FEATURE, false)
-    saxParserFactory.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_PARAMETER_ENTITIES_FEATURE, false)
-    saxParserFactory.setFeature(Constants.XERCES_FEATURE_PREFIX + Constants.DISALLOW_DOCTYPE_DECL_FEATURE, true)
+    saxParserFactory.setFeature(
+      Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_GENERAL_ENTITIES_FEATURE,
+      false
+    )
+    saxParserFactory.setFeature(
+      Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_PARAMETER_ENTITIES_FEATURE,
+      false
+    )
+    saxParserFactory.setFeature(
+      Constants.XERCES_FEATURE_PREFIX + Constants.DISALLOW_DOCTYPE_DECL_FEATURE,
+      true
+    )
     saxParserFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
     saxParserFactory
-  }
 
   /*
    * A parser to be used that is configured to ensure that no schemas are loaded.
    */
   private[play] def XML = scala.xml.XML.withSAXParser(xercesSaxParserFactory.newSAXParser())
 
-  private[play] def privateMaybeApplication: Try[Application] = {
-    if _currentApp.get != null then {
-      Success(_currentApp.get)
-    } else {
+  private[play] def privateMaybeApplication: Try[Application] =
+    if _currentApp.get != null then Success(_currentApp.get)
+    else
       Failure(
         new RuntimeException(
           s"""
@@ -58,8 +65,6 @@ object Play {
        """.stripMargin
         )
       )
-    }
-  }
 
   /* Used by the routes compiler to resolve an application for the injector.  Treat as private. */
   def routesCompilerMaybeApplication: Option[Application] = privateMaybeApplication.toOption
@@ -73,29 +78,28 @@ object Play {
   /**
    * Sets the global application instance.
    *
-   * If another app was previously started using this API and the global application is enabled, Play.stop will be
-   * called on the existing application.
+   * If another app was previously started using this API and the global application is enabled, Play.stop
+   * will be called on the existing application.
    *
-   * @param app the application to start
+   * @param app
+   *   the application to start
    */
   def start(app: Application): Unit = synchronized {
     val globalApp = app.globalApplicationEnabled
 
     // Stop the current app if the new app needs to replace the current app instance
-    if globalApp && _currentApp.get != null then {
+    if globalApp && _currentApp.get != null then
       logger.info("Stopping current application")
       stop(_currentApp.get())
-    }
 
-    app.mode match {
+    app.mode match
       case Mode.Test =>
       case mode =>
         logger.info(s"Application started ($mode)${if !globalApp then " (no global state)" else ""}")
-    }
 
     // Set the current app if the global application is enabled
     // Also set it if the current app is null, in order to display more useful errors if we try to use the app
-    if globalApp then {
+    if globalApp then
       logger.warn(
         s"""
            |You are using the deprecated global state to set and access the current running application. If you
@@ -106,34 +110,30 @@ object Play {
 
       // It's possible to stop the Application using Coordinated Shutdown, when that happens the Application
       // should no longer be considered the current App
-      app.coordinatedShutdown.addTask(CoordinatedShutdown.PhaseBeforeActorSystemTerminate, "unregister-global-app") {
-        () =>
-          unsetGlobalApp(app)
-          Future.successful(Done)
+      app.coordinatedShutdown.addTask(
+        CoordinatedShutdown.PhaseBeforeActorSystemTerminate,
+        "unregister-global-app"
+      ) { () =>
+        unsetGlobalApp(app)
+        Future.successful(Done)
       }
-    }
   }
 
   /**
    * Stops the given application.
    */
-  def stop(app: Application): Unit = {
-    if app != null then {
+  def stop(app: Application): Unit =
+    if app != null then
       Threads.withContextClassLoader(app.classloader) {
-        try {
-          Await.ready(app.stop(), Duration.Inf)
-        } catch { case NonFatal(e) => logger.warn("Error stopping application", e) }
+        try Await.ready(app.stop(), Duration.Inf)
+        catch case NonFatal(e) => logger.warn("Error stopping application", e)
       }
-    }
-  }
 
-  private def unsetGlobalApp(app: Application) = {
+  private def unsetGlobalApp(app: Application) =
     // Don't bother un-setting the current app unless it's our app
     _currentApp.compareAndSet(app, null)
-  }
 
   /**
    * A convenient function for getting an implicit materializer from the current application
    */
   implicit def materializer(using app: Application): Materializer = app.materializer
-}

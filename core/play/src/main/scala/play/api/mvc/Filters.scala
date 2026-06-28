@@ -10,9 +10,8 @@ import play.api.libs.streams.Accumulator
 import scala.concurrent.Promise
 import scala.concurrent.Future
 
-trait EssentialFilter {
+trait EssentialFilter:
   def apply(next: EssentialAction): EssentialAction
-}
 
 /**
  * Implement this interface if you want to add a Filter to your application
@@ -25,25 +24,25 @@ trait EssentialFilter {
  * }
  * }}}
  */
-trait Filter extends EssentialFilter {
+trait Filter extends EssentialFilter:
   self =>
 
   implicit def mat: Materializer
 
   /**
-   * Apply the filter, given the request header and a function to call the next
-   * operation.
+   * Apply the filter, given the request header and a function to call the next operation.
    *
-   * @param f A function to call the next operation. Call this to continue
-   * normally with the current request. You do not need to call this function
-   * if you want to generate a result in a different way.
-   * @param rh The RequestHeader.
+   * @param f
+   *   A function to call the next operation. Call this to continue normally with the current request. You do
+   *   not need to call this function if you want to generate a result in a different way.
+   * @param rh
+   *   The RequestHeader.
    */
   def apply(f: RequestHeader => Future[Result])(rh: RequestHeader): Future[Result]
 
-  def apply(next: EssentialAction): EssentialAction = {
+  def apply(next: EssentialAction): EssentialAction =
     implicit val ec = mat.executionContext
-    (rh: RequestHeader) => {
+    (rh: RequestHeader) =>
       // Promised result returned to this filter when it invokes the delegate function (the next filter in the chain)
       val promisedResult = Promise[Result]()
       // Promised accumulator returned to the framework
@@ -68,42 +67,33 @@ trait Filter extends EssentialFilter {
           // When the iteratee is done, we can redeem the promised result that was returned to the filter
           promisedResult.success(simpleResult)
           result
-        }.recoverWith {
-          case t: Throwable =>
-            // If the iteratee finishes with an error, fail the promised result that was returned to the
-            // filter with the same error. Note, we MUST use tryFailure here as it's possible that a)
-            // promisedResult was already completed successfully in the mapM method above but b) calculating
-            // the result in that method caused an error, so we ended up in this recover block anyway.
-            promisedResult.tryFailure(t)
-            result
+        }.recoverWith { case t: Throwable =>
+          // If the iteratee finishes with an error, fail the promised result that was returned to the
+          // filter with the same error. Note, we MUST use tryFailure here as it's possible that a)
+          // promisedResult was already completed successfully in the mapM method above but b) calculating
+          // the result in that method caused an error, so we ended up in this recover block anyway.
+          promisedResult.tryFailure(t)
+          result
         }
       })
-    }
-  }
-}
 
-object Filter {
+object Filter:
   def apply(
       filter: (RequestHeader => Future[Result], RequestHeader) => Future[Result]
-  )(using m: Materializer): Filter = new Filter {
-    implicit def mat                                                                 = m
+  )(using m: Materializer): Filter = new Filter:
+    implicit def mat = m
     def apply(f: RequestHeader => Future[Result])(rh: RequestHeader): Future[Result] = filter(f, rh)
-  }
-}
 
 /**
  * Compose the action and the Filters to create a new Action
  */
-object Filters {
+object Filters:
   def apply(h: EssentialAction, filters: EssentialFilter*): EssentialAction = FilterChain(h, filters.toList)
-}
 
 /**
  * Compose the action and the Filters to create a new Action
  */
-object FilterChain {
-  def apply(action: EssentialAction, filters: List[EssentialFilter]): EssentialAction = (rh: RequestHeader) => {
+object FilterChain:
+  def apply(action: EssentialAction, filters: List[EssentialFilter]): EssentialAction = (rh: RequestHeader) =>
     val chain = filters.reverse.foldLeft(action) { (a, i) => i(a) }
     chain(rh)
-  }
-}

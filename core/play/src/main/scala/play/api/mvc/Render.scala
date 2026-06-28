@@ -10,8 +10,8 @@ import play.api.http.HeaderNames.*
 import scala.concurrent.Future
 import play.core.Execution.Implicits.trampoline
 
-trait Rendering {
-  object render {
+trait Rendering:
+  object render:
 
     /**
      * Tries to render the most acceptable result according to the request’s Accept header value.
@@ -25,22 +25,23 @@ trait Rendering {
      * }
      * }}}
      *
-     * @param f A partial function returning a `Result` for a given request media range
-     * @return A result provided by `f`, if it is defined for the current request media ranges, otherwise NotAcceptable
+     * @param f
+     *   A partial function returning a `Result` for a given request media range
+     * @return
+     *   A result provided by `f`, if it is defined for the current request media ranges, otherwise
+     *   NotAcceptable
      */
-    def apply(f: PartialFunction[MediaRange, Result])(using request: RequestHeader): Result = {
-      def _render(ms: Seq[MediaRange]): Result = ms match {
+    def apply(f: PartialFunction[MediaRange, Result])(using request: RequestHeader): Result =
+      def _render(ms: Seq[MediaRange]): Result = ms match
         case Nil => NotAcceptable
-        case Seq(m, ms @ _*) =>
+        case Seq(m, ms*) =>
           f.applyOrElse(m, (m: MediaRange) => _render(ms))
-      }
 
       // “If no Accept header field is present, then it is assumed that the client accepts all media types.”
       val result =
         if request.acceptedTypes.isEmpty then _render(Seq(new MediaRange("*", "*", Nil, None, Nil)))
         else _render(request.acceptedTypes)
       result.withHeaders(result.header.varyWith(ACCEPT))
-    }
 
     /**
      * Tries to render the most acceptable result according to the request’s Accept header value.
@@ -56,21 +57,20 @@ trait Rendering {
      * }
      * }}}
      *
-     * @param f A partial function returning a `Future[Result]` for a given request media range
-     * @return A result provided by `f`, if it is defined for the current request media ranges, otherwise NotAcceptable
+     * @param f
+     *   A partial function returning a `Future[Result]` for a given request media range
+     * @return
+     *   A result provided by `f`, if it is defined for the current request media ranges, otherwise
+     *   NotAcceptable
      */
-    def async(f: PartialFunction[MediaRange, Future[Result]])(using request: RequestHeader): Future[Result] = {
-      def _render(ms: Seq[MediaRange]): Future[Result] = ms match {
+    def async(f: PartialFunction[MediaRange, Future[Result]])(using request: RequestHeader): Future[Result] =
+      def _render(ms: Seq[MediaRange]): Future[Result] = ms match
         case Nil => Future.successful(NotAcceptable)
-        case Seq(m, ms @ _*) =>
+        case Seq(m, ms*) =>
           f.applyOrElse(m, (m: MediaRange) => _render(ms))
-      }
 
       // “If no Accept header field is present, then it is assumed that the client accepts all media types.”
       val result =
         if request.acceptedTypes.isEmpty then _render(Seq(new MediaRange("*", "*", Nil, None, Nil)))
         else _render(request.acceptedTypes)
       result.map(r => r.withHeaders(r.header.varyWith(ACCEPT)))
-    }
-  }
-}

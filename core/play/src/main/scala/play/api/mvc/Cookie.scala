@@ -25,14 +25,23 @@ import scala.util.control.NonFatal
 /**
  * An HTTP cookie.
  *
- * @param name the cookie name
- * @param value the cookie value
- * @param maxAge the cookie expiration date in seconds, `None` for a transient cookie, or a value 0 or less to expire a cookie now
- * @param path the cookie path, defaulting to the root path `/`
- * @param domain the cookie domain
- * @param secure whether this cookie is secured, sent only for HTTPS requests
- * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScript code
- * @param sameSite defines cookie access restriction: first-party or same-site context
+ * @param name
+ *   the cookie name
+ * @param value
+ *   the cookie value
+ * @param maxAge
+ *   the cookie expiration date in seconds, `None` for a transient cookie, or a value 0 or less to expire a
+ *   cookie now
+ * @param path
+ *   the cookie path, defaulting to the root path `/`
+ * @param domain
+ *   the cookie domain
+ * @param secure
+ *   whether this cookie is secured, sent only for HTTPS requests
+ * @param httpOnly
+ *   whether this cookie is HTTP only, i.e. not accessible from client-side JavaScript code
+ * @param sameSite
+ *   defines cookie access restriction: first-party or same-site context
  */
 case class Cookie(
     name: String,
@@ -45,51 +54,48 @@ case class Cookie(
     sameSite: Option[Cookie.SameSite] = None
 )
 
-object Cookie {
+object Cookie:
   private val logger = Logger(this.getClass)
 
-  sealed abstract class SameSite(val value: String) {
+  sealed abstract class SameSite(val value: String):
     private def matches(v: String): Boolean = value.equalsIgnoreCase(v)
-  }
-  object SameSite {
-    private[play] val values: Seq[SameSite]    = Seq(Strict, Lax, None)
+  object SameSite:
+    private[play] val values: Seq[SameSite] = Seq(Strict, Lax, None)
     def parse(value: String): Option[SameSite] = values.find(_.matches(value))
     case object Strict extends SameSite("Strict")
-    case object Lax    extends SameSite("Lax")
-    case object None   extends SameSite("None")
-  }
+    case object Lax extends SameSite("Lax")
+    case object None extends SameSite("None")
 
   /**
    * Check the prefix of this cookie and make sure it matches the rules.
    *
-   * @return the original cookie if it is valid, else a new cookie that has the proper attributes set.
+   * @return
+   *   the original cookie if it is valid, else a new cookie that has the proper attributes set.
    */
-  def validatePrefix(cookie: Cookie): Cookie = {
+  def validatePrefix(cookie: Cookie): Cookie =
     val SecurePrefix = "__Secure-"
-    val HostPrefix   = "__Host-"
-    @inline def warnIfNotSecure(prefix: String): Unit = {
-      if !cookie.secure then {
-        logger.warn(s"$prefix prefix is used for cookie but Secure flag not set! Setting now. Cookie is: $cookie")(
-          using SecurityMarkerContext
+    val HostPrefix = "__Host-"
+    @inline def warnIfNotSecure(prefix: String): Unit =
+      if !cookie.secure then
+        logger.warn(
+          s"$prefix prefix is used for cookie but Secure flag not set! Setting now. Cookie is: $cookie"
+        )(using
+          SecurityMarkerContext
         )
-      }
-    }
 
-    if cookie.name.startsWith(SecurePrefix) then {
+    if cookie.name.startsWith(SecurePrefix) then
       warnIfNotSecure(SecurePrefix)
       cookie.copy(secure = true)
-    } else if cookie.name.startsWith(HostPrefix) then {
+    else if cookie.name.startsWith(HostPrefix) then
       warnIfNotSecure(HostPrefix)
-      if cookie.path != "/" then {
-        logger.warn(s"""$HostPrefix is used on cookie but Path is not "/"! Setting now. Cookie is: $cookie""")(
-          using SecurityMarkerContext
+      if cookie.path != "/" then
+        logger.warn(
+          s"""$HostPrefix is used on cookie but Path is not "/"! Setting now. Cookie is: $cookie"""
+        )(using
+          SecurityMarkerContext
         )
-      }
       cookie.copy(secure = true, path = "/")
-    } else {
-      cookie
-    }
-  }
+    else cookie
 
   /**
    * The cookie's Max-Age, in seconds, when we expire the cookie.
@@ -97,15 +103,18 @@ object Cookie {
    * When Max-Age = 0, Expires is set to 0 epoch time for compatibility with older browsers.
    */
   val DiscardedMaxAge: Int = 0
-}
 
 /**
- * A cookie to be discarded.  This contains only the data necessary for discarding a cookie.
+ * A cookie to be discarded. This contains only the data necessary for discarding a cookie.
  *
- * @param name the name of the cookie to discard
- * @param path the path of the cookie, defaults to the root path
- * @param domain the cookie domain
- * @param secure whether this cookie is secured
+ * @param name
+ *   the name of the cookie to discard
+ * @param path
+ *   the path of the cookie, defaults to the root path
+ * @param domain
+ *   the cookie domain
+ * @param secure
+ *   whether this cookie is secured
  */
 case class DiscardingCookie(
     name: String,
@@ -113,14 +122,13 @@ case class DiscardingCookie(
     domain: Option[String] = None,
     secure: Boolean = false,
     sameSite: Option[SameSite] = None
-) {
+):
   def toCookie = Cookie(name, "", Some(Cookie.DiscardedMaxAge), path, domain, secure, false, sameSite)
-}
 
 /**
  * The HTTP cookies set.
  */
-trait Cookies extends Iterable[Cookie] {
+trait Cookies extends Iterable[Cookie]:
 
   /**
    * Optionally returns the cookie associated with a key.
@@ -131,12 +139,11 @@ trait Cookies extends Iterable[Cookie] {
    * Retrieves the cookie that is associated with the given key.
    */
   def apply(name: String): Cookie = get(name).getOrElse(scala.sys.error("Cookie doesn't exist"))
-}
 
 /**
  * Logic for encoding and decoding `Cookie` and `Set-Cookie` headers.
  */
-trait CookieHeaderEncoding {
+trait CookieHeaderEncoding:
   import play.core.cookie.encoding.DefaultCookie
 
   private implicit val markerContext: SecurityMarkerContext.type = SecurityMarkerContext
@@ -144,12 +151,12 @@ trait CookieHeaderEncoding {
   protected def config: CookiesConfiguration
 
   /**
-   * Play doesn't support multiple values per header, so has to compress cookies into one header. The problem is,
-   * Set-Cookie doesn't support being compressed into one header, the reason being that the separator character for
-   * header values, comma, is used in the dates in the Expires attribute of a cookie value. So we synthesise our own
-   * separator, that we use here, and before we send the cookie back to the client.
+   * Play doesn't support multiple values per header, so has to compress cookies into one header. The problem
+   * is, Set-Cookie doesn't support being compressed into one header, the reason being that the separator
+   * character for header values, comma, is used in the dates in the Expires attribute of a cookie value. So
+   * we synthesise our own separator, that we use here, and before we send the cookie back to the client.
    */
-  val SetCookieHeaderSeparator      = ";;"
+  val SetCookieHeaderSeparator = ";;"
   val SetCookieHeaderSeparatorRegex = SetCookieHeaderSeparator.r
 
   import scala.jdk.CollectionConverters.*
@@ -158,7 +165,7 @@ trait CookieHeaderEncoding {
 
   private val logger = Logger(this.getClass)
 
-  def fromSetCookieHeader(header: Option[String]): Cookies = header match {
+  def fromSetCookieHeader(header: Option[String]): Cookies = header match
     case Some(headerValue) =>
       fromMap(
         decodeSetCookieHeader(headerValue)
@@ -168,9 +175,8 @@ trait CookieHeaderEncoding {
           .toMap
       )
     case None => fromMap(Map.empty)
-  }
 
-  def fromCookieHeader(header: Option[String]): Cookies = header match {
+  def fromCookieHeader(header: Option[String]): Cookies = header match
     case Some(headerValue) =>
       fromMap(
         decodeCookieHeader(headerValue)
@@ -180,29 +186,28 @@ trait CookieHeaderEncoding {
           .toMap
       )
     case None => fromMap(Map.empty)
-  }
 
-  private def fromMap(cookies: Map[String, Cookie]): Cookies = new Cookies {
+  private def fromMap(cookies: Map[String, Cookie]): Cookies = new Cookies:
     def get(name: String) = cookies.get(name)
     override def toString = cookies.toString
 
-    override def foreach[U](f: (Cookie) => U): Unit = {
+    override def foreach[U](f: (Cookie) => U): Unit =
       cookies.values.foreach(f)
-    }
 
     def iterator: Iterator[Cookie] = cookies.valuesIterator
-  }
 
   /**
    * Encodes cookies as a Set-Cookie HTTP header.
    *
-   * @param cookies the Cookies to encode
-   * @return a valid Set-Cookie header value
+   * @param cookies
+   *   the Cookies to encode
+   * @return
+   *   a valid Set-Cookie header value
    */
-  def encodeSetCookieHeader(cookies: Seq[Cookie]): String = {
+  def encodeSetCookieHeader(cookies: Seq[Cookie]): String =
     val encoder = config.serverEncoder
     val newCookies = cookies.map { cookie =>
-      val c  = Cookie.validatePrefix(cookie)
+      val c = Cookie.validatePrefix(cookie)
       val nc = new DefaultCookie(c.name, c.value)
       nc.setMaxAge(c.maxAge.getOrElse(Integer.MIN_VALUE))
       nc.setPath(c.path)
@@ -213,35 +218,37 @@ trait CookieHeaderEncoding {
       encoder.encode(nc)
     }
     newCookies.mkString(SetCookieHeaderSeparator)
-  }
 
   /**
    * Encodes cookies as a Set-Cookie HTTP header.
    *
-   * @param cookies the Cookies to encode
-   * @return a valid Set-Cookie header value
+   * @param cookies
+   *   the Cookies to encode
+   * @return
+   *   a valid Set-Cookie header value
    */
-  def encodeCookieHeader(cookies: Seq[Cookie]): String = {
+  def encodeCookieHeader(cookies: Seq[Cookie]): String =
     val encoder = config.clientEncoder
     encoder.encode(cookies.map { cookie => new DefaultCookie(cookie.name, cookie.value) }.asJava)
-  }
 
   /**
    * Decodes a Set-Cookie header value as a proper cookie set.
    *
-   * @param cookieHeader the Set-Cookie header value
-   * @return decoded cookies
+   * @param cookieHeader
+   *   the Set-Cookie header value
+   * @return
+   *   decoded cookies
    */
-  def decodeSetCookieHeader(cookieHeader: String): Seq[Cookie] = {
-    if cookieHeader.isEmpty then {
+  def decodeSetCookieHeader(cookieHeader: String): Seq[Cookie] =
+    if cookieHeader.isEmpty then
       // fail fast if there are no existing cookies
       Seq.empty
-    } else {
+    else
       Try {
         val decoder = config.clientDecoder
         val newCookies = for
           cookieString <- SetCookieHeaderSeparatorRegex.split(cookieHeader).toSeq
-          cookie       <- Option(decoder.decode(cookieString.trim))
+          cookie <- Option(decoder.decode(cookieString.trim))
         yield Cookie(
           cookie.name,
           cookie.value,
@@ -257,16 +264,16 @@ trait CookieHeaderEncoding {
         logger.debug(s"Couldn't decode the Cookie header containing: $cookieHeader")
         Seq.empty
       }
-    }
-  }
 
   /**
    * Decodes a Cookie header value as a proper cookie set.
    *
-   * @param cookieHeader the Cookie header value
-   * @return decoded cookies
+   * @param cookieHeader
+   *   the Cookie header value
+   * @return
+   *   decoded cookies
    */
-  def decodeCookieHeader(cookieHeader: String): Seq[Cookie] = {
+  def decodeCookieHeader(cookieHeader: String): Seq[Cookie] =
     Try {
       config.serverDecoder
         .decode(cookieHeader)
@@ -277,34 +284,36 @@ trait CookieHeaderEncoding {
       logger.debug(s"Couldn't decode the Cookie header containing: $cookieHeader")
       Nil
     }
-  }
 
   /**
    * Merges an existing Set-Cookie header with new cookie values
    *
-   * @param cookieHeader the existing Set-Cookie header value
-   * @param cookies the new cookies to encode
-   * @return a valid Set-Cookie header value
+   * @param cookieHeader
+   *   the existing Set-Cookie header value
+   * @param cookies
+   *   the new cookies to encode
+   * @return
+   *   a valid Set-Cookie header value
    */
-  def mergeSetCookieHeader(cookieHeader: String, cookies: Seq[Cookie]): String = {
-    val rawCookies                 = decodeSetCookieHeader(cookieHeader) ++ cookies
+  def mergeSetCookieHeader(cookieHeader: String, cookies: Seq[Cookie]): String =
+    val rawCookies = decodeSetCookieHeader(cookieHeader) ++ cookies
     val mergedCookies: Seq[Cookie] = CookieHeaderMerging.mergeSetCookieHeaderCookies(rawCookies)
     encodeSetCookieHeader(mergedCookies)
-  }
 
   /**
    * Merges an existing Cookie header with new cookie values
    *
-   * @param cookieHeader the existing Cookie header value
-   * @param cookies the new cookies to encode
-   * @return a valid Cookie header value
+   * @param cookieHeader
+   *   the existing Cookie header value
+   * @param cookies
+   *   the new cookies to encode
+   * @return
+   *   a valid Cookie header value
    */
-  def mergeCookieHeader(cookieHeader: String, cookies: Seq[Cookie]): String = {
-    val rawCookies                 = decodeCookieHeader(cookieHeader) ++ cookies
+  def mergeCookieHeader(cookieHeader: String, cookies: Seq[Cookie]): String =
+    val rawCookies = decodeCookieHeader(cookieHeader) ++ cookies
     val mergedCookies: Seq[Cookie] = CookieHeaderMerging.mergeCookieHeaderCookies(rawCookies)
     encodeCookieHeader(mergedCookies)
-  }
-}
 
 /**
  * The default implementation of `CookieHeaders`.
@@ -316,41 +325,37 @@ class DefaultCookieHeaderEncoding @Inject() (
 /**
  * Utilities for merging individual cookie values in HTTP cookie headers.
  */
-object CookieHeaderMerging {
+object CookieHeaderMerging:
 
   /**
-   * Merge the elements in a sequence so that there is only one occurrence of
-   * elements when mapped by a discriminator function.
+   * Merge the elements in a sequence so that there is only one occurrence of elements when mapped by a
+   * discriminator function.
    */
-  private def mergeOn[A, B](input: Iterable[A], f: A => B): Seq[A] = {
+  private def mergeOn[A, B](input: Iterable[A], f: A => B): Seq[A] =
     val withMergeValue: Seq[(B, A)] = input.toSeq.map(el => (f(el), el))
-    ListMap(withMergeValue *).values.toSeq
-  }
+    ListMap(withMergeValue*).values.toSeq
 
   /**
-   * Merges the cookies contained in a `Set-Cookie` header so that there's
-   * only one cookie for each name/path/domain triple.
+   * Merges the cookies contained in a `Set-Cookie` header so that there's only one cookie for each
+   * name/path/domain triple.
    */
-  def mergeSetCookieHeaderCookies(unmerged: Iterable[Cookie]): Seq[Cookie] = {
+  def mergeSetCookieHeaderCookies(unmerged: Iterable[Cookie]): Seq[Cookie] =
     // See rfc6265#section-4.1.2
     // Secure and http-only attributes are not considered when testing if
     // two cookies are overlapping.
     mergeOn(unmerged, (c: Cookie) => (c.name, c.path, c.domain.map(_.toLowerCase(Locale.ENGLISH))))
-  }
 
   /**
-   * Merges the cookies contained in a `Cookie` header so that there's
-   * only one cookie for each name.
+   * Merges the cookies contained in a `Cookie` header so that there's only one cookie for each name.
    */
-  def mergeCookieHeaderCookies(unmerged: Iterable[Cookie]): Seq[Cookie] = {
+  def mergeCookieHeaderCookies(unmerged: Iterable[Cookie]): Seq[Cookie] =
     mergeOn(unmerged, (c: Cookie) => c.name)
-  }
-}
 
 /**
  * Trait that should be extended by the Cookie helpers.
  */
-trait CookieBaker[T <: AnyRef] { self: CookieDataCodec =>
+trait CookieBaker[T <: AnyRef]:
+  self: CookieDataCodec =>
 
   /**
    * The cookie name.
@@ -388,7 +393,7 @@ trait CookieBaker[T <: AnyRef] { self: CookieDataCodec =>
   def secure = false
 
   /**
-   *  The cookie path.
+   * The cookie path.
    */
   def path: String = "/"
 
@@ -400,54 +405,52 @@ trait CookieBaker[T <: AnyRef] { self: CookieDataCodec =>
   /**
    * Encodes the data as a `Cookie`.
    */
-  def encodeAsCookie(data: T): Cookie = {
+  def encodeAsCookie(data: T): Cookie =
     val cookie = encode(serialize(data))
     Cookie(COOKIE_NAME, cookie, maxAge, path, domain, secure, httpOnly, sameSite)
-  }
 
   /**
    * Decodes the data from a `Cookie`.
    */
-  def decodeCookieToMap(cookie: Option[Cookie]): Map[String, String] = {
+  def decodeCookieToMap(cookie: Option[Cookie]): Map[String, String] =
     serialize(decodeFromCookie(cookie))
-  }
 
   /**
    * Decodes the data from a `Cookie`.
    */
   def decodeFromCookie(cookie: Option[Cookie]): T =
     if cookie.isEmpty then emptyCookie
-    else {
+    else
       val extractedCookie: Cookie = cookie.get
       if extractedCookie.name != COOKIE_NAME then emptyCookie /* can this happen? */
-      else {
-        deserialize(decode(extractedCookie.value))
-      }
-    }
+      else deserialize(decode(extractedCookie.value))
 
   def discard = DiscardingCookie(COOKIE_NAME, path, domain, secure, sameSite)
 
   /**
    * Builds the cookie object from the given data map.
    *
-   * @param data the data map to build the cookie object
-   * @return a new cookie object
+   * @param data
+   *   the data map to build the cookie object
+   * @return
+   *   a new cookie object
    */
   protected def deserialize(data: Map[String, String]): T
 
   /**
    * Converts the given cookie object into a data map.
    *
-   * @param cookie the cookie object to serialize into a map
-   * @return a new `Map` storing the key-value pairs for the given cookie
+   * @param cookie
+   *   the cookie object to serialize into a map
+   * @return
+   *   a new `Map` storing the key-value pairs for the given cookie
    */
   protected def serialize(cookie: T): Map[String, String]
-}
 
 /**
  * This trait encodes and decodes data to a string used as cookie value.
  */
-trait CookieDataCodec {
+trait CookieDataCodec:
 
   /**
    * Encodes the data as a `String`.
@@ -458,13 +461,11 @@ trait CookieDataCodec {
    * Decodes from an encoded `String`.
    */
   def decode(data: String): Map[String, String]
-}
 
 /**
- * This trait writes out cookies as url encoded safe text format, optionally prefixed with a
- * signed code.
+ * This trait writes out cookies as url encoded safe text format, optionally prefixed with a signed code.
  */
-trait UrlEncodedCookieDataCodec extends CookieDataCodec {
+trait UrlEncodedCookieDataCodec extends CookieDataCodec:
   private val logger = Logger(this.getClass)
 
   /**
@@ -477,90 +478,71 @@ trait UrlEncodedCookieDataCodec extends CookieDataCodec {
   /**
    * Encodes the data as a `String`.
    */
-  def encode(data: Map[String, String]): String = {
+  def encode(data: Map[String, String]): String =
     val encoded = data
       .map { case (k, v) => URLEncoder.encode(k, "UTF-8") + "=" + URLEncoder.encode(v, "UTF-8") }
       .mkString("&")
-    if isSigned then
-      cookieSigner.sign(encoded) + "-" + encoded
-    else
-      encoded
-  }
+    if isSigned then cookieSigner.sign(encoded) + "-" + encoded
+    else encoded
 
   /**
    * Decodes from an encoded `String`.
    */
-  def decode(data: String): Map[String, String] = {
-    def urldecode(data: String): Map[String, String] = {
+  def decode(data: String): Map[String, String] =
+    def urldecode(data: String): Map[String, String] =
       // In some cases we've seen clients ignore the Max-Age and Expires on a cookie, and fail to properly clear the
       // cookie. This can cause the client to send an empty cookie back to us after we've attempted to clear it. So
       // just decode empty cookies to an empty map. See https://github.com/playframework/playframework/issues/7680.
-      if data.isEmpty then {
-        Map.empty[String, String]
-      } else {
+      if data.isEmpty then Map.empty[String, String]
+      else
         data
           .split("&")
           .iterator
           .flatMap { pair =>
-            pair.span(_ != '=') match { // "foo=bar".span(_ != '=') -> (foo,=bar)
+            pair.span(_ != '=') match // "foo=bar".span(_ != '=') -> (foo,=bar)
               case (_, "") => // Skip invalid
                 Option.empty[(String, String)]
 
               case (encName, encVal) =>
                 Some(URLDecoder.decode(encName, "UTF-8") -> URLDecoder.decode(encVal.tail, "UTF-8"))
-            }
           }
           .toMap
-      }
-    }
 
     // Do not change this unless you understand the security issues behind timing attacks.
     // This method intentionally runs in constant time if the two strings have the same length.
     // If it didn't, it would be vulnerable to a timing attack.
-    def safeEquals(a: String, b: String) = {
-      if a.length != b.length then {
-        false
-      } else {
+    def safeEquals(a: String, b: String) =
+      if a.length != b.length then false
+      else
         var equal = 0
-        for i <- Array.range(0, a.length) do {
-          equal |= a(i) ^ b(i)
-        }
+        for i <- Array.range(0, a.length) do equal |= a(i) ^ b(i)
         equal == 0
-      }
-    }
 
-    try {
-      if isSigned then {
-        val parts   = data.split("-", 2)
+    try
+      if isSigned then
+        val parts = data.split("-", 2)
         val message = parts.tail.mkString("-")
-        if safeEquals(parts(0), cookieSigner.sign(message)) then {
-          urldecode(message)
-        } else {
+        if safeEquals(parts(0), cookieSigner.sign(message)) then urldecode(message)
+        else
           logger.warn("Cookie failed message authentication check")(using SecurityMarkerContext)
           Map.empty[String, String]
-        }
-      } else urldecode(data)
-    } catch {
+      else urldecode(data)
+    catch
       // fail gracefully is the session cookie is corrupted
       case NonFatal(e) =>
         logger.warn("Could not decode cookie", e)(using SecurityMarkerContext)
         Map.empty[String, String]
-    }
-  }
-}
 
 /**
- * A trait that identifies the cookie encoding and uses the appropriate codec, for
- * upgrading from a signed cookie encoding to a JWT cookie encoding.
+ * A trait that identifies the cookie encoding and uses the appropriate codec, for upgrading from a signed
+ * cookie encoding to a JWT cookie encoding.
  */
-trait FallbackCookieDataCodec extends CookieDataCodec {
+trait FallbackCookieDataCodec extends CookieDataCodec:
 
   def signedCodec: UrlEncodedCookieDataCodec
 
-  def decode(encodedData: String): Map[String, String] = {
+  def decode(encodedData: String): Map[String, String] =
     signedCodec.decode(encodedData)
-  }
-}
 
 case class DefaultUrlEncodedCookieDataCodec(
     isSigned: Boolean,
@@ -574,5 +556,5 @@ class LegacyCookiesModule
     extends SimpleModule(
       bind[CookieSigner].toProvider[CookieSignerProvider],
       bind[SessionCookieBaker].to[LegacySessionCookieBaker],
-      bind[FlashCookieBaker].to[LegacyFlashCookieBaker],
+      bind[FlashCookieBaker].to[LegacyFlashCookieBaker]
     )

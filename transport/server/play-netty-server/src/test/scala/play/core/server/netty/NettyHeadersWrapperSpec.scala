@@ -8,13 +8,12 @@ import io.netty.handler.codec.http.DefaultHttpHeaders
 import org.specs2.mutable.*
 import play.api.mvc.*
 
-class NettyHeadersWrapperSpec extends Specification {
-  val headers: Headers = {
+class NettyHeadersWrapperSpec extends Specification:
+  val headers: Headers =
     val nettyHeaders = new DefaultHttpHeaders()
     val headersToAdd = Seq("a" -> "a1", "a" -> "a2", "b" -> "b1", "b" -> "b2", "B" -> "b3", "c" -> "c1")
     for (k, v) <- headersToAdd do nettyHeaders.add(k, v)
     new NettyHeadersWrapper(nettyHeaders)
-  }
 
   "Netty Headers implementation" should {
     "return its headers as a sequence of name-value pairs" in {
@@ -47,7 +46,8 @@ class NettyHeadersWrapperSpec extends Specification {
     }
 
     "return the header values associated with b by case insensitive" in {
-      (headers.getAll("b") must_== Seq("b1", "b2", "b3")).and(headers.getAll("B") must_== Seq("b1", "b2", "b3"))
+      (headers.getAll("b") must_== Seq("b1", "b2", "b3"))
+        .and(headers.getAll("B") must_== Seq("b1", "b2", "b3"))
     }
 
     "not return an empty sequence of values associated with an unknown key" in {
@@ -92,4 +92,3 @@ class NettyHeadersWrapperSpec extends Specification {
       headers must_!= Headers("a" -> "a2", "A" -> "a1", "b" -> "b1", "b" -> "b2", "B" -> "b3", "c" -> "C1")
     }
   }
-}

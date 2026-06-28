@@ -4,7 +4,6 @@
 
 package play.core.routing
 
-
 import play.api.http.HttpErrorHandler
 import play.api.mvc.*
 import play.api.routing.Router
@@ -12,70 +11,60 @@ import play.api.routing.Router
 /**
  * A route
  */
-object Route {
+object Route:
 
   /**
    * Extractor of route from a request.
    */
-  trait ParamsExtractor {
+  trait ParamsExtractor:
     def unapply(request: RequestHeader): Option[RouteParams]
-  }
 
   /**
    * Create a params extractor from the given method and path pattern.
    */
-  def apply(method: String, pathPattern: PathPattern) = new ParamsExtractor {
-    def unapply(request: RequestHeader): Option[RouteParams] = {
-      if method == request.method then {
+  def apply(method: String, pathPattern: PathPattern) = new ParamsExtractor:
+    def unapply(request: RequestHeader): Option[RouteParams] =
+      if method == request.method then
         pathPattern(request.path).map { groups => RouteParams(groups, request.queryString) }
-      } else {
-        None
-      }
-    }
-  }
-}
+      else None
 
 /**
  * An included router
  */
-class Include(val router: Router) {
-  def unapply(request: RequestHeader): Option[Handler] = {
+class Include(val router: Router):
+  def unapply(request: RequestHeader): Option[Handler] =
     router.routes.lift(request)
-  }
-}
 
 /**
  * An included router
  */
-object Include {
+object Include:
   def apply(router: Router) = new Include(router)
-}
 
 case class Param[T](name: String, value: Either[String, T])
 
-case class RouteParams(path: Map[String, Either[Throwable, String]], queryString: Map[String, Seq[String]]) {
-  def fromPath[T](key: String, default: Option[T] = None)(using binder: PathBindable[T]): Param[T] = {
+case class RouteParams(path: Map[String, Either[Throwable, String]], queryString: Map[String, Seq[String]]):
+  def fromPath[T](key: String, default: Option[T] = None)(using binder: PathBindable[T]): Param[T] =
     Param(
       key,
       path.get(key).map(v => v.fold(t => Left(t.getMessage), binder.bind(key, _))).getOrElse {
         default.map(d => Right(d)).getOrElse(Left("Missing parameter: " + key))
       }
     )
-  }
 
-  def fromQuery[T](key: String, default: Option[T] = None)(using binder: QueryStringBindable[T]): Param[T] = {
+  def fromQuery[T](key: String, default: Option[T] = None)(using binder: QueryStringBindable[T]): Param[T] =
     val bindResult = binder.bind(key, queryString)
     if bindResult == Some(Right(None))
-        || bindResult == Some(Right(Nil))
-        || bindResult == Some(Right(Some(Nil))) then {
-      Param(key, default.map(d => Right(d)).getOrElse(bindResult.get))
-    } else {
-      Param(key, bindResult.getOrElse {
-        default.map(d => Right(d)).getOrElse(Left("Missing parameter: " + key))
-      })
-    }
-  }
-}
+      || bindResult == Some(Right(Nil))
+      || bindResult == Some(Right(Some(Nil)))
+    then Param(key, default.map(d => Right(d)).getOrElse(bindResult.get))
+    else
+      Param(
+        key,
+        bindResult.getOrElse {
+          default.map(d => Right(d)).getOrElse(Left("Missing parameter: " + key))
+        }
+      )
 
 /**
  * A generated router.
@@ -90,13 +79,11 @@ abstract class GeneratedRouter extends Router {
   def named(name: String)(generator: => Handler) =
     Handler.Stage.modifyRequest(_.addAttr(play.api.routing.Router.Attrs.ActionName, name), generator)
 
-  def call(generator: => Handler): Handler = {
+  def call(generator: => Handler): Handler =
     generator
-  }
 
-  def call[P](pa: Param[P])(generator: (P) => Handler): Handler = {
+  def call[P](pa: Param[P])(generator: (P) => Handler): Handler =
     pa.value.fold(badRequest, generator)
-  }
 
   // Keep the old versions for avoiding compiler failures while building for Scala 2.10,
   // and for avoiding warnings when building for newer Scala versions

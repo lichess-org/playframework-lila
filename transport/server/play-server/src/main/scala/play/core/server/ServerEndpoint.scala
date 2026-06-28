@@ -9,10 +9,9 @@ import javax.net.ssl.*
 import akka.annotation.ApiMayChange
 
 /**
- * Contains information about which port and protocol can be used to connect to the server.
- * This class is used to abstract out the details of connecting to different backends
- * and protocols. Most tests will operate the same no matter which endpoint they
- * are connected to.
+ * Contains information about which port and protocol can be used to connect to the server. This class is used
+ * to abstract out the details of connecting to different backends and protocols. Most tests will operate the
+ * same no matter which endpoint they are connected to.
  */
 @ApiMayChange final case class ServerEndpoint(
     description: String,
@@ -21,7 +20,7 @@ import akka.annotation.ApiMayChange
     port: Int,
     protocols: Set[String],
     ssl: Option[SSLContext]
-) {
+):
 
   /**
    * Create a full URL out of a path. E.g. a path of `/foo` becomes `http://localhost:12345/foo`
@@ -31,11 +30,8 @@ import akka.annotation.ApiMayChange
   /**
    * Create a full WebSocket URL out of a path. E.g. a path of `/foo` becomes `ws://localhost:12345/foo`
    */
-  def wsPathUrl(path: String): String = {
-    val wsScheme = scheme match {
-      case "http"  => "ws"
+  def wsPathUrl(path: String): String =
+    val wsScheme = scheme match
+      case "http" => "ws"
       case "https" => "wss"
-    }
     s"$wsScheme://$host:$port$path"
-  }
-}

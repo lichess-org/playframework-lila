@@ -16,14 +16,14 @@ object BuildSettings {
   val SourcesApplication = config("sources").hide
 
   /** These settings are used by all projects. */
-  def playCommonSettings: Seq[Setting[_]] = Def.settings(
+  def playCommonSettings: Seq[Setting[?]] = Def.settings(
     organization := "com.typesafe.play",
     scalaVersion := "3.8.4",
     javacOptions ++= Seq("-encoding", "UTF-8", "--release", "21"),
     (Compile / doc / scalacOptions) := Seq("-no-java-comments"),
-    (Test / fork)                   := true,
-    (Test / parallelExecution)      := false,
-    (Test / test / testListeners)   := Nil,
+    (Test / fork) := true,
+    (Test / parallelExecution) := false,
+    (Test / test / testListeners) := Nil,
     (Test / javaOptions) ++= Seq("-XX:MaxMetaspaceSize=384m", "-Xmx512m", "-Xms128m"),
     testOptions ++= Seq(
       Tests.Argument(TestFrameworks.Specs2, "showtimes"),

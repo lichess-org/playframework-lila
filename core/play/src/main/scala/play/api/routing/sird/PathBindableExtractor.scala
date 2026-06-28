@@ -11,46 +11,38 @@ import java.util.UUID
 /**
  * An extractor that extracts from a String using a [[play.api.mvc.PathBindable]].
  */
-class PathBindableExtractor[T](using pb: PathBindable[T]) {
+class PathBindableExtractor[T](using pb: PathBindable[T]):
   self =>
 
   /**
    * Extract s to T if it can be bound, otherwise don't match.
    */
-  def unapply(s: String): Option[T] = {
+  def unapply(s: String): Option[T] =
     pb.bind("anon", s).toOption
-  }
 
   /**
    * Extract Option[T] only if s is None, Some value that can be bound, otherwise don't match.
    */
-  def unapply(s: Option[String]): Option[Option[T]] = {
-    s match {
-      case None              => Some(None)
+  def unapply(s: Option[String]): Option[Option[T]] =
+    s match
+      case None => Some(None)
       case Some(self(value)) => Some(Some(value))
-      case _                 => None
-    }
-  }
+      case _ => None
 
   /**
    * Extract Seq[T] only if ever element of s can be bound, otherwise don't match.
    */
-  def unapply(s: Seq[String]): Option[Seq[T]] = {
-    val bound = s.collect {
-      case self(value) => value
+  def unapply(s: Seq[String]): Option[Seq[T]] =
+    val bound = s.collect { case self(value) =>
+      value
     }
-    if bound.sizeIs == s.length then {
-      Some(bound)
-    } else {
-      None
-    }
-  }
-}
+    if bound.sizeIs == s.length then Some(bound)
+    else None
 
 /**
  * Extractors that bind types from paths using [[play.api.mvc.PathBindable]].
  */
-trait PathBindableExtractors {
+trait PathBindableExtractors:
 
   /**
    * An int extractor.
@@ -81,4 +73,3 @@ trait PathBindableExtractors {
    * A UUID extractor.
    */
   val uuid = new PathBindableExtractor[UUID]
-}

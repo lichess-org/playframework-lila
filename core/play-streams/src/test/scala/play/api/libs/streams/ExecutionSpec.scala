@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.language.reflectiveCalls
 import scala.util.Try
 
-class ExecutionSpec extends Specification {
+class ExecutionSpec extends Specification:
   import Execution.trampoline
 
   val waitTime = Duration(5, SECONDS)
@@ -26,30 +26,22 @@ class ExecutionSpec extends Specification {
     }
 
     "not overflow the stack" in {
-      def executeRecursively(ec: ExecutionContext, times: Int): Unit = {
-        if times > 0 then {
-          ec.execute(() => executeRecursively(ec, times - 1))
-        }
-      }
+      def executeRecursively(ec: ExecutionContext, times: Int): Unit =
+        if times > 0 then ec.execute(() => executeRecursively(ec, times - 1))
 
       // Work out how deep to go to cause an overflow
-      val overflowingExecutionContext = new ExecutionContext {
-        def execute(runnable: Runnable): Unit = {
+      val overflowingExecutionContext = new ExecutionContext:
+        def execute(runnable: Runnable): Unit =
           runnable.run()
-        }
         def reportFailure(t: Throwable): Unit = t.printStackTrace()
-      }
 
       var overflowTimes = 1 << 10
-      try {
-        while overflowTimes > 0 do {
+      try
+        while overflowTimes > 0 do
           executeRecursively(overflowingExecutionContext, overflowTimes)
           overflowTimes = overflowTimes << 1
-        }
         sys.error("Can't get the stack to overflow")
-      } catch {
-        case _: StackOverflowError => ()
-      }
+      catch case _: StackOverflowError => ()
 
       // Now verify that we don't overflow
       Try(executeRecursively(trampoline, overflowTimes)) `must` beSuccessfulTry[Unit]
@@ -57,18 +49,20 @@ class ExecutionSpec extends Specification {
 
     "execute code in the order it was submitted" in {
       val runRecord = scala.collection.mutable.Buffer.empty[Int]
-      case class TestRunnable(id: Int, children: Runnable*) extends Runnable {
-        def run(): Unit = {
+      case class TestRunnable(id: Int, children: Runnable*) extends Runnable:
+        def run(): Unit =
           runRecord += id
           for c <- children do trampoline.execute(c)
-        }
-      }
 
       trampoline.execute(
         TestRunnable(
           0,
           TestRunnable(1),
-          TestRunnable(2, TestRunnable(4, TestRunnable(6), TestRunnable(7)), TestRunnable(5, TestRunnable(8))),
+          TestRunnable(
+            2,
+            TestRunnable(4, TestRunnable(6), TestRunnable(7)),
+            TestRunnable(5, TestRunnable(8))
+          ),
           TestRunnable(3)
         )
       )
@@ -76,4 +70,3 @@ class ExecutionSpec extends Specification {
       runRecord `must` equalTo(0 to 8)
     }
   }
-}

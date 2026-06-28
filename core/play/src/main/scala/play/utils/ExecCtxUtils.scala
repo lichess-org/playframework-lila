@@ -9,9 +9,8 @@ import scala.annotation.nowarn
 
 // Workaround https://github.com/scala/bug/issues/7934#issuecomment-292425679
 // deprecation warnings are not issued within deprecated methods/classes
-@deprecated("", "") private[play] sealed class ExecCtxUtils {
+@deprecated("", "") private[play] sealed class ExecCtxUtils:
   final def prepare(ec: ExecutionContext): ExecutionContext = ec.prepare()
-}
 
 /** INTERNAL API */
 @nowarn

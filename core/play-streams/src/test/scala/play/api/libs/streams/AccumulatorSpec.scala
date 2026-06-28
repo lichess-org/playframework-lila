@@ -19,26 +19,22 @@ import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AccumulatorSpec extends Specification {
-  def withMaterializer[T](block: Materializer => T): T = {
+class AccumulatorSpec extends Specification:
+  def withMaterializer[T](block: Materializer => T): T =
     val system = ActorSystem("test")
-    try {
-      block(Materializer.matFromSystem(using system))
-    } finally {
+    try block(Materializer.matFromSystem(using system))
+    finally
       system.terminate()
       Await.result(system.whenTerminated, Duration.Inf)
-    }
-  }
 
-  def source                    = Source(1 to 3)
+  def source = Source(1 to 3)
   def await[T](f: Future[T]): T = Await.result(f, 10.seconds)
-  def error[T](any: Any): T     = throw sys.error("error")
+  def error[T](any: Any): T = throw sys.error("error")
   def errorSource[T]: Source[T, NotUsed] =
     Source.fromPublisher((s: Subscriber[? >: T]) =>
-      s.onSubscribe(new Subscription {
-        def cancel(): Unit         = s.onComplete()
-        def request(n: Long): Unit = s.onError(new RuntimeException("error"))
-      })
+      s.onSubscribe(new Subscription:
+        def cancel(): Unit = s.onComplete()
+        def request(n: Long): Unit = s.onError(new RuntimeException("error")))
     )
 
   "a sink accumulator" should {
@@ -57,8 +53,8 @@ class AccumulatorSpec extends Specification {
         await(
           sum
             .map(error[Int])
-            .recover {
-              case e => 20
+            .recover { case e =>
+              20
             }
             .run(source)
         ) must_== 20
@@ -67,8 +63,8 @@ class AccumulatorSpec extends Specification {
       "when the exception comes fom the stream" `in` withMaterializer { implicit m =>
         await(
           sum
-            .recover {
-              case e => 20
+            .recover { case e =>
+              20
             }
             .run(errorSource)
         ) must_== 20
@@ -80,8 +76,8 @@ class AccumulatorSpec extends Specification {
         await(
           sum
             .map(error[Int])
-            .recoverWith {
-              case e => Future(20)
+            .recoverWith { case e =>
+              Future(20)
             }
             .run(source)
         ) must_== 20
@@ -90,8 +86,8 @@ class AccumulatorSpec extends Specification {
       "when the exception comes from the stream" `in` withMaterializer { implicit m =>
         await(
           sum
-            .recoverWith {
-              case e => Future(20)
+            .recoverWith { case e =>
+              Future(20)
             }
             .run(errorSource)
         ) must_== 20
@@ -140,8 +136,8 @@ class AccumulatorSpec extends Specification {
           await(
             sum
               .map(error[Int])
-              .recover {
-                case e => 20
+              .recover { case e =>
+                20
               }
               .run(source)
           ) must_== 20
@@ -150,8 +146,8 @@ class AccumulatorSpec extends Specification {
         "when the exception comes fom the stream" `in` withMaterializer { implicit m =>
           await(
             sum
-              .recover {
-                case e => 20
+              .recover { case e =>
+                20
               }
               .run(errorSource)
           ) must_== 20
@@ -163,8 +159,8 @@ class AccumulatorSpec extends Specification {
           await(
             sum
               .map(error[Int])
-              .recoverWith {
-                case e => Future(20)
+              .recoverWith { case e =>
+                Future(20)
               }
               .run(source)
           ) must_== 20
@@ -173,8 +169,8 @@ class AccumulatorSpec extends Specification {
         "when the exception comes from the stream" `in` withMaterializer { implicit m =>
           await(
             sum
-              .recoverWith {
-                case e => Future(20)
+              .recoverWith { case e =>
+                Future(20)
               }
               .run(errorSource)
           ) must_== 20
@@ -195,7 +191,8 @@ class AccumulatorSpec extends Specification {
         }
 
         "for a failed future" `in` withMaterializer { implicit m =>
-          val result = Accumulator.flatten[Int, Int](Future.failed(new RuntimeException("failed"))).run(source)
+          val result =
+            Accumulator.flatten[Int, Int](Future.failed(new RuntimeException("failed"))).run(source)
           await(result) `must` throwA[RuntimeException]("failed")
         }
 
@@ -219,8 +216,8 @@ class AccumulatorSpec extends Specification {
           await(
             sum
               .map(error[Int])
-              .recover {
-                case e => 20
+              .recover { case e =>
+                20
               }
               .run(6)
           ) must_== 20
@@ -232,8 +229,8 @@ class AccumulatorSpec extends Specification {
           await(
             sum
               .map(error[Int])
-              .recoverWith {
-                case e => Future(20)
+              .recoverWith { case e =>
+                Future(20)
               }
               .run(6)
           ) must_== 20
@@ -251,4 +248,3 @@ class AccumulatorSpec extends Specification {
       }
     }
   }
-}

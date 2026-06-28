@@ -14,8 +14,10 @@ import scala.annotation.*
 /**
  * Defines the default content type for type `A`.
  *
- * @tparam A the content type
- * @param mimeType the default content type for `A`, if any
+ * @tparam A
+ *   the content type
+ * @param mimeType
+ *   the default content type for `A`, if any
  */
 @implicitNotFound("Cannot guess the content type to use for ${A}. Try to define a ContentTypeOf[${A}]")
 case class ContentTypeOf[-A](mimeType: Option[String])
@@ -28,35 +30,31 @@ object ContentTypeOf extends DefaultContentTypeOfs
 /**
  * Contains typeclasses for ContentTypeOf.
  */
-trait DefaultContentTypeOfs {
+trait DefaultContentTypeOfs:
 
   /**
    * Default content type for `Html` values (`text/html`).
    */
-  implicit def contentTypeOf_Html(using codec: Codec): ContentTypeOf[Html] = {
+  implicit def contentTypeOf_Html(using codec: Codec): ContentTypeOf[Html] =
     ContentTypeOf[Html](Some(ContentTypes.HTML))
-  }
 
   /**
    * Default content type for `Xml` values (`application/xml`).
    */
-  implicit def contentTypeOf_Xml(using codec: Codec): ContentTypeOf[Xml] = {
+  implicit def contentTypeOf_Xml(using codec: Codec): ContentTypeOf[Xml] =
     ContentTypeOf[Xml](Some(ContentTypes.XML))
-  }
 
   /**
    * Default content type for `JsValue` values (`application/json`).
    */
-  implicit def contentTypeOf_JsValue(using codec: Codec): ContentTypeOf[JsValue] = {
+  implicit def contentTypeOf_JsValue(using codec: Codec): ContentTypeOf[JsValue] =
     ContentTypeOf[JsValue](Some(ContentTypes.JSON))
-  }
 
   /**
    * Default content type for `Txt` values (`text/plain`).
    */
-  implicit def contentTypeOf_Txt(using codec: Codec): ContentTypeOf[Txt] = {
+  implicit def contentTypeOf_Txt(using codec: Codec): ContentTypeOf[Txt] =
     ContentTypeOf[Txt](Some(ContentTypes.TEXT))
-  }
 
   /**
    * Default content type for `JavaScript` values.
@@ -67,30 +65,26 @@ trait DefaultContentTypeOfs {
   /**
    * Default content type for `String` values (`text/plain`).
    */
-  implicit def contentTypeOf_String(using codec: Codec): ContentTypeOf[String] = {
+  implicit def contentTypeOf_String(using codec: Codec): ContentTypeOf[String] =
     ContentTypeOf[String](Some(ContentTypes.TEXT))
-  }
 
   /**
    * Default content type for `Map[String, Seq[String]]]` values (`application/x-www-form-urlencoded`).
    */
-  implicit def contentTypeOf_urlEncodedForm(using codec: Codec): ContentTypeOf[Map[String, Seq[String]]] = {
+  implicit def contentTypeOf_urlEncodedForm(using codec: Codec): ContentTypeOf[Map[String, Seq[String]]] =
     ContentTypeOf[Map[String, Seq[String]]](Some(ContentTypes.FORM))
-  }
 
   /**
    * Default content type for `NodeSeq` values (`application/xml`).
    */
-  implicit def contentTypeOf_NodeSeq[C <: scala.xml.NodeSeq](using codec: Codec): ContentTypeOf[C] = {
+  implicit def contentTypeOf_NodeSeq[C <: scala.xml.NodeSeq](using codec: Codec): ContentTypeOf[C] =
     ContentTypeOf[C](Some(ContentTypes.XML))
-  }
 
   /**
    * Default content type for `NodeBuffer` values (`application/xml`).
    */
-  implicit def contentTypeOf_NodeBuffer(using codec: Codec): ContentTypeOf[scala.xml.NodeBuffer] = {
+  implicit def contentTypeOf_NodeBuffer(using codec: Codec): ContentTypeOf[scala.xml.NodeBuffer] =
     ContentTypeOf[scala.xml.NodeBuffer](Some(ContentTypes.XML))
-  }
 
   /**
    * Default content type for byte array (application/application/octet-stream).
@@ -109,4 +103,3 @@ trait DefaultContentTypeOfs {
    */
   implicit def contentTypeOf_EmptyContent: ContentTypeOf[Results.EmptyContent] =
     ContentTypeOf[Results.EmptyContent](None)
-}

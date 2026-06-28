@@ -14,7 +14,7 @@ import play.api.mvc.*
 /**
  * A `RequestFactory` provides logic for creating requests.
  */
-trait RequestFactory {
+trait RequestFactory:
 
   /**
    * Create a `RequestHeader`.
@@ -29,17 +29,14 @@ trait RequestFactory {
   ): RequestHeader
 
   /**
-   * Creates a `RequestHeader` based on the values of an
-   * existing `RequestHeader`. The factory may modify the copied
-   * values to produce a modified `RequestHeader`.
+   * Creates a `RequestHeader` based on the values of an existing `RequestHeader`. The factory may modify the
+   * copied values to produce a modified `RequestHeader`.
    */
-  def copyRequestHeader(rh: RequestHeader): RequestHeader = {
+  def copyRequestHeader(rh: RequestHeader): RequestHeader =
     createRequestHeader(rh.connection, rh.method, rh.target, rh.version, rh.headers, rh.attrs)
-  }
 
   /**
-   * Create a `Request` with a body. By default this just calls
-   * `createRequestHeader(...).withBody(body)`.
+   * Create a `Request` with a body. By default this just calls `createRequestHeader(...).withBody(body)`.
    */
   def createRequest[A](
       connection: RemoteConnection,
@@ -53,22 +50,18 @@ trait RequestFactory {
     createRequestHeader(connection, method, target, version, headers, attrs).withBody(body)
 
   /**
-   * Creates a `Request` based on the values of an
-   * existing `Request`. The factory may modify the copied
+   * Creates a `Request` based on the values of an existing `Request`. The factory may modify the copied
    * values to produce a modified `Request`.
    */
-  def copyRequest[A](r: Request[A]): Request[A] = {
+  def copyRequest[A](r: Request[A]): Request[A] =
     createRequest[A](r.connection, r.method, r.target, r.version, r.headers, r.attrs, r.body)
-  }
-}
 
-object RequestFactory {
+object RequestFactory:
 
   /**
-   * A `RequestFactory` that creates a request with the arguments given, without
-   * any additional modification.
+   * A `RequestFactory` that creates a request with the arguments given, without any additional modification.
    */
-  val plain = new RequestFactory {
+  val plain = new RequestFactory:
     override def createRequestHeader(
         connection: RemoteConnection,
         method: String,
@@ -78,22 +71,20 @@ object RequestFactory {
         attrs: TypedMap
     ): RequestHeader =
       new RequestHeaderImpl(connection, method, target, version, headers, attrs)
-  }
-}
 
 /**
- * The default [[RequestFactory]] used by a Play application. This
- * `RequestFactory` adds the following typed attributes to requests:
- * - request id
- * - cookie
- * - session cookie
- * - flash cookie
+ * The default [[RequestFactory]] used by a Play application. This `RequestFactory` adds the following typed
+ * attributes to requests:
+ *   - request id
+ *   - cookie
+ *   - session cookie
+ *   - flash cookie
  */
 class DefaultRequestFactory @Inject() (
     val cookieHeaderEncoding: CookieHeaderEncoding,
     val sessionBaker: SessionCookieBaker,
     val flashBaker: FlashCookieBaker
-) extends RequestFactory {
+) extends RequestFactory:
   def this(config: HttpConfiguration) = this(
     new DefaultCookieHeaderEncoding(config.cookies),
     new LegacySessionCookieBaker(config.session, new CookieSignerProvider(config.secret).get),
@@ -107,26 +98,22 @@ class DefaultRequestFactory @Inject() (
       version: String,
       headers: Headers,
       attrs: TypedMap
-  ): RequestHeader = {
-    val cookieCell = new LazyCell[Cookies] {
+  ): RequestHeader =
+    val cookieCell = new LazyCell[Cookies]:
       protected override def emptyMarker: Cookies = null
       protected override def create: Cookies =
         cookieHeaderEncoding.fromCookieHeader(headers.get(play.api.http.HeaderNames.COOKIE))
-    }
-    val sessionCell = new LazyCell[Session] {
+    val sessionCell = new LazyCell[Session]:
       protected override def emptyMarker: Session = null
       protected override def create: Session =
         sessionBaker.decodeFromCookie(cookieCell.value.get(sessionBaker.COOKIE_NAME))
-    }
-    val flashCell = new LazyCell[Flash] {
+    val flashCell = new LazyCell[Flash]:
       protected override def emptyMarker: Flash = null
-      protected override def create: Flash      = flashBaker.decodeFromCookie(cookieCell.value.get(flashBaker.COOKIE_NAME))
-    }
+      protected override def create: Flash =
+        flashBaker.decodeFromCookie(cookieCell.value.get(flashBaker.COOKIE_NAME))
     val updatedAttrMap = attrs + (
       RequestAttrKey.Cookies -> cookieCell,
       RequestAttrKey.Session -> sessionCell,
-      RequestAttrKey.Flash   -> flashCell
+      RequestAttrKey.Flash -> flashCell
     )
     new RequestHeaderImpl(connection, method, target, version, headers, updatedAttrMap)
-  }
-}

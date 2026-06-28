@@ -13,9 +13,11 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 
 /**
- * This class provides an easy way to use Server Sent Events (SSE) as a chunked encoding, using an Akka Source.
+ * This class provides an easy way to use Server Sent Events (SSE) as a chunked encoding, using an Akka
+ * Source.
  *
- * Please see the <a href="http://dev.w3.org/html5/eventsource/">Server-Sent Events specification</a> for details.
+ * Please see the <a href="http://dev.w3.org/html5/eventsource/">Server-Sent Events specification</a> for
+ * details.
  *
  * An example of how to display an event stream:
  *
@@ -40,7 +42,7 @@ import play.api.libs.json.JsValue
  *   }
  * }}}
  */
-object EventSource {
+object EventSource:
 
   /**
    * Makes a `Flow[E, Event, _]`, given an input source.
@@ -52,9 +54,8 @@ object EventSource {
    *   Ok.chunked(jsonStream via EventSource.flow).as(ContentTypes.EVENT_STREAM)
    * }}}
    */
-  def flow[E: EventDataExtractor: EventNameExtractor: EventIdExtractor]: Flow[E, Event, ?] = {
+  def flow[E: EventDataExtractor: EventNameExtractor: EventIdExtractor]: Flow[E, Event, ?] =
     Flow[E].map(Event(_))
-  }
 
   // ------------------
   // Event
@@ -63,48 +64,40 @@ object EventSource {
   /**
    * An event encoded with the SSE protocol..
    */
-  case class Event(data: String, id: Option[String], name: Option[String]) {
+  case class Event(data: String, id: Option[String], name: Option[String]):
 
     /**
      * This event, formatted according to the EventSource protocol.
      */
-    lazy val formatted = {
+    lazy val formatted =
       val sb = new StringBuilder
       name.foreach(sb.append("event: ").append(_).append('\n'))
       id.foreach(sb.append("id: ").append(_).append('\n'))
-      for line <- data.split("(\r?\n)|\r", -1) do {
-        sb.append("data: ").append(line).append('\n')
-      }
+      for line <- data.split("(\r?\n)|\r", -1) do sb.append("data: ").append(line).append('\n')
       sb.append('\n')
       sb.toString()
-    }
-  }
 
-  object Event {
+  object Event:
 
     /**
      * Creates an event from a single input, using implicit extractors to provide raw values.
      *
-     * If no extractor is available, the implicit conversion in the low priority traits will be used.
-     * For the EventDataExtractor, this means `String` or `JsValue` will be automatically mapped,
-     * and the nameExtractor and idExtractor will implicitly resolve to `None`.
+     * If no extractor is available, the implicit conversion in the low priority traits will be used. For the
+     * EventDataExtractor, this means `String` or `JsValue` will be automatically mapped, and the
+     * nameExtractor and idExtractor will implicitly resolve to `None`.
      */
-    def apply[A](a: A)(
-        using dataExtractor: EventDataExtractor[A],
+    def apply[A](a: A)(using
+        dataExtractor: EventDataExtractor[A],
         nameExtractor: EventNameExtractor[A],
         idExtractor: EventIdExtractor[A]
-    ): Event = {
+    ): Event =
       Event(dataExtractor.eventData(a), idExtractor.eventId(a), nameExtractor.eventName(a))
-    }
 
-    implicit def writeable(using codec: Codec): Writeable[Event] = {
+    implicit def writeable(using codec: Codec): Writeable[Event] =
       Writeable(event => codec.encode(event.formatted))
-    }
 
-    implicit def contentType(using codec: Codec): ContentTypeOf[Event] = {
+    implicit def contentType(using codec: Codec): ContentTypeOf[Event] =
       ContentTypeOf(Some(ContentTypes.EVENT_STREAM))
-    }
-  }
 
   // ------------------
   // Event Data Extractor
@@ -112,11 +105,10 @@ object EventSource {
 
   case class EventDataExtractor[A](eventData: A => String)
 
-  trait LowPriorityEventEncoder {
+  trait LowPriorityEventEncoder:
     implicit val stringEvents: EventDataExtractor[String] = EventDataExtractor(identity)
 
     implicit val jsonEvents: EventDataExtractor[JsValue] = EventDataExtractor(Json.stringify)
-  }
 
   object EventDataExtractor extends LowPriorityEventEncoder
 
@@ -126,9 +118,8 @@ object EventSource {
 
   case class EventIdExtractor[E](eventId: E => Option[String])
 
-  trait LowPriorityEventIdExtractor {
+  trait LowPriorityEventIdExtractor:
     implicit def non[E]: EventIdExtractor[E] = EventIdExtractor[E](_ => None)
-  }
 
   object EventIdExtractor extends LowPriorityEventIdExtractor
 
@@ -138,11 +129,8 @@ object EventSource {
 
   case class EventNameExtractor[E](eventName: E => Option[String])
 
-  trait LowPriorityEventNameExtractor {
+  trait LowPriorityEventNameExtractor:
     implicit def non[E]: EventNameExtractor[E] = EventNameExtractor[E](_ => None)
-  }
 
-  object EventNameExtractor extends LowPriorityEventNameExtractor {
+  object EventNameExtractor extends LowPriorityEventNameExtractor:
     implicit def pair[E]: EventNameExtractor[(String, E)] = EventNameExtractor[(String, E)](p => Some(p._1))
-  }
-}
