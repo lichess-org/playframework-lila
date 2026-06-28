@@ -54,3 +54,26 @@ jobs:
       - name: compile
         run: sbt compile
 
+  format:
+    runs-on: ubuntu-latest
+    env:
+      JAVA_OPTS: "-Xmx6G -XX:+UseG1GC"
+      SBT_OPTS: "-Dsbt.ci=true"
+    steps:
+
+      - name: Checkout current branch
+        uses: actions/checkout@v6
+
+      - name: Setup JVM
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: compile
+        run: sbt scalafmtCheckAll
+

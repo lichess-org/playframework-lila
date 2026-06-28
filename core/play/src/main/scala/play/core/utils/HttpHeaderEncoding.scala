@@ -4,21 +4,20 @@
 
 package play.core.utils
 
-import java.lang.{ StringBuilder as JStringBuilder }
-import java.util.{ BitSet as JBitSet }
+import java.lang.StringBuilder as JStringBuilder
+import java.util.BitSet as JBitSet
 
 /**
  * Support for rending HTTP header parameters according to RFC5987.
  */
-private[play] object HttpHeaderParameterEncoding {
-  private def charSeqToBitSet(chars: Seq[Char]): JBitSet = {
+private[play] object HttpHeaderParameterEncoding:
+  private def charSeqToBitSet(chars: Seq[Char]): JBitSet =
     val ints: Seq[Int] = chars.map(_.toInt)
-    val max            = ints.fold(0)(Math.max(_, _))
+    val max = ints.fold(0)(Math.max(_, _))
     assert(max <= 256) // We should only be dealing with 7 or 8 bit chars
     val bitSet = new JBitSet(max)
     ints.foreach(bitSet.set(_))
     bitSet
-  }
 
   private val AlphaNum: Seq[Char] = ('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')
 
@@ -44,11 +43,10 @@ private[play] object HttpHeaderParameterEncoding {
 
   /**
    * A subset of the 'qdtext' defined in https://tools.ietf.org/html/rfc2616#section-2.2. These are the
-   * characters which can be inside a 'quoted-string' parameter value. These should form a
-   * superset of the [[AttrChar]] set defined below. We exclude some characters which are technically
-   * valid, but might be problematic, e.g. "\" and "%" could be treated as escape characters by some
-   * clients. We can be conservative because we can express these characters clearly as an extended
-   * parameter.
+   * characters which can be inside a 'quoted-string' parameter value. These should form a superset of the
+   * [[AttrChar]] set defined below. We exclude some characters which are technically valid, but might be
+   * problematic, e.g. "\" and "%" could be treated as escape characters by some clients. We can be
+   * conservative because we can express these characters clearly as an extended parameter.
    */
   private val PartialQuotedText: JBitSet = charSeqToBitSet(
     AlphaNum ++ AttrCharPunctuation ++
@@ -57,40 +55,31 @@ private[play] object HttpHeaderParameterEncoding {
   )
 
   /**
-   * The 'attr-char' values defined in https://tools.ietf.org/html/rfc5987#section-3.2.1. Should be a
-   * subset of [[PartialQuotedText]] defined above.
+   * The 'attr-char' values defined in https://tools.ietf.org/html/rfc5987#section-3.2.1. Should be a subset
+   * of [[PartialQuotedText]] defined above.
    */
   private val AttrChar: JBitSet = charSeqToBitSet(AlphaNum ++ AttrCharPunctuation)
 
   private val PlaceholderChar: Char = '?'
 
   /**
-   * Render a parameter name and value, handling character set issues as
-   * recommended in RFC5987.
+   * Render a parameter name and value, handling character set issues as recommended in RFC5987.
    *
    * Examples:
-   * [[
-   * render("filename", "foo.txt") ==> "filename=foo.txt"
-   * render("filename", "naïve.txt") ==> "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt"
-   * ]]
+   * [[render("filename", "foo.txt") ==> "filename=foo.txt" render("filename", "naïve.txt") ==> "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt"]]
    */
-  def encode(name: String, value: String): String = {
+  def encode(name: String, value: String): String =
     val builder = new JStringBuilder
     encodeToBuilder(name, value, builder)
     builder.toString
-  }
 
   /**
-   * Render a parameter name and value, handling character set issues as
-   * recommended in RFC5987.
+   * Render a parameter name and value, handling character set issues as recommended in RFC5987.
    *
    * Examples:
-   * [[
-   * render("filename", "foo.txt") ==> "filename=foo.txt"
-   * render("filename", "naïve.txt") ==> "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt"
-   * ]]
+   * [[render("filename", "foo.txt") ==> "filename=foo.txt" render("filename", "naïve.txt") ==> "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt"]]
    */
-  def encodeToBuilder(name: String, value: String, builder: JStringBuilder): Unit = {
+  def encodeToBuilder(name: String, value: String, builder: JStringBuilder): Unit =
     // This flag gets set if we encounter extended characters when rendering the
     // regular parameter value.
     var hasExtendedChars = false
@@ -112,14 +101,13 @@ private[play] object HttpHeaderParameterEncoding {
         // the 'token' or 'quoted printable' encoding, however it's
         // simpler to use the subset of characters that is also valid
         // for extended attributes.
-        if codePoint >= 0 && codePoint <= 255 && PartialQuotedText.get(codePoint) then {
+        if codePoint >= 0 && codePoint <= 255 && PartialQuotedText.get(codePoint) then
           builder.append(codePoint.toChar)
-        } else {
+        else
           // Set flag because we need to render an extended parameter.
           hasExtendedChars = true
           // Render a placeholder instead of the unsupported character.
           builder.append(PlaceholderChar)
-        }
       )
 
     builder.append('"')
@@ -131,7 +119,7 @@ private[play] object HttpHeaderParameterEncoding {
     // - https://tools.ietf.org/html/rfc5987#section-4.2
     // - https://tools.ietf.org/html/rfc6266#section-4.3 (for Content-Disposition filename parameter)
 
-    if hasExtendedChars then {
+    if hasExtendedChars then
       def hexDigit(x: Int): Char = (if x < 10 then x + '0' else x - 10 + 'a').toChar
 
       // From https://tools.ietf.org/html/rfc5987#section-3.2.1:
@@ -156,15 +144,9 @@ private[play] object HttpHeaderParameterEncoding {
       // 2.1 of [RFC3986].
 
       val bytes = value.getBytes(CharacterSetName)
-      for b <- bytes do {
-        if AttrChar.get(b & 0xff) then {
-          builder.append(b.toChar)
-        } else {
+      for b <- bytes do
+        if AttrChar.get(b & 0xff) then builder.append(b.toChar)
+        else
           builder.append('%')
           builder.append(hexDigit((b >> 4) & 0xf))
           builder.append(hexDigit(b & 0xf))
-        }
-      }
-    }
-  }
-}

@@ -15,19 +15,17 @@ import scala.language.reflectiveCalls
 /**
  * Helpers to create secure actions.
  */
-object Security {
+object Security:
   private val logger = Logger(getClass)
 
   /**
    * The default error response for an unauthorized request; used multiple places here
    */
-  private val DefaultUnauthorized: RequestHeader => Result = implicit request =>
-    Unauthorized("unauthorized")
+  private val DefaultUnauthorized: RequestHeader => Result = implicit request => Unauthorized("unauthorized")
 
   /**
-   * Wraps another action, allowing only authenticated HTTP requests.
-   * Furthermore, it lets users to configure where to retrieve the user info from
-   * and what to do in case unsuccessful authentication
+   * Wraps another action, allowing only authenticated HTTP requests. Furthermore, it lets users to configure
+   * where to retrieve the user info from and what to do in case unsuccessful authentication
    *
    * For example:
    * {{{
@@ -45,15 +43,19 @@ object Security {
    * }
    * }}}
    *
-   * @tparam A the type of the user info value (e.g. `String` if user info consists only in a user name)
-   * @param userinfo function used to retrieve the user info from the request header
-   * @param onUnauthorized function used to generate alternative result if the user is not authenticated
-   * @param action the action to wrap
+   * @tparam A
+   *   the type of the user info value (e.g. `String` if user info consists only in a user name)
+   * @param userinfo
+   *   function used to retrieve the user info from the request header
+   * @param onUnauthorized
+   *   function used to generate alternative result if the user is not authenticated
+   * @param action
+   *   the action to wrap
    */
   def Authenticated[A](
       userinfo: RequestHeader => Option[A],
       onUnauthorized: RequestHeader => Result
-  )(action: A => EssentialAction): EssentialAction = {
+  )(action: A => EssentialAction): EssentialAction =
     EssentialAction { request =>
       userinfo(request)
         .map { user => action(user)(request) }
@@ -61,23 +63,21 @@ object Security {
           Accumulator.done(onUnauthorized(request))
         }
     }
-  }
 
   def WithAuthentication[A](
       userinfo: RequestHeader => Option[A]
-  )(action: A => EssentialAction): EssentialAction = {
+  )(action: A => EssentialAction): EssentialAction =
     Authenticated(userinfo, DefaultUnauthorized)(action)
-  }
 
   /**
    * An authenticated request
    *
-   * @param user The user that made the request
+   * @param user
+   *   The user that made the request
    */
-  class AuthenticatedRequest[+A, U](val user: U, request: Request[A]) extends WrappedRequest[A](request) {
+  class AuthenticatedRequest[+A, U](val user: U, request: Request[A]) extends WrappedRequest[A](request):
     protected override def newWrapper[B](newRequest: Request[B]): AuthenticatedRequest[B, U] =
       new AuthenticatedRequest[B, U](user, newRequest)
-  }
 
   /**
    * An authenticated action builder.
@@ -96,8 +96,8 @@ object Security {
    * }
    * }}}
    *
-   * You can then use the authenticated builder with other action builders, i.e. to use a
-   * messagesApi with authentication, you can add:
+   * You can then use the authenticated builder with other action builders, i.e. to use a messagesApi with
+   * authentication, you can add:
    *
    * {{{
    *  class AuthMessagesRequest[A](val user: User,
@@ -127,15 +127,17 @@ object Security {
    * }
    * }}}
    *
-   * @param userinfo The function that looks up the user info.
-   * @param onUnauthorized The function to get the result for when no authenticated user can be found.
+   * @param userinfo
+   *   The function that looks up the user info.
+   * @param onUnauthorized
+   *   The function to get the result for when no authenticated user can be found.
    */
   class AuthenticatedBuilder[U](
       userinfo: RequestHeader => Option[U],
       defaultParser: BodyParser[AnyContent],
       onUnauthorized: RequestHeader => Result = implicit request => Unauthorized("unauthorized")
   )(using val executionContext: ExecutionContext)
-      extends ActionBuilder[({ type R[A] = AuthenticatedRequest[A, U] })#R, AnyContent] {
+      extends ActionBuilder[({ type R[A] = AuthenticatedRequest[A, U] })#R, AnyContent]:
     lazy val parser = defaultParser
 
     def invokeBlock[A](request: Request[A], block: (AuthenticatedRequest[A, U]) => Future[Result]) =
@@ -144,29 +146,26 @@ object Security {
     /**
      * Authenticate the given block.
      */
-    def authenticate[A](request: Request[A], block: (AuthenticatedRequest[A, U]) => Future[Result]) = {
+    def authenticate[A](request: Request[A], block: (AuthenticatedRequest[A, U]) => Future[Result]) =
       userinfo(request)
         .map { user => block(new AuthenticatedRequest(user, request)) }
         .getOrElse {
           Future.successful(onUnauthorized(request))
         }
-    }
-  }
 
-  object AuthenticatedBuilder {
+  object AuthenticatedBuilder:
 
     /**
      * Create an authenticated builder
      *
-     * @param userinfo The function that looks up the user info.
-     * @param onUnauthorized The function to get the result for when no authenticated user can be found.
+     * @param userinfo
+     *   The function that looks up the user info.
+     * @param onUnauthorized
+     *   The function to get the result for when no authenticated user can be found.
      */
     def apply[U](
         userinfo: RequestHeader => Option[U],
         defaultParser: BodyParser[AnyContent],
         onUnauthorized: RequestHeader => Result = DefaultUnauthorized
-    )(using ec: ExecutionContext): AuthenticatedBuilder[U] = {
+    )(using ec: ExecutionContext): AuthenticatedBuilder[U] =
       new AuthenticatedBuilder(userinfo, defaultParser, onUnauthorized)
-    }
-  }
-}

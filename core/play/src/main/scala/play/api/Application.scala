@@ -35,8 +35,8 @@ import scala.reflect.ClassTag
  *
  * Application creation is handled by the framework engine.
  *
- * If you need to create an ad-hoc application,
- * for example in case of unit testing, you can easily achieve this using:
+ * If you need to create an ad-hoc application, for example in case of unit testing, you can easily achieve
+ * this using:
  * {{{
  * val application = new DefaultApplication(new File("."), this.getClass.getClassloader, None, Play.Mode.Dev)
  * }}}
@@ -47,7 +47,7 @@ import scala.reflect.ClassTag
   msg =
     "You do not have an implicit Application in scope. If you want to bring the current running Application into context, please use dependency injection."
 )
-trait Application {
+trait Application:
 
   /**
    * The absolute path hosting this application, mainly used by the `getFile(path)` helper method
@@ -69,7 +69,7 @@ trait Application {
    */
   def environment: Environment
 
-  private[play] def isDev  = mode == Mode.Dev
+  private[play] def isDev = mode == Mode.Dev
   private[play] def isTest = mode == Mode.Test
   private[play] def isProd = mode == Mode.Prod
 
@@ -109,55 +109,46 @@ trait Application {
   def errorHandler: HttpErrorHandler
 
   /**
-   * Stop the application.  The returned future will be redeemed when all stop hooks have been run.
+   * Stop the application. The returned future will be redeemed when all stop hooks have been run.
    */
   def stop(): Future[?]
 
   /**
-   * Get the runtime injector for this application. In a runtime dependency injection based application, this can be
-   * used to obtain components as bound by the DI framework.
+   * Get the runtime injector for this application. In a runtime dependency injection based application, this
+   * can be used to obtain components as bound by the DI framework.
    *
-   * @return The injector.
+   * @return
+   *   The injector.
    */
   def injector: Injector = NewInstanceInjector
 
   /**
-   * Returns true if the global application is enabled for this app. If set to false, this changes the behavior of
-   * Play.start to disallow access to the global application instance,
-   * also affecting the deprecated Play APIs that use these.
+   * Returns true if the global application is enabled for this app. If set to false, this changes the
+   * behavior of Play.start to disallow access to the global application instance, also affecting the
+   * deprecated Play APIs that use these.
    */
-  lazy val globalApplicationEnabled: Boolean = {
+  lazy val globalApplicationEnabled: Boolean =
     configuration.getOptional[Boolean](Play.GlobalAppConfigKey).getOrElse(true)
-  }
-}
 
-object Application {
+object Application:
 
   /**
-   * Creates a function that caches results of calls to
-   * `app.injector.instanceOf[T]`. The cache speeds up calls
-   * when called with the same Application each time, which is
-   * a big benefit in production. It still works properly if
-   * called with a different Application each time, such as
-   * when running unit tests, but it will run more slowly.
+   * Creates a function that caches results of calls to `app.injector.instanceOf[T]`. The cache speeds up
+   * calls when called with the same Application each time, which is a big benefit in production. It still
+   * works properly if called with a different Application each time, such as when running unit tests, but it
+   * will run more slowly.
    *
-   * Since values are cached, it's important that this is only
-   * used for singleton values.
+   * Since values are cached, it's important that this is only used for singleton values.
    *
-   * This method avoids synchronization so it's possible that
-   * the injector might be called more than once for a single
-   * instance if this method is called from different threads
-   * at the same time.
+   * This method avoids synchronization so it's possible that the injector might be called more than once for
+   * a single instance if this method is called from different threads at the same time.
    *
-   * The cache uses a SoftReference to both the Application and
-   * the returned instance so it will not cause memory leaks.
-   * Unlike WeakHashMap it doesn't use a ReferenceQueue, so values
-   * will still be cleaned even if the ReferenceQueue is never
-   * activated.
+   * The cache uses a SoftReference to both the Application and the returned instance so it will not cause
+   * memory leaks. Unlike WeakHashMap it doesn't use a ReferenceQueue, so values will still be cleaned even if
+   * the ReferenceQueue is never activated.
    */
   def instanceCache[T: ClassTag]: Application => T =
     new InlineCache((app: Application) => app.injector.instanceOf[T])
-}
 
 @Singleton
 class DefaultApplication @Inject() (
@@ -171,7 +162,7 @@ class DefaultApplication @Inject() (
     override val actorSystem: ActorSystem,
     override val materializer: Materializer,
     override val coordinatedShutdown: CoordinatedShutdown
-) extends Application {
+) extends Application:
   def this(
       environment: Environment,
       applicationLifecycle: ApplicationLifecycle,
@@ -201,14 +192,13 @@ class DefaultApplication @Inject() (
 
   override def stop(): Future[?] =
     CoordinatedShutdownSupport.asyncShutdown(actorSystem, ApplicationStoppedReason)
-}
 
 private[play] case object ApplicationStoppedReason extends CoordinatedShutdown.Reason
 
 /**
  * Helper to provide the Play built in components.
  */
-trait BuiltInComponents extends AkkaComponents with AkkaTypedComponents {
+trait BuiltInComponents extends AkkaComponents with AkkaTypedComponents:
 
   /** The application's environment, e.g. it's [[ClassLoader]] and root path. */
   def environment: Environment
@@ -216,27 +206,29 @@ trait BuiltInComponents extends AkkaComponents with AkkaTypedComponents {
   /** The application's configuration. */
   def configuration: Configuration
 
-  /** A registry to receive application lifecycle events, e.g. to close resources when the application stops. */
+  /**
+   * A registry to receive application lifecycle events, e.g. to close resources when the application stops.
+   */
   def applicationLifecycle: ApplicationLifecycle
 
   /** The router that's used to pass requests to the correct handler. */
   def router: Router
 
   /**
-   * The runtime [[Injector]] instance provided to the [[DefaultApplication]]. This injector is set up to allow
-   * existing (deprecated) legacy APIs to function. It is not set up to support injecting arbitrary Play components.
+   * The runtime [[Injector]] instance provided to the [[DefaultApplication]]. This injector is set up to
+   * allow existing (deprecated) legacy APIs to function. It is not set up to support injecting arbitrary Play
+   * components.
    */
-  lazy val injector: Injector = {
+  lazy val injector: Injector =
     val simple = new SimpleInjector(NewInstanceInjector) +
-      cookieSigner +      // play.api.libs.Crypto (for cookies)
+      cookieSigner + // play.api.libs.Crypto (for cookies)
       httpConfiguration + // play.api.mvc.BodyParsers trait
-      tempFileCreator     // play.api.libs.TemporaryFileCreator object
+      tempFileCreator // play.api.libs.TemporaryFileCreator object
     new ContextClassLoaderInjector(simple, environment.classLoader)
-  }
 
   lazy val playBodyParsers: PlayBodyParsers =
     PlayBodyParsers(tempFileCreator, httpErrorHandler, httpConfiguration.parser)(using materializer)
-  lazy val defaultBodyParser: BodyParser[AnyContent]  = playBodyParsers.default
+  lazy val defaultBodyParser: BodyParser[AnyContent] = playBodyParsers.default
   lazy val defaultActionBuilder: DefaultActionBuilder = DefaultActionBuilder(defaultBodyParser)
 
   lazy val httpConfiguration: HttpConfiguration =
@@ -246,8 +238,8 @@ trait BuiltInComponents extends AkkaComponents with AkkaTypedComponents {
     new DefaultHttpErrorHandler(environment, configuration, Some(router))
 
   /**
-   * List of filters, typically provided by mixing in play.filters.HttpFiltersComponents
-   * or play.api.NoHttpFiltersComponents.
+   * List of filters, typically provided by mixing in play.filters.HttpFiltersComponents or
+   * play.api.NoHttpFiltersComponents.
    *
    * In most cases you will want to mixin HttpFiltersComponents and append your own filters:
    *
@@ -303,20 +295,26 @@ trait BuiltInComponents extends AkkaComponents with AkkaTypedComponents {
   lazy val csrfTokenSigner: CSRFTokenSigner = new CSRFTokenSignerProvider(cookieSigner).get
 
   lazy val tempFileReaper: TemporaryFileReaper =
-    new DefaultTemporaryFileReaper(actorSystem, TemporaryFileReaperConfiguration.fromConfiguration(configuration))
+    new DefaultTemporaryFileReaper(
+      actorSystem,
+      TemporaryFileReaperConfiguration.fromConfiguration(configuration)
+    )
   lazy val tempFileCreator: TemporaryFileCreator =
     new DefaultTemporaryFileCreator(applicationLifecycle, tempFileReaper, configuration)
 
-  lazy val fileMimeTypes: FileMimeTypes = new DefaultFileMimeTypesProvider(httpConfiguration.fileMimeTypes).get
+  lazy val fileMimeTypes: FileMimeTypes = new DefaultFileMimeTypesProvider(
+    httpConfiguration.fileMimeTypes
+  ).get
 
   // NOTE: the following helpers are declared as protected since they are only meant to be used inside BuiltInComponents
   // This also makes them not conflict with other methods of the same type when used with Macwire.
 
   /**
-   * Alias method to [[defaultActionBuilder]]. This just helps to keep the idiom of using `Action`
-   * when creating `Router`s using the built in components.
+   * Alias method to [[defaultActionBuilder]]. This just helps to keep the idiom of using `Action` when
+   * creating `Router`s using the built in components.
    *
-   * @return the default action builder.
+   * @return
+   *   the default action builder.
    */
   protected def Action: DefaultActionBuilder = defaultActionBuilder
 
@@ -324,13 +322,12 @@ trait BuiltInComponents extends AkkaComponents with AkkaTypedComponents {
    * Alias method to [[playBodyParsers]].
    */
   protected def parse: PlayBodyParsers = playBodyParsers
-}
 
 /**
  * A component to mix in when no default filters should be mixed in to BuiltInComponents.
  *
- * @see [[BuiltInComponents.httpFilters]]
+ * @see
+ *   [[BuiltInComponents.httpFilters]]
  */
-trait NoHttpFiltersComponents {
+trait NoHttpFiltersComponents:
   val httpFilters: Seq[EssentialFilter] = Nil
-}

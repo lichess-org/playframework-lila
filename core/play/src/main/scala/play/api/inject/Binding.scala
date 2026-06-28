@@ -17,21 +17,28 @@ import play.inject.SourceProvider
 /**
  * A binding.
  *
- * Bindings are used to bind classes, optionally qualified by a JSR-330 qualifier annotation, to instances, providers or
- * implementation classes.
+ * Bindings are used to bind classes, optionally qualified by a JSR-330 qualifier annotation, to instances,
+ * providers or implementation classes.
  *
- * Bindings may also specify a JSR-330 scope.  If, and only if that scope is [[$javadoc/javax/inject/Singleton javax.inject.Singleton]], then the
- * binding may declare itself to be eagerly instantiated.  In which case, it should be eagerly instantiated when Play
- * starts up.
+ * Bindings may also specify a JSR-330 scope. If, and only if that scope is
+ * [[$javadoc/javax/inject/Singleton javax.inject.Singleton]], then the binding may declare itself to be
+ * eagerly instantiated. In which case, it should be eagerly instantiated when Play starts up.
  *
- * @param key The binding key.
- * @param target The binding target.
- * @param scope The JSR-330 scope.
- * @param eager Whether the binding should be eagerly instantiated.
- * @param source Where this object was bound. Used in error reporting.
- * @see The [[Module]] class for information on how to provide bindings.
+ * @param key
+ *   The binding key.
+ * @param target
+ *   The binding target.
+ * @param scope
+ *   The JSR-330 scope.
+ * @param eager
+ *   Whether the binding should be eagerly instantiated.
+ * @param source
+ *   Where this object was bound. Used in error reporting.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  *
- * @define javadoc http://docs.oracle.com/javase/8/docs/api
+ * @define javadoc
+ *   http://docs.oracle.com/javase/8/docs/api
  */
 final case class Binding[T](
     key: BindingKey[T],
@@ -39,7 +46,7 @@ final case class Binding[T](
     scope: Option[Class[? <: Annotation]],
     eager: Boolean,
     source: Object
-) {
+):
 
   /**
    * Configure the scope for this binding.
@@ -57,31 +64,32 @@ final case class Binding[T](
    */
   def eagerly(): Binding[T] = copy(eager = true)
 
-  override def toString = {
+  override def toString =
     val eagerDesc = if eager then " eagerly" else ""
     s"$source:\nBinding($key to ${target.getOrElse("self")}${scope.fold("")(" in " + _)}$eagerDesc)"
-  }
-}
 
 /**
  * Constructor for a binding Key that doesn't have a qualifier.
  *
- * @see The [[Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
-object BindingKey {
+object BindingKey:
   def apply[T](clazz: Class[T]): BindingKey[T] = new BindingKey(clazz)
-}
 
 /**
  * A binding key.
  *
  * A binding key consists of a class and zero or more JSR-330 qualifiers.
  *
- * @param clazz The class to bind.
- * @param qualifier An optional qualifier.
- * @see The [[Module]] class for information on how to provide bindings.
+ * @param clazz
+ *   The class to bind.
+ * @param qualifier
+ *   An optional qualifier.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
-final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnotation]) {
+final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnotation]):
   def this(clazz: Class[T]) = this(clazz, None)
 
   /**
@@ -95,8 +103,8 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
   /**
    * Qualify this binding key with the given annotation.
    *
-   * For example, you may have both a cached implementation, and a direct implementation of a service. To differentiate
-   * between them, you may define a Cached annotation:
+   * For example, you may have both a cached implementation, and a direct implementation of a service. To
+   * differentiate between them, you may define a Cached annotation:
    *
    * {{{
    *   import scala.annotation._
@@ -124,8 +132,8 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
   /**
    * Qualify this binding key with the given annotation.
    *
-   * For example, you may have both a cached implementation, and a direct implementation of a service. To differentiate
-   * between them, you may define a Cached annotation:
+   * For example, you may have both a cached implementation, and a direct implementation of a service. To
+   * differentiate between them, you may define a Cached annotation:
    *
    * {{{
    *   import scala.annotation._
@@ -155,7 +163,7 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
    *
    * This class will be instantiated and injected by the injection framework.
    */
-  def to(implementation: Class[? <: T]): Binding[T] = {
+  def to(implementation: Class[? <: T]): Binding[T] =
     Binding(
       this,
       Some(ConstructionTarget(validateTargetNonAbstract(implementation))),
@@ -163,7 +171,6 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
       false,
       SourceLocator.source
     )
-  }
 
   /**
    * Bind this binding key to the given implementation class.
@@ -185,7 +192,8 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
    * Bind this binding key to the given instance.
    */
   def to[A <: T](instance: => A): Binding[T] =
-    to(new Provider[A] { def get = instance })
+    to(new Provider[A]:
+      def get = instance)
 
   /**
    * Bind this binding key to another binding key.
@@ -196,8 +204,8 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
   /**
    * Bind this binding key to the given provider class.
    *
-   * The dependency injection framework will instantiate and inject this provider, and then invoke its `get` method
-   * whenever an instance of the class is needed.
+   * The dependency injection framework will instantiate and inject this provider, and then invoke its `get`
+   * method whenever an instance of the class is needed.
    */
   def toProvider[P <: Provider[? <: T]](provider: Class[P]): Binding[T] =
     Binding(
@@ -211,8 +219,8 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
   /**
    * Bind this binding key to the given provider class.
    *
-   * The dependency injection framework will instantiate and inject this provider, and then invoke its `get` method
-   * whenever an instance of the class is needed.
+   * The dependency injection framework will instantiate and inject this provider, and then invoke its `get`
+   * method whenever an instance of the class is needed.
    */
   def toProvider[P <: Provider[? <: T]: ClassTag]: Binding[T] =
     toProvider(implicitly[ClassTag[P]].runtimeClass.asInstanceOf[Class[P]])
@@ -227,50 +235,51 @@ final case class BindingKey[T](clazz: Class[T], qualifier: Option[QualifierAnnot
    */
   def toSelf: Binding[T] = Binding(this, None, None, false, SourceLocator.source)
 
-  override def toString = {
+  override def toString =
     s"$clazz${qualifier.fold("")(" qualified with " + _)}"
-  }
 
-  private def validateTargetNonAbstract[T](target: Class[T]): Class[T] = {
-    if target.isInterface || Modifier.isAbstract(target.getModifiers) then {
+  private def validateTargetNonAbstract[T](target: Class[T]): Class[T] =
+    if target.isInterface || Modifier.isAbstract(target.getModifiers) then
       throw new PlayException(
         "Cannot bind abstract target",
         s"""You have attempted to bind $target as a construction target for $this, however, $target is abstract. If you wish to bind this as an alias, bind it to a ${classOf[
-          BindingKey[?]
-        ]} instead."""
+            BindingKey[?]
+          ]} instead."""
       )
-    }
     target
-  }
-}
 
 /**
  * A binding target.
  *
  * This trait captures the four possible types of targets.
  *
- * @see The [[Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
 sealed trait BindingTarget[T] {}
 
 /**
  * A binding target that is provided by a provider instance.
  *
- * @see The [[Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
 final case class ProviderTarget[T](provider: Provider[? <: T]) extends BindingTarget[T] {}
 
 /**
  * A binding target that is provided by a provider class.
  *
- * @see The [[Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
-final case class ProviderConstructionTarget[T](provider: Class[? <: Provider[? <: T]]) extends BindingTarget[T] {}
+final case class ProviderConstructionTarget[T](provider: Class[? <: Provider[? <: T]])
+    extends BindingTarget[T] {}
 
 /**
  * A binding target that is provided by a class.
  *
- * @see The [[play.api.inject.Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[play.api.inject.Module]] class for information on how to provide bindings.
  */
 final case class ConstructionTarget[T](implementation: Class[? <: T]) extends BindingTarget[T] {}
 
@@ -282,30 +291,36 @@ final case class BindingKeyTarget[T](key: BindingKey[? <: T]) extends BindingTar
 /**
  * A qualifier annotation.
  *
- * Since bindings may specify either annotations, or instances of annotations, this abstraction captures either of
- * those two possibilities.
+ * Since bindings may specify either annotations, or instances of annotations, this abstraction captures
+ * either of those two possibilities.
  *
- * @see The [[Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
 sealed trait QualifierAnnotation {}
 
 /**
  * A qualifier annotation instance.
  *
- * @see The [[Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
 final case class QualifierInstance[T <: Annotation](instance: T) extends QualifierAnnotation {}
 
 /**
  * A qualifier annotation class.
  *
- * @see The [[Module]] class for information on how to provide bindings.
+ * @see
+ *   The [[Module]] class for information on how to provide bindings.
  */
 final case class QualifierClass[T <: Annotation](clazz: Class[T]) extends QualifierAnnotation {}
 
-private object SourceLocator {
+private object SourceLocator:
   val provider =
-    SourceProvider.DEFAULT_INSTANCE.plusSkippedClasses(this.getClass, classOf[BindingKey[?]], classOf[Binding[?]])
+    SourceProvider.DEFAULT_INSTANCE.plusSkippedClasses(
+      this.getClass,
+      classOf[BindingKey[?]],
+      classOf[Binding[?]]
+    )
 
   def source = provider.get()
-}

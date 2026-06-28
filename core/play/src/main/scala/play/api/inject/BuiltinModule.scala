@@ -33,14 +33,13 @@ import scala.concurrent.ExecutionContextExecutor
 /**
  * The Play BuiltinModule.
  *
- * Provides all the core components of a Play application. This is typically automatically enabled by Play for an
- * application.
+ * Provides all the core components of a Play application. This is typically automatically enabled by Play for
+ * an application.
  */
 class BuiltinModule
-    extends SimpleModule((env, conf) => {
-      def dynamicBindings(factories: ((Environment, Configuration) => Seq[Binding[?]])*) = {
+    extends SimpleModule((env, conf) =>
+      def dynamicBindings(factories: ((Environment, Configuration) => Seq[Binding[?]])*) =
         factories.flatMap(_(env, conf))
-      }
 
       Seq(
         bind[Environment] `to` env,
@@ -86,15 +85,14 @@ class BuiltinModule
         HttpRequestHandler.bindingsFromConfiguration,
         RoutesProvider.bindingsFromConfiguration
       )
-    })
+    )
 
 // This allows us to access the original configuration via this
 // provider while overriding the binding for Configuration itself.
 class ConfigurationProvider(val get: Configuration) extends Provider[Configuration]
 
-class ConfigProvider @Inject() (configuration: Configuration) extends Provider[Config] {
+class ConfigProvider @Inject() (configuration: Configuration) extends Provider[Config]:
   override def get() = configuration.underlying
-}
 
 @Singleton
 class RoutesProvider @Inject() (
@@ -102,19 +100,17 @@ class RoutesProvider @Inject() (
     environment: Environment,
     configuration: Configuration,
     httpConfig: HttpConfiguration
-) extends Provider[Router] {
-  lazy val get = {
+) extends Provider[Router]:
+  lazy val get =
     val prefix = httpConfig.context
 
     val router = Router
       .load(environment, configuration)
       .fold[Router](Router.empty)(injector.instanceOf(_))
     router.withPrefix(prefix)
-  }
-}
 
-object RoutesProvider {
-  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
+object RoutesProvider:
+  def bindingsFromConfiguration(environment: Environment, configuration: Configuration): Seq[Binding[?]] =
     val routerClass = Router.load(environment, configuration)
 
     import scala.language.existentials
@@ -124,11 +120,8 @@ object RoutesProvider {
 
     // If it's a generated router, then we need to provide a binding for it. Otherwise, it's the users
     // (or the library that provided the router) job to provide a binding for it.
-    val routerInstanceBinding = routerClass match {
+    val routerInstanceBinding = routerClass match
       case Some(generated) if classOf[GeneratedRouter].isAssignableFrom(generated) =>
         Seq(bind(generated).toSelf)
       case _ => Nil
-    }
     routerInstanceBinding :+ bind[Router].toProvider[RoutesProvider]
-  }
-}

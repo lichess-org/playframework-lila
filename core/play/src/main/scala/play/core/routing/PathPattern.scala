@@ -16,72 +16,66 @@ trait PathPart
 /**
  * A dynamically extracted part of the path.
  *
- * @param name The name of the part.
- * @param constraint The constraint - that is, the type.
- * @param encodeable Whether the path should be encoded/decoded.
+ * @param name
+ *   The name of the part.
+ * @param constraint
+ *   The constraint - that is, the type.
+ * @param encodeable
+ *   Whether the path should be encoded/decoded.
  */
-case class DynamicPart(name: String, constraint: String, encodeable: Boolean) extends PathPart {
+case class DynamicPart(name: String, constraint: String, encodeable: Boolean) extends PathPart:
   override def toString = """DynamicPart("""" + name + "\", \"\"\"" + constraint + "\"\"\")" // "
-}
 
 /**
  * A static part of the path.
  */
-case class StaticPart(value: String) extends PathPart {
+case class StaticPart(value: String) extends PathPart:
   override def toString = """StaticPart("""" + value + """")"""
-}
 
 /**
  * A pattern for match paths, consisting of a sequence of path parts.
  */
-case class PathPattern(parts: Seq[PathPart]) {
+case class PathPattern(parts: Seq[PathPart]):
   import java.util.regex.*
 
   private def decodeIfEncoded(decode: Boolean, groupCount: Int): Matcher => Either[Throwable, String] =
     matcher =>
       Exception.allCatch[String].either {
-        if decode then {
+        if decode then
           val group = matcher.group(groupCount)
           // If param is not correctly encoded, get path will return null, so we prepend a / to it
           new URI("/" + group).getPath.drop(1)
-        } else
-          matcher.group(groupCount)
+        else matcher.group(groupCount)
       }
 
   private val (regex, groups) =
     parts.foldLeft(Pattern.quote("/"), Map.empty[String, Matcher => Either[Throwable, String]], 0) { (s, e) =>
-      e match {
+      e match
         case StaticPart(p) => ((s._1 + Pattern.quote(p)), s._2, s._3)
-        case DynamicPart(k, r, encodeable) => {
+        case DynamicPart(k, r, encodeable) =>
           (
             (s._1 + "(" + r + ")"),
             (s._2 + (k -> decodeIfEncoded(encodeable, s._3 + 1))),
             s._3 + 1 + Pattern.compile(r).matcher("").groupCount
           )
-        }
-      }
-    } match {
+    } match
       case (r, g, _) => Pattern.compile("^" + r + "$") -> g
-    }
 
   /**
    * Apply the path pattern to a given candidate path to see if it matches.
    *
-   * @param path The path to match against.
-   * @return The map of extracted parameters, or none if the path didn't match.
+   * @param path
+   *   The path to match against.
+   * @return
+   *   The map of extracted parameters, or none if the path didn't match.
    */
-  def apply(path: String): Option[Map[String, Either[Throwable, String]]] = {
+  def apply(path: String): Option[Map[String, Either[Throwable, String]]] =
     val matcher = regex.matcher(path)
-    if matcher.matches then {
-      Some(groups.view.mapValues(_(matcher)).toMap)
-    } else {
-      None
-    }
-  }
+    if matcher.matches then Some(groups.view.mapValues(_(matcher)).toMap)
+    else None
 
   override def toString =
     parts.map {
       case DynamicPart(name, constraint, _) => "$" + name + "<" + constraint + ">"
-      case StaticPart(path)                 => path
+      case StaticPart(path) => path
     }.mkString
-}

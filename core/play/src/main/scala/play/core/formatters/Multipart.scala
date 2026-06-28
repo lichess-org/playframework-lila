@@ -20,7 +20,7 @@ import play.api.mvc.MultipartFormData
 
 import scala.annotation.tailrec
 
-object Multipart {
+object Multipart:
   private def CrLf = "\r\n"
 
   private val alphabet = "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".getBytes(US_ASCII)
@@ -31,45 +31,41 @@ object Multipart {
   def transform(
       body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?],
       boundary: String
-  ): Source[ByteString, ?] = {
+  ): Source[ByteString, ?] =
     body.via(format(boundary, Charset.defaultCharset(), 4096))
-  }
 
   /**
-   * Provides a Formatting Flow which could be used to format a MultipartFormData.Part source to a multipart/form data body
+   * Provides a Formatting Flow which could be used to format a MultipartFormData.Part source to a
+   * multipart/form data body
    */
   def format(
       boundary: String,
       nioCharset: Charset,
       chunkSize: Int
-  ): Flow[MultipartFormData.Part[Source[ByteString, ?]], ByteString, NotUsed] = {
+  ): Flow[MultipartFormData.Part[Source[ByteString, ?]], ByteString, NotUsed] =
     Flow[MultipartFormData.Part[Source[ByteString, ?]]]
       .via(streamed(boundary, nioCharset, chunkSize))
       .flatMapConcat(identity)
-  }
 
   /**
    * Creates a new random number of the given length and base64 encodes it (using a custom "safe" alphabet).
    *
-   * @throws java.lang.IllegalArgumentException if the length is greater than 70 or less than 1 as specified in
-   *                                  <a href="https://tools.ietf.org/html/rfc2046#section-5.1.1">rfc2046</a>
+   * @throws java.lang.IllegalArgumentException
+   *   if the length is greater than 70 or less than 1 as specified in <a
+   *   href="https://tools.ietf.org/html/rfc2046#section-5.1.1">rfc2046</a>
    */
-  def randomBoundary(length: Int = 18, random: java.util.Random = ThreadLocalRandom.current()): String = {
-    if length < 1 || length > 70 then throw new IllegalArgumentException("length can't be greater than 70 or less than 1")
-    val bytes: Seq[Byte] = for byte <- 1 to length yield {
-      alphabet(random.nextInt(alphabet.length))
-    }
+  def randomBoundary(length: Int = 18, random: java.util.Random = ThreadLocalRandom.current()): String =
+    if length < 1 || length > 70 then
+      throw new IllegalArgumentException("length can't be greater than 70 or less than 1")
+    val bytes: Seq[Byte] = for byte <- 1 to length yield alphabet(random.nextInt(alphabet.length))
     new String(bytes.toArray, US_ASCII)
-  }
 
   /**
-   * Helper function to escape a single header parameter using the HTML5 strategy.
-   * (The alternative would be the strategy defined by RFC5987)
-   * Particularly useful for Content-Disposition header parameters which might contain
-   * non-ASCII values, like file names.
-   * This follows the "WHATWG HTML living standard" section 4.10.21.8 and matches
-   * the behavior of curl and modern browsers.
-   * See https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
+   * Helper function to escape a single header parameter using the HTML5 strategy. (The alternative would be
+   * the strategy defined by RFC5987) Particularly useful for Content-Disposition header parameters which
+   * might contain non-ASCII values, like file names. This follows the "WHATWG HTML living standard" section
+   * 4.10.21.8 and matches the behavior of curl and modern browsers. See
+   * https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data
    */
   def escapeParamWithHTML5Strategy(value: String) =
     value
@@ -77,102 +73,90 @@ object Multipart {
       .replace("\r", "%0D")
       .replace("\n", "%0A")
 
-  private sealed trait Formatter {
+  private sealed trait Formatter:
     def ~~(ch: Char): this.type
 
-    def ~~(string: String): this.type = {
+    def ~~(string: String): this.type =
       @tailrec def rec(ix: Int = 0): this.type =
-        if ix < string.length then {
+        if ix < string.length then
           this ~~ string.charAt(ix)
           rec(ix + 1)
-        } else this
+        else this
       rec()
-    }
-  }
 
-  private class CustomCharsetByteStringFormatter(nioCharset: Charset, sizeHint: Int) extends Formatter {
+  private class CustomCharsetByteStringFormatter(nioCharset: Charset, sizeHint: Int) extends Formatter:
     private val charBuffer = CharBuffer.allocate(64)
-    private val builder    = new ByteStringBuilder
+    private val builder = new ByteStringBuilder
     builder.sizeHint(sizeHint)
 
-    def get: ByteString = {
+    def get: ByteString =
       flushCharBuffer()
       builder.result()
-    }
 
-    def ~~(char: Char): this.type = {
+    def ~~(char: Char): this.type =
       if !charBuffer.hasRemaining then flushCharBuffer()
       charBuffer.put(char)
       this
-    }
 
-    def ~~(bytes: ByteString): this.type = {
-      if bytes.nonEmpty then {
+    def ~~(bytes: ByteString): this.type =
+      if bytes.nonEmpty then
         flushCharBuffer()
         builder ++= bytes
-      }
       this
-    }
 
-    private def flushCharBuffer(): Unit = {
+    private def flushCharBuffer(): Unit =
       charBuffer.flip()
-      if charBuffer.hasRemaining then {
+      if charBuffer.hasRemaining then
         val byteBuffer = nioCharset.encode(charBuffer)
-        val bytes      = new Array[Byte](byteBuffer.remaining())
+        val bytes = new Array[Byte](byteBuffer.remaining())
         byteBuffer.get(bytes)
         builder.putBytes(bytes)
-      }
       charBuffer.clear()
-    }
-  }
 
-  private class ByteStringFormatter(sizeHint: Int) extends Formatter {
+  private class ByteStringFormatter(sizeHint: Int) extends Formatter:
     private val builder = new ByteStringBuilder
     builder.sizeHint(sizeHint)
 
     def get: ByteString = builder.result()
 
-    def ~~(char: Char): this.type = {
+    def ~~(char: Char): this.type =
       builder += char.toByte
       this
-    }
-  }
 
   private def streamed(
       boundary: String,
       nioCharset: Charset,
       chunkSize: Int
   ): GraphStage[FlowShape[MultipartFormData.Part[Source[ByteString, ?]], Source[ByteString, Any]]] =
-    new GraphStage[FlowShape[MultipartFormData.Part[Source[ByteString, ?]], Source[ByteString, Any]]] {
-      val in  = Inlet[MultipartFormData.Part[Source[ByteString, ?]]]("CustomCharsetByteStringFormatter.in")
+    new GraphStage[FlowShape[MultipartFormData.Part[Source[ByteString, ?]], Source[ByteString, Any]]]:
+      val in = Inlet[MultipartFormData.Part[Source[ByteString, ?]]]("CustomCharsetByteStringFormatter.in")
       val out = Outlet[Source[ByteString, Any]]("CustomCharsetByteStringFormatter.out")
 
       override def shape = FlowShape.of(in, out)
 
       override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
-        new GraphStageLogic(shape) with OutHandler with InHandler {
+        new GraphStageLogic(shape) with OutHandler with InHandler:
           var firstBoundaryRendered = false
 
-          override def onPush(): Unit = {
+          override def onPush(): Unit =
             val f = new CustomCharsetByteStringFormatter(nioCharset, chunkSize)
 
             val bodyPart = grab(in)
 
-            def bodyPartChunks(data: Source[ByteString, Any]): Source[ByteString, Any] = {
+            def bodyPartChunks(data: Source[ByteString, Any]): Source[ByteString, Any] =
               (Source.single(f.get) ++ data).mapMaterializedValue(_ => ())
-            }
 
-            def completePartFormatting(): Source[ByteString, Any] = bodyPart match {
-              case MultipartFormData.DataPart(_, data)               => Source.single((f ~~ ByteString(data)).get)
+            def completePartFormatting(): Source[ByteString, Any] = bodyPart match
+              case MultipartFormData.DataPart(_, data) => Source.single((f ~~ ByteString(data)).get)
               case MultipartFormData.FilePart(_, _, _, ref, _, _, _) => bodyPartChunks(ref)
-              case _                                                 => throw new UnsupportedOperationException()
-            }
+              case _ => throw new UnsupportedOperationException()
 
             renderBoundary(f, boundary, suppressInitialCrLf = !firstBoundaryRendered)
             firstBoundaryRendered = true
 
-            val (key, filename, contentType, dispositionType) = bodyPart match {
-              case MultipartFormData.DataPart(innerKey, _) => (innerKey, None, Option("text/plain"), "form-data")
+            val (key, filename, contentType, dispositionType) = bodyPart match
+              case MultipartFormData.DataPart(innerKey, _) =>
+                (innerKey, None, Option("text/plain"), "form-data")
               case MultipartFormData.FilePart(
                     innerKey,
                     innerFilename,
@@ -184,39 +168,29 @@ object Multipart {
                   ) =>
                 (innerKey, Option(innerFilename), innerContentType, innerDispositionType)
               case _ => throw new UnsupportedOperationException()
-            }
             renderDisposition(f, dispositionType, key, filename)
             contentType.foreach { ct => renderContentType(f, ct) }
             renderBuffer(f)
             push(out, completePartFormatting())
-          }
 
-          override def onPull(): Unit = {
+          override def onPull(): Unit =
             val finishing = isClosed(in)
-            if finishing && firstBoundaryRendered then {
+            if finishing && firstBoundaryRendered then
               val f = new ByteStringFormatter(boundary.length + 4)
               renderFinalBoundary(f, boundary)
               push(out, Source.single(f.get))
               completeStage()
-            } else if finishing then {
-              completeStage()
-            } else {
-              pull(in)
-            }
-          }
+            else if finishing then completeStage()
+            else pull(in)
 
-          override def onUpstreamFinish(): Unit = {
+          override def onUpstreamFinish(): Unit =
             if isAvailable(out) then onPull()
-          }
 
           setHandlers(in, out, this)
-        }
-    }
 
-  private def renderBoundary(f: Formatter, boundary: String, suppressInitialCrLf: Boolean = false): Unit = {
+  private def renderBoundary(f: Formatter, boundary: String, suppressInitialCrLf: Boolean = false): Unit =
     if !suppressInitialCrLf then f ~~ CrLf
     f ~~ '-' ~~ '-' ~~ boundary ~~ CrLf
-  }
 
   private def renderFinalBoundary(f: Formatter, boundary: String): Unit =
     f ~~ CrLf ~~ '-' ~~ '-' ~~ boundary ~~ '-' ~~ '-'
@@ -226,19 +200,15 @@ object Multipart {
       dispositionType: String,
       contentDisposition: String,
       filename: Option[String]
-  ): Unit = {
+  ): Unit =
     f ~~ "Content-Disposition: " ~~ dispositionType ~~ "; name=" ~~ '"' ~~ escapeParamWithHTML5Strategy(
       contentDisposition
     ) ~~ '"'
     filename.foreach { name => f ~~ "; filename=" ~~ '"' ~~ escapeParamWithHTML5Strategy(name) ~~ '"' }
     f ~~ CrLf
-  }
 
-  private def renderContentType(f: Formatter, contentType: String): Unit = {
+  private def renderContentType(f: Formatter, contentType: String): Unit =
     f ~~ "Content-Type: " ~~ contentType ~~ CrLf
-  }
 
-  private def renderBuffer(f: Formatter): Unit = {
+  private def renderBuffer(f: Formatter): Unit =
     f ~~ CrLf
-  }
-}

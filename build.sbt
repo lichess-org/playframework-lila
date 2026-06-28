@@ -27,16 +27,18 @@ lazy val PlayExceptionsProject = Project("Play-Exceptions", file("core/play-exce
   .settings(playCommonSettings)
   .settings(
     autoScalaLibrary := false,
-    crossPaths       := false,
+    crossPaths := false
   )
 
 lazy val PlayProject = Project("Play", file("core/play"))
   .enablePlugins(SbtTwirl)
   .settings(playCommonSettings)
   .settings(
-    libraryDependencies ++= runtime(scalaVersion.value) ++ scalacheckDependencies ++ cookieEncodingDependencies :+
+    libraryDependencies ++= runtime(
+      scalaVersion.value
+    ) ++ scalacheckDependencies ++ cookieEncodingDependencies :+
       jimfs % Test,
-    (sourceGenerators in Compile) += Def
+    (Compile / sourceGenerators) += Def
       .task(
         PlayVersion(
           version.value,
@@ -44,7 +46,7 @@ lazy val PlayProject = Project("Play", file("core/play"))
           sbtVersion.value,
           Dependencies.akkaVersion,
           Dependencies.akkaHttpVersion,
-          (sourceManaged in Compile).value
+          (Compile / sourceManaged).value
         )
       )
       .taskValue
@@ -65,9 +67,8 @@ lazy val PlayLogback = Project("Play-Logback", file("core/play-logback"))
   .settings(playCommonSettings)
   .settings(
     libraryDependencies += logback,
-    parallelExecution in Test := false,
-    // quieten deprecation warnings in tests
-    scalacOptions in Test := (scalacOptions in Test).value.diff(Seq("-deprecation"))
+    Test / parallelExecution := false,
+    Test / scalacOptions := (Test / scalacOptions).value.diff(Seq("-deprecation"))
   )
   .dependsOn(PlayProject)
 
@@ -76,8 +77,7 @@ lazy val PlayConfiguration = Project("Play-Configuration", file("core/play-confi
   .settings(
     libraryDependencies ++= Seq(typesafeConfig, slf4jApi) ++ specs2Deps.map(_ % Test),
     (Test / parallelExecution) := false,
-    // quieten deprecation warnings in tests
-    (scalacOptions in Test) := (scalacOptions in Test).value.diff(Seq("-deprecation"))
+    (Test / scalacOptions) := (Test / scalacOptions).value.diff(Seq("-deprecation"))
   )
   .dependsOn(PlayExceptionsProject)
 

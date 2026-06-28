@@ -12,28 +12,27 @@ import scala.util.Try
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.CharSequenceReader
 
-object ContentEncoding {
+object ContentEncoding:
   // Taken from https://www.iana.org/assignments/http-parameters/http-parameters.xhtml
-  val Aes128gcm   = "aes128gcm"
-  val Gzip        = "gzip"
-  val Brotli      = "br"
-  val Compress    = "compress"
-  val Deflate     = "deflate"
-  val Exi         = "exi"
+  val Aes128gcm = "aes128gcm"
+  val Gzip = "gzip"
+  val Brotli = "br"
+  val Compress = "compress"
+  val Deflate = "deflate"
+  val Exi = "exi"
   val Pack200Gzip = "pack200-gzip"
-  val Identity    = "identity"
+  val Identity = "identity"
   // not official but common
   val Bzip2 = "bzip2"
-  val Xz    = "xz"
+  val Xz = "xz"
 
   val `*` = "*"
-}
 
 /**
- * A representation of an encoding preference as specified in the Accept-Encoding header. This contains an encoding
- * name (or *), and an optional q-value.
+ * A representation of an encoding preference as specified in the Accept-Encoding header. This contains an
+ * encoding name (or *), and an optional q-value.
  */
-case class EncodingPreference(name: String = "*", qValue: Option[BigDecimal] = None) {
+case class EncodingPreference(name: String = "*", qValue: Option[BigDecimal] = None):
 
   /**
    * `true` if this is a wildcard `*` preference.
@@ -49,9 +48,8 @@ case class EncodingPreference(name: String = "*", qValue: Option[BigDecimal] = N
    * Check if this encoding preference matches the specified encoding name.
    */
   def matches(contentEncoding: String): Boolean = matchesAny || name.equalsIgnoreCase(contentEncoding)
-}
 
-object EncodingPreference {
+object EncodingPreference:
 
   /**
    * Ordering for encodings, in order of highest priority to lowest priority.
@@ -59,24 +57,22 @@ object EncodingPreference {
   implicit val ordering: Ordering[EncodingPreference] = ordering(_.compare(_))
 
   /**
-   * An ordering for EncodingPreferences with a specific function for comparing names. Useful to allow the server to
-   * provide a preference.
+   * An ordering for EncodingPreferences with a specific function for comparing names. Useful to allow the
+   * server to provide a preference.
    */
   def ordering(compareByName: (String, String) => Int): Ordering[EncodingPreference] =
-    (a: EncodingPreference, b: EncodingPreference) => {
+    (a: EncodingPreference, b: EncodingPreference) =>
       val qCompare = a.q.compare(b.q)
-      val compare  = if qCompare != 0 then -qCompare else compareByName(a.name, b.name)
+      val compare = if qCompare != 0 then -qCompare else compareByName(a.name, b.name)
       if compare != 0 then compare
       else if a.matchesAny then 1
       else if b.matchesAny then -1
       else 0
-    }
-}
 
 /**
  * A representation of the Accept-Encoding header
  */
-trait AcceptEncoding {
+trait AcceptEncoding:
 
   /**
    * The list of Accept-Encoding headers in order of appearance
@@ -99,24 +95,23 @@ trait AcceptEncoding {
   /**
    * Returns `true` if and only if the encoding is accepted by this Accept-Encoding header.
    */
-  def accepts(encoding: String): Boolean = {
+  def accepts(encoding: String): Boolean =
     preferences.exists(_.matches(encoding))
-  }
 
   /**
    * Given a list of encoding names, choose the most preferred by the client. If several encodings are equally
    * preferred, choose the one first in the list.
    *
-   * Note that this chooses not to handle the "*" value, since its presence does not tell us if the client supports
-   * the specific encoding.
+   * Note that this chooses not to handle the "*" value, since its presence does not tell us if the client
+   * supports the specific encoding.
    */
-  def preferred(choices: Seq[String]): Option[String] = {
+  def preferred(choices: Seq[String]): Option[String] =
     // filter matches to ones in the choices
     val filteredMatches = preferences.filter(e => e.q > 0 && choices.exists(e.matches))
     // get top preference by finding max q and then getting preferred option among those
     val preference =
       if filteredMatches.isEmpty then None
-      else {
+      else
         val maxQ = filteredMatches.maxBy(_.q).q
         filteredMatches
           .filter(maxQ == _.q)
@@ -124,17 +119,13 @@ trait AcceptEncoding {
             val idx = choices.indexWhere(pref.matches)
             if idx == -1 then Int.MaxValue else idx
           }
-      }
     // return the name of the encoding if it matches any, otherwise identity if it is accepted by the client
-    preference match {
+    preference match
       case Some(pref) if !pref.matchesAny => Some(pref.name)
-      case _ if identityAllowed           => Some(ContentEncoding.Identity)
-      case _                              => None
-    }
-  }
-}
+      case _ if identityAllowed => Some(ContentEncoding.Identity)
+      case _ => None
 
-object AcceptEncoding {
+object AcceptEncoding:
   private val logger = Logger(getClass)
 
   /**
@@ -151,19 +142,16 @@ object AcceptEncoding {
   /**
    * Create an AcceptEncoding from a list of headers.
    */
-  def fromHeaders(allHeaders: Seq[String]) = new AcceptEncoding {
+  def fromHeaders(allHeaders: Seq[String]) = new AcceptEncoding:
     def headers: Seq[String] = allHeaders
-  }
 
   /**
    * Parse a single Accept-Encoding header and return a list of preferred encodings.
    */
-  def parseHeader(acceptEncoding: String): Seq[EncodingPreference] = {
-    AcceptEncodingParser(new CharSequenceReader(acceptEncoding)) match {
+  def parseHeader(acceptEncoding: String): Seq[EncodingPreference] =
+    AcceptEncodingParser(new CharSequenceReader(acceptEncoding)) match
       case AcceptEncodingParser.Success(encs: Seq[EncodingPreference], next) =>
-        if !next.atEnd then {
-          logger.debug(s"Unable to parse part of Accept-Encoding header '${next.source}'")
-        }
+        if !next.atEnd then logger.debug(s"Unable to parse part of Accept-Encoding header '${next.source}'")
         encs
       case AcceptEncodingParser.Error(err, _) =>
         logger.debug(s"Unable to parse Accept-Encoding header '$acceptEncoding': $err")
@@ -171,19 +159,17 @@ object AcceptEncoding {
       case AcceptEncodingParser.Failure(err, _) =>
         logger.debug(s"Unable to parse Accept-Encoding header '$acceptEncoding': $err")
         Seq.empty
-    }
-  }
 
   /**
    * Parser for content encodings
    */
-  private[http] object AcceptEncodingParser extends Parsers {
+  private[http] object AcceptEncodingParser extends Parsers:
     private val logger = Logger(this.getClass())
 
-    val separatorChars  = "()<>@,;:\\\"/[]?={} \t"
+    val separatorChars = "()<>@,;:\\\"/[]?={} \t"
     val separatorBitSet = separatorChars.toCharArray.map(_.toInt).to(BitSet)
-    val qChars          = "Qq"
-    val qBitSet         = qChars.toCharArray.map(_.toInt).to(BitSet)
+    val qChars = "Qq"
+    val qBitSet = qChars.toCharArray.map(_.toInt).to(BitSet)
 
     type Elem = Char
 
@@ -195,24 +181,21 @@ object AcceptEncoding {
      *
      * These patterns are translated directly using the same naming
      */
-    val ctl  = acceptIf { c => (c >= 0 && c <= 0x1f) || c == 0x7f }(_ => "Expected a control character")
+    val ctl = acceptIf { c => (c >= 0 && c <= 0x1f) || c == 0x7f }(_ => "Expected a control character")
     val char = acceptIf(_ < 0x80)(_ => "Expected an ascii character")
     val text = not(ctl) ~> any
-    val separators = {
+    val separators =
       acceptIf(c => separatorBitSet(c))(_ => s"Expected one of $separatorChars")
-    }
-    val qParamName = {
+    val qParamName =
       acceptIf(c => qBitSet(c))(_ => s"Expected one of $qChars")
-    }
 
     val token = rep1(not(separators | ctl) ~> any) ^^ charSeqToString
 
-    def badPart(p: Char => Boolean, msg: => String) = rep1(acceptIf(p)(ignoreErrors)) ^^ {
-      case chars =>
-        logger.debug(msg + ": " + charSeqToString(chars))
-        None
+    def badPart(p: Char => Boolean, msg: => String) = rep1(acceptIf(p)(ignoreErrors)) ^^ { case chars =>
+      logger.debug(msg + ": " + charSeqToString(chars))
+      None
     }
-    val badQValue   = badPart(c => c != ',' && c != ';', "Bad q value format")
+    val badQValue = badPart(c => c != ',' && c != ';', "Bad q value format")
     val badEncoding = badPart(c => c != ',', "Bad encoding")
 
     def tolerant[T](p: Parser[T], bad: Parser[Option[T]]) = p.map(Some.apply) | bad
@@ -223,17 +206,16 @@ object AcceptEncoding {
     val tolerantQParameter = tolerant(qParameter <~ guard(end | ','), badQValue)
 
     val qValue = opt(';' ~> rep(' ') ~> tolerantQParameter <~ rep(' ')) ^^ (_.flatten)
-    val encoding: Parser[EncodingPreference] = (token <~ rep(' ')) ~ qValue ^^ {
-      case encoding ~ qValue =>
-        EncodingPreference(
-          encoding,
-          qValue.flatMap { q =>
-            Try(BigDecimal(q)).filter(q => q >= 0 && q <= 1).map(Some.apply).getOrElse {
-              logger.debug(s"Invalid q value: $q")
-              None
-            }
+    val encoding: Parser[EncodingPreference] = (token <~ rep(' ')) ~ qValue ^^ { case encoding ~ qValue =>
+      EncodingPreference(
+        encoding,
+        qValue.flatMap { q =>
+          Try(BigDecimal(q)).filter(q => q >= 0 && q <= 1).map(Some.apply).getOrElse {
+            logger.debug(s"Invalid q value: $q")
+            None
           }
-        )
+        }
+      )
     }
 
     val tolerantEncoding = tolerant(encoding <~ guard(end | ','), badEncoding)
@@ -245,5 +227,3 @@ object AcceptEncoding {
     def ignoreErrors(c: Char) = ""
 
     def charSeqToString(chars: Seq[Char]) = new String(chars.toArray)
-  }
-}

@@ -22,7 +22,8 @@ addCommandAlias(
 )
 
 /**
- * If you need extra commands to validate source code or other documents, add following line to your `build.sbt`
+ * If you need extra commands to validate source code or other documents, add following line to your
+ * `build.sbt`
  * {{{
  *   val _ = sys.props += ("sbt_validateCode" -> List("<command1>", "<command2>",...).mkString(";"))
  * }}}

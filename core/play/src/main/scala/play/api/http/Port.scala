@@ -5,8 +5,7 @@
 package play.api.http
 
 /**
- * A port.  This class is defined so that ports can be passed around implicitly.
+ * A port. This class is defined so that ports can be passed around implicitly.
  */
-class Port(val value: Int) extends AnyVal {
+class Port(val value: Int) extends AnyVal:
   override def toString = value.toString
-}

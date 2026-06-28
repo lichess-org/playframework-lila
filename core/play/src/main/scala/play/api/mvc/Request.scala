@@ -4,7 +4,6 @@
 
 package play.api.mvc
 
-
 import play.api.libs.typedmap.TypedEntry
 import play.api.libs.typedmap.TypedKey
 import play.api.libs.typedmap.TypedMap
@@ -16,30 +15,31 @@ import scala.annotation.implicitNotFound
 /**
  * The complete HTTP request.
  *
- * @tparam A the body content type.
+ * @tparam A
+ *   the body content type.
  */
 @implicitNotFound("Cannot find any HTTP Request here")
-trait Request[+A] extends RequestHeader {
+trait Request[+A] extends RequestHeader:
   self =>
 
   /**
-   * True if this request has a body. This is either done by inspecting the request headers or the body itself to see if
-   * it is an entity representing an "empty" body.
+   * True if this request has a body. This is either done by inspecting the request headers or the body itself
+   * to see if it is an entity representing an "empty" body.
    */
-  override def hasBody: Boolean = {
+  override def hasBody: Boolean =
     import play.api.http.HeaderNames.*
-    if headers.get(CONTENT_LENGTH).isDefined || headers.get(TRANSFER_ENCODING).isDefined then {
+    if headers.get(CONTENT_LENGTH).isDefined || headers.get(TRANSFER_ENCODING).isDefined then
       // A relevant header is set, which means this is a real request or a fake request used for testing where the user
       // cared about setting the headers. We can just use them to see if a body exists. In a real life production application,
       // where clients basically always send these headers when applicable (for requests that send bodies like POST, etc.)
       // we are very likely to enter this if branch.
       super.hasBody
-    } else {
+    else
       // No relevant header present, very likely this is a real life GET request (or alike) without a body or a fake request
       // used for testing where the user did not care about setting the headers (but maybe did set an entity though).
       // Let's do our best to find out if there is an entity that represents an "empty" body.
-      @inline def isEmptyBody(body: Any): Boolean = body match {
-        case AnyContentAsEmpty | null | ()                      => true
+      @inline def isEmptyBody(body: Any): Boolean = body match
+        case AnyContentAsEmpty | null | () => true
         case unit if unit.isInstanceOf[scala.runtime.BoxedUnit] => true
         // All values which are known to represent an empty body have been checked, therefore, if we end up here, technically
         // it is sure something is set (at least it's not null), even though this something might represent "empty"/"no body"
@@ -48,11 +48,8 @@ trait Request[+A] extends RequestHeader {
         // if they represent an empty body (empty Strings, empty ByteString, etc.) but that would not be consistent
         // (custom types defined by the user that represent "empty" would still return false)
         case _ => false
-      }
 
       !isEmptyBody(body)
-    }
-  }
 
   /**
    * The body content.
@@ -79,30 +76,30 @@ trait Request[+A] extends RequestHeader {
     new RequestImpl[A](connection, method, target, version, headers, newAttrs, body)
   override def addAttr[B](key: TypedKey[B], value: B): Request[A] =
     withAttrs(attrs.updated(key, value))
-  override def addAttrs(e1: TypedEntry[?]): Request[A]                    = withAttrs(attrs + e1)
+  override def addAttrs(e1: TypedEntry[?]): Request[A] = withAttrs(attrs + e1)
   override def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?]): Request[A] = withAttrs(attrs + (e1, e2))
   override def addAttrs(e1: TypedEntry[?], e2: TypedEntry[?], e3: TypedEntry[?]): Request[A] =
     withAttrs(attrs + (e1, e2, e3))
   override def addAttrs(entries: TypedEntry[?]*): Request[A] =
-    withAttrs(attrs.+(entries *))
+    withAttrs(attrs.+(entries*))
   override def removeAttr(key: TypedKey[?]): Request[A] =
     withAttrs(attrs - key)
-}
 
-object Request {
+object Request:
 
   /**
-   * Create a new Request from a RequestHeader and a body. The RequestHeader's
-   * methods aren't evaluated when this method is called.
+   * Create a new Request from a RequestHeader and a body. The RequestHeader's methods aren't evaluated when
+   * this method is called.
    */
   def apply[A](rh: RequestHeader, body: A): Request[A] = rh.withBody(body)
-}
 
 /**
  * A standard implementation of a Request.
  *
- * @param body The body of the request.
- * @tparam A The type of the body content.
+ * @param body
+ *   The body of the request.
+ * @tparam A
+ *   The type of the body content.
  */
 private[play] class RequestImpl[+A](
     override val connection: RemoteConnection,

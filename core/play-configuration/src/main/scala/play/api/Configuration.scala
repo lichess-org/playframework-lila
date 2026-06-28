@@ -34,28 +34,25 @@ import java.io.IOException
  *
  * The underlying implementation is provided by https://github.com/typesafehub/config.
  */
-object Configuration {
+object Configuration:
   def load(
       classLoader: ClassLoader,
       properties: Properties,
       directSettings: Map[String, AnyRef],
       allowMissingApplicationConf: Boolean
-  ): Configuration = {
-    try {
+  ): Configuration =
+    try
       // Iterating through the system properties is prone to ConcurrentModificationExceptions
       // (such as in unit tests), which is why Typesafe config maintains a cache for it.
       // So, if the passed in properties *are* the system properties, don't parse it ourselves.
-      val userDefinedProperties = if properties eq System.getProperties then {
-        ConfigFactory.empty()
-      } else {
-        ConfigFactory.parseProperties(properties)
-      }
+      val userDefinedProperties = if properties eq System.getProperties then ConfigFactory.empty()
+      else ConfigFactory.parseProperties(properties)
 
       // Inject our direct settings into the config.
       val directConfig: Config = ConfigFactory.parseMap(directSettings.asJava)
 
       // Resolve application.conf
-      val applicationConfig: Config = {
+      val applicationConfig: Config =
         def setting(key: String): Option[String] =
           directSettings.get(key).orElse(Option(properties.getProperty(key))).map(_.toString)
 
@@ -75,7 +72,6 @@ object Configuration {
             .setAllowMissing(allowMissingApplicationConf)
           ConfigFactory.defaultApplication(parseOptions)
         }
-      }
 
       // Resolve another .conf file so that we can override values in Akka's
       // reference.conf, but still make it possible for users to override
@@ -88,7 +84,7 @@ object Configuration {
         userDefinedProperties,
         directConfig,
         applicationConfig,
-        playOverridesConfig,
+        playOverridesConfig
       ).reduceLeft(_.withFallback(_))
 
       // Resolve settings. Among other things, the `play.server.dir` setting defined in directConfig will
@@ -96,18 +92,14 @@ object Configuration {
       val resolvedConfig = ConfigFactory.load(classLoader, combinedConfig)
 
       Configuration(resolvedConfig)
-    } catch {
-      case e: ConfigException => throw configError(e.getMessage, Option(e.origin), Some(e))
-    }
-  }
+    catch case e: ConfigException => throw configError(e.getMessage, Option(e.origin), Some(e))
 
   /**
    * Load a new Configuration from the Environment.
    */
-  def load(environment: Environment, devSettings: Map[String, AnyRef]): Configuration = {
+  def load(environment: Environment, devSettings: Map[String, AnyRef]): Configuration =
     val allowMissingApplicationConf = environment.mode == Mode.Test
     load(environment.classLoader, System.getProperties, devSettings, allowMissingApplicationConf)
-  }
 
   /**
    * Load a new Configuration from the Environment.
@@ -127,15 +119,13 @@ object Configuration {
   /**
    * Create a new Configuration from the data passed as a Map.
    */
-  def from(data: Map[String, Any]): Configuration = {
-    def toJava(data: Any): Any = data match {
-      case map: Map[?, ?]        => map.view.mapValues(toJava).toMap.asJava
+  def from(data: Map[String, Any]): Configuration =
+    def toJava(data: Any): Any = data match
+      case map: Map[?, ?] => map.view.mapValues(toJava).toMap.asJava
       case iterable: Iterable[?] => iterable.map(toJava).asJava
-      case v                     => v
-    }
+      case v => v
 
     Configuration(ConfigFactory.parseMap(toJava(data).asInstanceOf[java.util.Map[String, AnyRef]]))
-  }
 
   /**
    * Create a new Configuration from the given key-value pairs.
@@ -146,101 +136,83 @@ object Configuration {
       message: String,
       origin: Option[ConfigOrigin] = None,
       e: Option[Throwable] = None
-  )(using codec: Codec): PlayException = {
+  )(using codec: Codec): PlayException =
     origin
-      .map(o => {
+      .map(o =>
         /*
         The stable values here help us from putting a reference to a ConfigOrigin inside the anonymous ExceptionSource.
         This is necessary to keep the Exception serializable, because ConfigOrigin is not serializable.
          */
-        val originLine       = o.lineNumber: java.lang.Integer
+        val originLine = o.lineNumber: java.lang.Integer
         val originSourceName = o.filename
-        val originUrlOpt     = Option(o.url)
-        new PlayException.ExceptionSource("Configuration error", message, e.orNull) {
-          def line              = originLine
-          def position          = null
-          def input             = originUrlOpt.map(url => new String(readStream(url.openStream()), codec.name)).orNull
-          def sourceName        = originSourceName
+        val originUrlOpt = Option(o.url)
+        new PlayException.ExceptionSource("Configuration error", message, e.orNull):
+          def line = originLine
+          def position = null
+          def input = originUrlOpt.map(url => new String(readStream(url.openStream()), codec.name)).orNull
+          def sourceName = originSourceName
           override def toString = "Configuration error: " + getMessage
-        }
-      })
+      )
       .getOrElse(new PlayException("Configuration error", message, e.orNull))
-  }
 
   /**
    * Read the given stream into a byte array.
    *
    * Closes the stream.
    */
-  private def readStream(stream: InputStream): Array[Byte] = {
-    try {
+  private def readStream(stream: InputStream): Array[Byte] =
+    try
       val buffer = new Array[Byte](8192)
-      var len    = stream.read(buffer)
-      val out    = new ByteArrayOutputStream() // Doesn't need closing
-      while len != -1 do {
+      var len = stream.read(buffer)
+      val out = new ByteArrayOutputStream() // Doesn't need closing
+      while len != -1 do
         out.write(buffer, 0, len)
         len = stream.read(buffer)
-      }
       out.toByteArray
-    } finally {
-      try {
-        if stream != null then {
-          stream.close()
-        }
-      } catch {
-        case e: IOException => logger.warn("Error closing stream", e)
-      }
-    }
-  }
+    finally
+      try if stream != null then stream.close()
+      catch case e: IOException => logger.warn("Error closing stream", e)
 
   private[Configuration] val logger = LoggerFactory.getLogger(getClass)
-}
 
 /**
  * A full configuration set.
  *
  * The underlying implementation is provided by https://github.com/typesafehub/config.
  *
- * @param underlying the underlying Config implementation
+ * @param underlying
+ *   the underlying Config implementation
  */
-case class Configuration(underlying: Config) {
+case class Configuration(underlying: Config):
   import Configuration.logger
 
-  private[play] def reportDeprecation(path: String, deprecated: String): Unit = {
+  private[play] def reportDeprecation(path: String, deprecated: String): Unit =
     val origin = underlying.getValue(deprecated).origin
     logger.warn(s"${origin.description}: $deprecated is deprecated, use $path instead")
-  }
 
   /**
-   * Merge two configurations. The second configuration overrides the first configuration.
-   * This is the opposite direction of `Config`'s `withFallback` method.
+   * Merge two configurations. The second configuration overrides the first configuration. This is the
+   * opposite direction of `Config`'s `withFallback` method.
    */
   @deprecated("Use withFallback instead", since = "2.8.0")
-  def ++(other: Configuration): Configuration = {
+  def ++(other: Configuration): Configuration =
     Configuration(other.underlying.withFallback(underlying))
-  }
 
   /**
-   * Merge two configurations. The second configuration will act as the fallback for the first
-   * configuration.
+   * Merge two configurations. The second configuration will act as the fallback for the first configuration.
    */
-  def withFallback(other: Configuration): Configuration = {
+  def withFallback(other: Configuration): Configuration =
     Configuration(underlying.withFallback(other.underlying))
-  }
 
   /**
-   * Reads a value from the underlying implementation.
-   * If the value is not set this will return None, otherwise returns Some.
+   * Reads a value from the underlying implementation. If the value is not set this will return None,
+   * otherwise returns Some.
    *
    * Does not check neither for incorrect type nor null value, but catches and wraps the error.
    */
-  private def readValue[T](path: String, v: => T): Option[T] = {
-    try {
-      if underlying.hasPathOrNull(path) then Some(v) else None
-    } catch {
-      case NonFatal(e) => throw reportError(path, e.getMessage, Some(e))
-    }
-  }
+  private def readValue[T](path: String, v: => T): Option[T] =
+    try if underlying.hasPathOrNull(path) then Some(v) else None
+    catch case NonFatal(e) => throw reportError(path, e.getMessage, Some(e))
 
   /**
    * Check if the given path exists.
@@ -250,58 +222,46 @@ case class Configuration(underlying: Config) {
   /**
    * Get the config at the given path.
    */
-  def get[A](path: String)(using loader: ConfigLoader[A]): A = {
+  def get[A](path: String)(using loader: ConfigLoader[A]): A =
     loader.load(underlying, path)
-  }
 
   /**
    * Get the config at the given path and validate against a set of valid values.
    */
-  def getAndValidate[A](path: String, values: Set[A])(using loader: ConfigLoader[A]): A = {
+  def getAndValidate[A](path: String, values: Set[A])(using loader: ConfigLoader[A]): A =
     val value = get(path)
-    if !values(value) then {
+    if !values(value) then
       throw reportError(path, s"Incorrect value, one of (${values.mkString(", ")}) was expected.")
-    }
     value
-  }
 
   /**
-   * Get a value that may either not exist or be null. Note that this is not generally considered idiomatic Config
-   * usage. Instead you should define all config keys in a reference.conf file.
+   * Get a value that may either not exist or be null. Note that this is not generally considered idiomatic
+   * Config usage. Instead you should define all config keys in a reference.conf file.
    */
-  def getOptional[A](path: String)(using loader: ConfigLoader[A]): Option[A] = {
-    try {
-      if underlying.hasPath(path) then Some(get[A](path)) else None
-    } catch {
-      case NonFatal(e) => throw reportError(path, e.getMessage, Some(e))
-    }
-  }
+  def getOptional[A](path: String)(using loader: ConfigLoader[A]): Option[A] =
+    try if underlying.hasPath(path) then Some(get[A](path)) else None
+    catch case NonFatal(e) => throw reportError(path, e.getMessage, Some(e))
 
   /**
    * Get a prototyped sequence of objects.
    *
    * Each object in the sequence will fallback to the object loaded from prototype.\$path.
    */
-  def getPrototypedSeq(path: String, prototypePath: String = "prototype.$path"): Seq[Configuration] = {
+  def getPrototypedSeq(path: String, prototypePath: String = "prototype.$path"): Seq[Configuration] =
     val prototype = underlying.getConfig(prototypePath.replace("$path", path))
     get[Seq[Config]](path).map { config => Configuration(config.withFallback(prototype)) }
-  }
 
   /**
    * Get a prototyped map of objects.
    *
    * Each value in the map will fallback to the object loaded from prototype.\$path.
    */
-  def getPrototypedMap(path: String, prototypePath: String = "prototype.$path"): Map[String, Configuration] = {
-    val prototype = if prototypePath.isEmpty then {
-      underlying
-    } else {
-      underlying.getConfig(prototypePath.replace("$path", path))
+  def getPrototypedMap(path: String, prototypePath: String = "prototype.$path"): Map[String, Configuration] =
+    val prototype = if prototypePath.isEmpty then underlying
+    else underlying.getConfig(prototypePath.replace("$path", path))
+    get[Map[String, Config]](path).map { case (key, config) =>
+      key -> Configuration(config.withFallback(prototype))
     }
-    get[Map[String, Config]](path).map {
-      case (key, config) => key -> Configuration(config.withFallback(prototype))
-    }
-  }
 
   /**
    * Get a deprecated configuration item.
@@ -310,7 +270,7 @@ case class Configuration(underlying: Config) {
    *
    * Otherwise, the configuration from path will be looked up.
    */
-  def getDeprecated[A: ConfigLoader](path: String, deprecatedPaths: String*): A = {
+  def getDeprecated[A: ConfigLoader](path: String, deprecatedPaths: String*): A =
     deprecatedPaths
       .collectFirst {
         case deprecated if underlying.hasPath(deprecated) =>
@@ -320,24 +280,22 @@ case class Configuration(underlying: Config) {
       .getOrElse {
         get[A](path)
       }
-  }
 
   /**
    * Get a deprecated configuration.
    *
-   * If the deprecated configuration is defined, it will be returned, falling back to the new configuration, and a
-   * warning will be logged.
+   * If the deprecated configuration is defined, it will be returned, falling back to the new configuration,
+   * and a warning will be logged.
    *
    * Otherwise, the configuration from path will be looked up and used as is.
    */
-  def getDeprecatedWithFallback(path: String, deprecated: String, parent: String = ""): Configuration = {
+  def getDeprecatedWithFallback(path: String, deprecated: String, parent: String = ""): Configuration =
     val config = get[Config](path)
-    val merged = if underlying.hasPath(deprecated) then {
+    val merged = if underlying.hasPath(deprecated) then
       reportDeprecation(path, deprecated)
       get[Config](deprecated).withFallback(config)
-    } else config
+    else config
     Configuration(merged)
-  }
 
   /**
    * Retrieves a configuration value as `Milliseconds`.
@@ -382,7 +340,8 @@ case class Configuration(underlying: Config) {
    * val keys = configuration.keys
    * }}}
    *
-   * @return the set of keys available in this configuration
+   * @return
+   *   the set of keys available in this configuration
    */
   def keys: Set[String] = underlying.entrySet.asScala.map(_.getKey).toSet
 
@@ -395,15 +354,16 @@ case class Configuration(underlying: Config) {
    * val subKeys = configuration.subKeys
    * }}}
    *
-   * @return the set of direct sub-keys available in this configuration
+   * @return
+   *   the set of direct sub-keys available in this configuration
    */
   def subKeys: Set[String] = underlying.root().keySet().asScala.toSet
 
   /**
-   * Returns every path as a set of key to value pairs, by recursively iterating through the
-   * config objects.
+   * Returns every path as a set of key to value pairs, by recursively iterating through the config objects.
    */
-  def entrySet: Set[(String, ConfigValue)] = underlying.entrySet().asScala.map(e => e.getKey -> e.getValue).toSet
+  def entrySet: Set[(String, ConfigValue)] =
+    underlying.entrySet().asScala.map(e => e.getKey -> e.getValue).toSet
 
   /**
    * Creates a configuration error for a specific configuration key.
@@ -414,15 +374,20 @@ case class Configuration(underlying: Config) {
    * throw configuration.reportError("engine.connectionUrl", "Cannot connect!")
    * }}}
    *
-   * @param path the configuration key, related to this error
-   * @param message the error message
-   * @param e the related exception
-   * @return a configuration exception
+   * @param path
+   *   the configuration key, related to this error
+   * @param message
+   *   the error message
+   * @param e
+   *   the related exception
+   * @return
+   *   a configuration exception
    */
-  def reportError(path: String, message: String, e: Option[Throwable] = None): PlayException = {
-    val origin = Option(if underlying.hasPath(path) then underlying.getValue(path).origin else underlying.root.origin)
+  def reportError(path: String, message: String, e: Option[Throwable] = None): PlayException =
+    val origin = Option(
+      if underlying.hasPath(path) then underlying.getValue(path).origin else underlying.root.origin
+    )
     Configuration.configError(message, origin, e)
-  }
 
   /**
    * Creates a configuration error for this configuration.
@@ -433,31 +398,33 @@ case class Configuration(underlying: Config) {
    * throw configuration.globalError("Missing configuration key: [yop.url]")
    * }}}
    *
-   * @param message the error message
-   * @param e the related exception
-   * @return a configuration exception
+   * @param message
+   *   the error message
+   * @param e
+   *   the related exception
+   * @return
+   *   a configuration exception
    */
-  def globalError(message: String, e: Option[Throwable] = None): PlayException = {
+  def globalError(message: String, e: Option[Throwable] = None): PlayException =
     Configuration.configError(message, Option(underlying.root.origin), e)
-  }
-}
 
 /**
  * A config loader
  */
-trait ConfigLoader[A] { self =>
+trait ConfigLoader[A]:
+  self =>
   def load(config: Config, path: String = ""): A
   def map[B](f: A => B): ConfigLoader[B] = (config, path) => f(self.load(config, path))
-}
 
-object ConfigLoader {
+object ConfigLoader:
   def apply[A](f: Config => String => A): ConfigLoader[A] = f(_)(_)
 
-  implicit val stringLoader: ConfigLoader[String]         = ConfigLoader(_.getString)
+  implicit val stringLoader: ConfigLoader[String] = ConfigLoader(_.getString)
   implicit val seqStringLoader: ConfigLoader[Seq[String]] = ConfigLoader(_.getStringList).map(_.asScala.toSeq)
 
-  implicit val intLoader: ConfigLoader[Int]         = ConfigLoader(_.getInt)
-  implicit val seqIntLoader: ConfigLoader[Seq[Int]] = ConfigLoader(_.getIntList).map(_.asScala.map(_.toInt).toSeq)
+  implicit val intLoader: ConfigLoader[Int] = ConfigLoader(_.getInt)
+  implicit val seqIntLoader: ConfigLoader[Seq[Int]] =
+    ConfigLoader(_.getIntList).map(_.asScala.map(_.toInt).toSeq)
 
   implicit val booleanLoader: ConfigLoader[Boolean] = ConfigLoader(_.getBoolean)
   implicit val seqBooleanLoader: ConfigLoader[Seq[Boolean]] =
@@ -492,7 +459,7 @@ object ConfigLoader {
   implicit val seqDoubleLoader: ConfigLoader[Seq[Double]] =
     ConfigLoader(_.getDoubleList).map(_.asScala.map(_.doubleValue).toSeq)
 
-  implicit val numberLoader: ConfigLoader[Number]         = ConfigLoader(_.getNumber)
+  implicit val numberLoader: ConfigLoader[Number] = ConfigLoader(_.getNumber)
   implicit val seqNumberLoader: ConfigLoader[Seq[Number]] = ConfigLoader(_.getNumberList).map(_.asScala.toSeq)
 
   implicit val longLoader: ConfigLoader[Long] = ConfigLoader(_.getLong)
@@ -503,13 +470,14 @@ object ConfigLoader {
   implicit val seqBytesLoader: ConfigLoader[Seq[ConfigMemorySize]] =
     ConfigLoader(_.getMemorySizeList).map(_.asScala.toSeq)
 
-  implicit val configLoader: ConfigLoader[Config]             = ConfigLoader(_.getConfig)
-  implicit val configListLoader: ConfigLoader[ConfigList]     = ConfigLoader(_.getList)
+  implicit val configLoader: ConfigLoader[Config] = ConfigLoader(_.getConfig)
+  implicit val configListLoader: ConfigLoader[ConfigList] = ConfigLoader(_.getList)
   implicit val configObjectLoader: ConfigLoader[ConfigObject] = ConfigLoader(_.getObject)
-  implicit val seqConfigLoader: ConfigLoader[Seq[Config]]     = ConfigLoader(_.getConfigList).map(_.asScala.toSeq)
+  implicit val seqConfigLoader: ConfigLoader[Seq[Config]] = ConfigLoader(_.getConfigList).map(_.asScala.toSeq)
 
-  implicit val configurationLoader: ConfigLoader[Configuration]         = configLoader.map(Configuration(_))
-  implicit val seqConfigurationLoader: ConfigLoader[Seq[Configuration]] = seqConfigLoader.map(_.map(Configuration(_)))
+  implicit val configurationLoader: ConfigLoader[Configuration] = configLoader.map(Configuration(_))
+  implicit val seqConfigurationLoader: ConfigLoader[Seq[Configuration]] =
+    seqConfigLoader.map(_.map(Configuration(_)))
 
   implicit val uriLoader: ConfigLoader[URI] = ConfigLoader(_.getString).map(new URI(_))
   implicit val urlLoader: ConfigLoader[URL] = uriLoader.map(_.toURL)
@@ -524,8 +492,8 @@ object ConfigLoader {
     (config, path) => if config.getIsNull(path) then None else Some(valueLoader.load(config, path))
 
   implicit def mapLoader[A](using valueLoader: ConfigLoader[A]): ConfigLoader[Map[String, A]] =
-    (config, path) => {
-      val obj  = config.getObject(path)
+    (config, path) =>
+      val obj = config.getObject(path)
       val conf = obj.toConfig
 
       obj
@@ -538,23 +506,24 @@ object ConfigLoader {
           key -> valueLoader.load(conf, path)
         }
         .toMap
-    }
 
   /**
-   * From https://github.com/playframework/twirl/blob/adde5d93e1598ce2665d7c35ab792260c3422f7d/api/shared/src/main/scala/play/twirl/api/utils/StringEscapeUtils.scala#L8-L31
-   * We don't want to pull in Twirl here just for this function to keep play-configuration as vanilla as possible.
+   * From
+   * https://github.com/playframework/twirl/blob/adde5d93e1598ce2665d7c35ab792260c3422f7d/api/shared/src/main/scala/play/twirl/api/utils/StringEscapeUtils.scala#L8-L31
+   * We don't want to pull in Twirl here just for this function to keep play-configuration as vanilla as
+   * possible.
    */
-  private def escapeEcmaScript(input: String): String = {
-    val s   = new StringBuilder()
+  private def escapeEcmaScript(input: String): String =
+    val s = new StringBuilder()
     val len = input.length
     var pos = 0
-    while pos < len do {
-      input.charAt(pos) match {
+    while pos < len do
+      input.charAt(pos) match
         // Standard Lookup
         case '\'' => s.append("\\'")
         case '\"' => s.append("\\\"")
         case '\\' => s.append("\\\\")
-        case '/'  => s.append("\\/")
+        case '/' => s.append("\\/")
         // JAVA_CTRL_CHARS
         case '\b' => s.append("\\b")
         case '\n' => s.append("\\n")
@@ -565,10 +534,6 @@ object ConfigLoader {
         case c if c < ' ' =>
         // if it not matches any characters above, just append it
         case c => s.append(c)
-      }
       pos += 1
-    }
 
     s.toString()
-  }
-}

@@ -5,10 +5,12 @@
 package play.core.server.common
 
 /**
- * This exception occurs when the Play server receives a request header
- * where at least one character is illegal according to RFC2616 and RFC7230
+ * This exception occurs when the Play server receives a request header where at least one character is
+ * illegal according to RFC2616 and RFC7230
  *
- * @param message The reason for the exception.
- * @param character The invalid character.
+ * @param message
+ *   The reason for the exception.
+ * @param character
+ *   The invalid character.
  */
 class InvalidHeaderCharacterException(message: String, val character: Char) extends Exception(message)

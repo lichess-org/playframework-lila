@@ -25,11 +25,16 @@ import scala.util.Success
 /**
  * HTTP related configuration of a Play application
  *
- * @param context       The HTTP context
- * @param parser        The parser configuration
- * @param session       The session configuration
- * @param flash         The flash configuration
- * @param fileMimeTypes The fileMimeTypes configuration
+ * @param context
+ *   The HTTP context
+ * @param parser
+ *   The parser configuration
+ * @param session
+ *   The session configuration
+ * @param flash
+ *   The flash configuration
+ * @param fileMimeTypes
+ *   The fileMimeTypes configuration
  */
 case class HttpConfiguration(
     context: String = "/",
@@ -48,58 +53,75 @@ case class HttpConfiguration(
  *
  * With the Play secret we want to:
  *
- * 1. Encourage the practice of *not* using the same secret in dev and prod.
- * 2. Make it obvious that the secret should be changed.
- * 3. Ensure that in dev mode, the secret stays stable across restarts.
- * 4. Ensure that in dev mode, sessions do not interfere with other applications that may be or have been running
- *   on localhost.  Eg, if I start Play app 1, and it stores a PLAY_SESSION cookie for localhost:9000, then I stop
- *   it, and start Play app 2, when it reads the PLAY_SESSION cookie for localhost:9000, it should not see the
- *   session set by Play app 1.  This can be achieved by using different secrets for the two, since if they are
- *   different, they will simply ignore the session cookie set by the other.
+ *   1. Encourage the practice of *not* using the same secret in dev and prod.
+ *   2. Make it obvious that the secret should be changed.
+ *   3. Ensure that in dev mode, the secret stays stable across restarts.
+ *   4. Ensure that in dev mode, sessions do not interfere with other applications that may be or have been
+ *      running on localhost. Eg, if I start Play app 1, and it stores a PLAY_SESSION cookie for
+ *      localhost:9000, then I stop it, and start Play app 2, when it reads the PLAY_SESSION cookie for
+ *      localhost:9000, it should not see the session set by Play app 1. This can be achieved by using
+ *      different secrets for the two, since if they are different, they will simply ignore the session cookie
+ *      set by the other.
  *
- * To achieve 1 and 2, we will, in Activator templates, set the default secret to be "changeme".  This should make
- * it obvious that the secret needs to be changed and discourage using the same secret in dev and prod.
+ * To achieve 1 and 2, we will, in Activator templates, set the default secret to be "changeme". This should
+ * make it obvious that the secret needs to be changed and discourage using the same secret in dev and prod.
  *
- * For safety, if the secret is not set, or if it's changeme, and we are in prod mode, then we will fail fatally.
- * This will further enforce both 1 and 2.
+ * For safety, if the secret is not set, or if it's changeme, and we are in prod mode, then we will fail
+ * fatally. This will further enforce both 1 and 2.
  *
- * To achieve 3, if in dev or test mode, if the secret is either changeme or not set, we will generate a secret
- * based on the location of application.conf.  This should be stable across restarts for a given application.
+ * To achieve 3, if in dev or test mode, if the secret is either changeme or not set, we will generate a
+ * secret based on the location of application.conf. This should be stable across restarts for a given
+ * application.
  *
  * To achieve 4, using the location of application.conf to generate the secret should ensure this.
  *
- * Play secret is checked for a minimum length, dependent on the algorithm used to sign the session and flash cookie.
- * If the key has fewer bits then required by the algorithm, then an error is thrown and the configuration is invalid.
+ * Play secret is checked for a minimum length, dependent on the algorithm used to sign the session and flash
+ * cookie. If the key has fewer bits then required by the algorithm, then an error is thrown and the
+ * configuration is invalid.
  *
- * @param secret   the application secret
- * @param provider the JCE provider to use. If null, uses the platform default
+ * @param secret
+ *   the application secret
+ * @param provider
+ *   the JCE provider to use. If null, uses the platform default
  */
 case class SecretConfiguration(secret: String = "changeme", provider: Option[String] = None)
 
 /**
  * The cookies configuration
  *
- * @param strict Whether strict cookie parsing should be used. If true, will cause the entire cookie header to be
- *               discarded if a single cookie is found to be invalid.
+ * @param strict
+ *   Whether strict cookie parsing should be used. If true, will cause the entire cookie header to be
+ *   discarded if a single cookie is found to be invalid.
  */
-case class CookiesConfiguration(strict: Boolean = true) {
-  val serverEncoder: ServerCookieEncoder = if strict then ServerCookieEncoder.STRICT else ServerCookieEncoder.LAX
-  val serverDecoder: ServerCookieDecoder = if strict then ServerCookieDecoder.STRICT else ServerCookieDecoder.LAX
-  val clientEncoder: ClientCookieEncoder = if strict then ClientCookieEncoder.STRICT else ClientCookieEncoder.LAX
-  val clientDecoder: ClientCookieDecoder = if strict then ClientCookieDecoder.STRICT else ClientCookieDecoder.LAX
-}
+case class CookiesConfiguration(strict: Boolean = true):
+  val serverEncoder: ServerCookieEncoder =
+    if strict then ServerCookieEncoder.STRICT else ServerCookieEncoder.LAX
+  val serverDecoder: ServerCookieDecoder =
+    if strict then ServerCookieDecoder.STRICT else ServerCookieDecoder.LAX
+  val clientEncoder: ClientCookieEncoder =
+    if strict then ClientCookieEncoder.STRICT else ClientCookieEncoder.LAX
+  val clientDecoder: ClientCookieDecoder =
+    if strict then ClientCookieDecoder.STRICT else ClientCookieDecoder.LAX
 
 /**
  * The session configuration
  *
- * @param cookieName The name of the cookie used to store the session
- * @param secure     Whether the session cookie should set the secure flag or not
- * @param maxAge     The max age of the session, none, use "session" sessions
- * @param httpOnly   Whether the HTTP only attribute of the cookie should be set
- * @param domain     The domain to set for the session cookie, if defined
- * @param path       The path for which this cookie is valid
- * @param sameSite   The cookie's SameSite attribute
- * @param jwt        The JWT specific information
+ * @param cookieName
+ *   The name of the cookie used to store the session
+ * @param secure
+ *   Whether the session cookie should set the secure flag or not
+ * @param maxAge
+ *   The max age of the session, none, use "session" sessions
+ * @param httpOnly
+ *   Whether the HTTP only attribute of the cookie should be set
+ * @param domain
+ *   The domain to set for the session cookie, if defined
+ * @param path
+ *   The path for which this cookie is valid
+ * @param sameSite
+ *   The cookie's SameSite attribute
+ * @param jwt
+ *   The JWT specific information
  */
 case class SessionConfiguration(
     cookieName: String = "PLAY_SESSION",
@@ -108,19 +130,26 @@ case class SessionConfiguration(
     httpOnly: Boolean = true,
     domain: Option[String] = None,
     path: String = "/",
-    sameSite: Option[SameSite] = Some(SameSite.Lax),
+    sameSite: Option[SameSite] = Some(SameSite.Lax)
 )
 
 /**
  * The flash configuration
  *
- * @param cookieName The name of the cookie used to store the session
- * @param secure     Whether the flash cookie should set the secure flag or not
- * @param httpOnly   Whether the HTTP only attribute of the cookie should be set
- * @param domain     The domain to set for the session cookie, if defined
- * @param path       The path for which this cookie is valid
- * @param sameSite   The cookie's SameSite attribute
- * @param jwt        The JWT specific information
+ * @param cookieName
+ *   The name of the cookie used to store the session
+ * @param secure
+ *   Whether the flash cookie should set the secure flag or not
+ * @param httpOnly
+ *   Whether the HTTP only attribute of the cookie should be set
+ * @param domain
+ *   The domain to set for the session cookie, if defined
+ * @param path
+ *   The path for which this cookie is valid
+ * @param sameSite
+ *   The cookie's SameSite attribute
+ * @param jwt
+ *   The JWT specific information
  */
 case class FlashConfiguration(
     cookieName: String = "PLAY_FLASH",
@@ -128,15 +157,18 @@ case class FlashConfiguration(
     httpOnly: Boolean = true,
     domain: Option[String] = None,
     path: String = "/",
-    sameSite: Option[SameSite] = Some(SameSite.Lax),
+    sameSite: Option[SameSite] = Some(SameSite.Lax)
 )
 
 /**
  * Configuration for body parsers.
  *
- * @param maxMemoryBuffer The maximum size that a request body that should be buffered in memory.
- * @param maxDiskBuffer   The maximum size that a request body should be buffered on disk.
- * @param allowEmptyFiles If empty file uploads are allowed (no matter if filename or file is empty)
+ * @param maxMemoryBuffer
+ *   The maximum size that a request body that should be buffered in memory.
+ * @param maxDiskBuffer
+ *   The maximum size that a request body should be buffered on disk.
+ * @param allowEmptyFiles
+ *   If empty file uploads are allowed (no matter if filename or file is empty)
  */
 case class ParserConfiguration(
     maxMemoryBuffer: Long = 102400,
@@ -147,9 +179,10 @@ case class ParserConfiguration(
 /**
  * Configuration for action composition.
  *
- * @param controllerAnnotationsFirst      If annotations put on controllers should be executed before the ones put on actions.
- * @param executeActionCreatorActionFirst If the action returned by the action creator should be
- *                                        executed before the action composition ones.
+ * @param controllerAnnotationsFirst
+ *   If annotations put on controllers should be executed before the ones put on actions.
+ * @param executeActionCreatorActionFirst
+ *   If the action returned by the action creator should be executed before the action composition ones.
  */
 case class ActionCompositionConfiguration(
     controllerAnnotationsFirst: Boolean = false,
@@ -159,24 +192,23 @@ case class ActionCompositionConfiguration(
 /**
  * Configuration for file MIME types, mapping from extension to content type.
  *
- * @param mimeTypes     the extension to mime type mapping.
+ * @param mimeTypes
+ *   the extension to mime type mapping.
  */
 case class FileMimeTypesConfiguration(mimeTypes: Map[String, String] = Map.empty)
 
-object HttpConfiguration {
-  private val logger                 = LoggerFactory.getLogger(classOf[HttpConfiguration])
+object HttpConfiguration:
+  private val logger = LoggerFactory.getLogger(classOf[HttpConfiguration])
   private val httpConfigurationCache = Application.instanceCache[HttpConfiguration]
 
-  def parseSameSite(config: Configuration, key: String): Option[SameSite] = {
+  def parseSameSite(config: Configuration, key: String): Option[SameSite] =
     config.get[Option[String]](key).flatMap { value =>
       val result = SameSite.parse(value)
-      if result.isEmpty then {
+      if result.isEmpty then
         val values = SameSite.values.mkString(", ")
         logger.warn(s"""Assuming $key = null, since "$value" is not a valid SameSite value ($values)""")
-      }
       result
     }
-  }
 
   def parseFileMimeTypes(config: Configuration): Map[String, String] =
     config
@@ -186,50 +218,45 @@ object HttpConfiguration {
       .flatMap { l =>
         val line = l.trim
 
-        line.splitAt(1) match {
+        line.splitAt(1) match
           case ("", "") => Option.empty[(String, String)] // blank
           case ("#", _) => Option.empty[(String, String)] // comment
 
           case _ => // "foo=bar".span(_ != '=') -> (foo,=bar)
-            line.span(_ != '=') match {
-              case (key, v) => Some(key -> v.drop(1))         // '=' prefix
-              case null     => Option.empty[(String, String)] // skip invalid
-            }
-        }
+            line.span(_ != '=') match
+              case (key, v) => Some(key -> v.drop(1)) // '=' prefix
+              case null => Option.empty[(String, String)] // skip invalid
       }
       .toMap
 
-  def fromConfiguration(config: Configuration, environment: Environment) = {
-    def getPath(key: String, deprecatedKey: Option[String] = None): String = {
-      val path = deprecatedKey match {
+  def fromConfiguration(config: Configuration, environment: Environment) =
+    def getPath(key: String, deprecatedKey: Option[String] = None): String =
+      val path = deprecatedKey match
         case Some(depKey) => config.getDeprecated[String](key, depKey)
-        case None         => config.get[String](key)
-      }
-      if !path.startsWith("/") then {
-        throw config.globalError(s"$key must start with a /")
-      }
+        case None => config.get[String](key)
+      if !path.startsWith("/") then throw config.globalError(s"$key must start with a /")
       path
-    }
 
-    val context     = getPath("play.http.context", Some("application.context"))
+    val context = getPath("play.http.context", Some("application.context"))
     val sessionPath = getPath("play.http.session.path")
-    val flashPath   = getPath("play.http.flash.path")
+    val flashPath = getPath("play.http.flash.path")
 
-    if config.has("mimetype") then {
+    if config.has("mimetype") then
       throw config.globalError("mimetype replaced by play.http.fileMimeTypes map")
-    }
 
     val secretConfiguration = getSecretConfiguration(config, environment)
     HttpConfiguration(
       context = context,
       parser = ParserConfiguration(
-        maxMemoryBuffer =
-          config.getDeprecated[ConfigMemorySize]("play.http.parser.maxMemoryBuffer", "parsers.text.maxLength").toBytes,
+        maxMemoryBuffer = config
+          .getDeprecated[ConfigMemorySize]("play.http.parser.maxMemoryBuffer", "parsers.text.maxLength")
+          .toBytes,
         maxDiskBuffer = config.get[ConfigMemorySize]("play.http.parser.maxDiskBuffer").toBytes,
         allowEmptyFiles = config.get[Boolean]("play.http.parser.allowEmptyFiles")
       ),
       actionComposition = ActionCompositionConfiguration(
-        controllerAnnotationsFirst = config.get[Boolean]("play.http.actionComposition.controllerAnnotationsFirst"),
+        controllerAnnotationsFirst =
+          config.get[Boolean]("play.http.actionComposition.controllerAnnotationsFirst"),
         executeActionCreatorActionFirst =
           config.get[Boolean]("play.http.actionComposition.executeActionCreatorActionFirst")
       ),
@@ -243,7 +270,7 @@ object HttpConfiguration {
         httpOnly = config.getDeprecated[Boolean]("play.http.session.httpOnly", "session.httpOnly"),
         domain = config.getDeprecated[Option[String]]("play.http.session.domain", "session.domain"),
         sameSite = parseSameSite(config, "play.http.session.sameSite"),
-        path = sessionPath,
+        path = sessionPath
       ),
       flash = FlashConfiguration(
         cookieName = config.getDeprecated[String]("play.http.flash.cookieName", "flash.cookieName"),
@@ -251,20 +278,19 @@ object HttpConfiguration {
         httpOnly = config.get[Boolean]("play.http.flash.httpOnly"),
         domain = config.get[Option[String]]("play.http.flash.domain"),
         sameSite = parseSameSite(config, "play.http.flash.sameSite"),
-        path = flashPath,
+        path = flashPath
       ),
       fileMimeTypes = FileMimeTypesConfiguration(
         parseFileMimeTypes(config)
       ),
       secret = secretConfiguration
     )
-  }
 
-  private def getSecretConfiguration(config: Configuration, environment: Environment): SecretConfiguration = {
+  private def getSecretConfiguration(config: Configuration, environment: Environment): SecretConfiguration =
     val Blank = """\s*""".r
 
     val secret =
-      config.get[Option[String]]("play.http.secret.key") match {
+      config.get[Option[String]]("play.http.secret.key") match
         case (Some("changeme") | Some(Blank()) | None) if environment.mode == Mode.Prod =>
           val message =
             """
@@ -287,20 +313,17 @@ object HttpConfiguration {
           )
           md5Secret
         case Some(s) => s
-      }
 
     val provider = config.getDeprecated[Option[String]]("play.http.secret.provider", "play.crypto.provider")
 
     SecretConfiguration(String.valueOf(secret), provider)
-  }
 
   /**
    * Don't use this - only exists for transition from global state
    */
-  private[play] def current: HttpConfiguration = Play.privateMaybeApplication match {
+  private[play] def current: HttpConfiguration = Play.privateMaybeApplication match
     case Success(app) => httpConfigurationCache(app)
-    case Failure(_)   => HttpConfiguration()
-  }
+    case Failure(_) => HttpConfiguration()
 
   /**
    * For calling from Java.
@@ -309,44 +332,37 @@ object HttpConfiguration {
 
   @Singleton
   class HttpConfigurationProvider @Inject() (configuration: Configuration, environment: Environment)
-      extends Provider[HttpConfiguration] {
+      extends Provider[HttpConfiguration]:
     lazy val get = fromConfiguration(configuration, environment)
-  }
 
   @Singleton
-  class ParserConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[ParserConfiguration] {
+  class ParserConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[ParserConfiguration]:
     lazy val get = conf.parser
-  }
 
   @Singleton
-  class CookiesConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[CookiesConfiguration] {
+  class CookiesConfigurationProvider @Inject() (conf: HttpConfiguration)
+      extends Provider[CookiesConfiguration]:
     lazy val get = conf.cookies
-  }
 
   @Singleton
-  class SessionConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[SessionConfiguration] {
+  class SessionConfigurationProvider @Inject() (conf: HttpConfiguration)
+      extends Provider[SessionConfiguration]:
     lazy val get = conf.session
-  }
 
   @Singleton
-  class FlashConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[FlashConfiguration] {
+  class FlashConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[FlashConfiguration]:
     lazy val get = conf.flash
-  }
 
   @Singleton
   class ActionCompositionConfigurationProvider @Inject() (conf: HttpConfiguration)
-      extends Provider[ActionCompositionConfiguration] {
+      extends Provider[ActionCompositionConfiguration]:
     lazy val get = conf.actionComposition
-  }
 
   @Singleton
   class FileMimeTypesConfigurationProvider @Inject() (conf: HttpConfiguration)
-      extends Provider[FileMimeTypesConfiguration] {
+      extends Provider[FileMimeTypesConfiguration]:
     lazy val get = conf.fileMimeTypes
-  }
 
   @Singleton
-  class SecretConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[SecretConfiguration] {
+  class SecretConfigurationProvider @Inject() (conf: HttpConfiguration) extends Provider[SecretConfiguration]:
     lazy val get: SecretConfiguration = conf.secret
-  }
-}

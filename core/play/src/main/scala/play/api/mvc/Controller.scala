@@ -13,8 +13,8 @@ import scala.concurrent.ExecutionContext
 /**
  * Useful mixins for controller classes.
  *
- * If you wish to write a controller with minimal dependencies, you can mix in this trait, which includes helpers and
- * useful constants.
+ * If you wish to write a controller with minimal dependencies, you can mix in this trait, which includes
+ * helpers and useful constants.
  *
  * {{{
  *   class MyController @Inject() (action: DefaultActionBuilder, parse: PlayBodyParsers) extends ControllerHelpers {
@@ -32,7 +32,7 @@ trait ControllerHelpers
     with ContentTypes
     with RequestExtractors
     with Rendering
-    with RequestImplicits {
+    with RequestImplicits:
 
   /**
    * Used to mark an action that is still not implemented, e.g.:
@@ -44,17 +44,16 @@ trait ControllerHelpers
   lazy val TODO: Action[AnyContent] = ActionBuilder.ignoringBody { implicit request =>
     NotImplemented("todo")
   }
-}
 
 object ControllerHelpers extends ControllerHelpers
 
 /**
  * Useful prewired mixins for controller components, assuming an available [[ControllerComponents]].
  *
- * If you want to extend your own [[AbstractController]] but want to use a different base "Action",
- * you can mix in this trait.
+ * If you want to extend your own [[AbstractController]] but want to use a different base "Action", you can
+ * mix in this trait.
  */
-trait BaseControllerHelpers extends ControllerHelpers {
+trait BaseControllerHelpers extends ControllerHelpers:
 
   /**
    * The components needed to use the controller methods
@@ -62,8 +61,8 @@ trait BaseControllerHelpers extends ControllerHelpers {
   protected def controllerComponents: ControllerComponents
 
   /**
-   * The default body parsers provided by Play. This can be used along with the Action helper to customize the body
-   * parser, for example:
+   * The default body parsers provided by Play. This can be used along with the Action helper to customize the
+   * body parser, for example:
    *
    * {{{
    *   def foo(query: String) = Action(parse.tolerantJson) { request =>
@@ -76,8 +75,8 @@ trait BaseControllerHelpers extends ControllerHelpers {
   implicit lazy val defaultFormBinding: FormBinding = parse.formBinding(parse.DefaultMaxTextLength)
 
   /**
-   * The default execution context provided by Play. You should use this for non-blocking code only. You can do so by
-   * passing it explicitly, or by defining an implicit in your controller like so:
+   * The default execution context provided by Play. You should use this for non-blocking code only. You can
+   * do so by passing it explicitly, or by defining an implicit in your controller like so:
    *
    * {{{
    *   implicit lazy val executionContext = defaultExecutionContext
@@ -89,12 +88,11 @@ trait BaseControllerHelpers extends ControllerHelpers {
    * The default FileMimeTypes provided by Play. Used to map between file name extensions and mime types.
    */
   implicit def fileMimeTypes: FileMimeTypes = controllerComponents.fileMimeTypes
-}
 
 /**
  * Useful mixin for methods that do implicit transformations of a request
  */
-trait RequestImplicits {
+trait RequestImplicits:
 
   /**
    * Retrieves the session implicitly from the request.
@@ -121,7 +119,6 @@ trait RequestImplicits {
    * }}}
    */
   implicit def request2flash(using request: RequestHeader): Flash = request.flash
-}
 
 /**
  * Defines utility methods to generate `Action` and `Results` types.
@@ -137,11 +134,11 @@ trait RequestImplicits {
  * }
  * }}}
  *
- * This is intended to provide the idiomatic Play API for actions, allowing you to use "Action" for the default
- * action builder and "parse" to access Play's default body parsers. You may want to extend this to provide your own
- * base controller class, or write your own version with similar code.
+ * This is intended to provide the idiomatic Play API for actions, allowing you to use "Action" for the
+ * default action builder and "parse" to access Play's default body parsers. You may want to extend this to
+ * provide your own base controller class, or write your own version with similar code.
  */
-trait BaseController extends BaseControllerHelpers {
+trait BaseController extends BaseControllerHelpers:
 
   /**
    * The default ActionBuilder. Used to construct an action, for example:
@@ -155,50 +152,45 @@ trait BaseController extends BaseControllerHelpers {
    * This is meant to be a replacement for the now-deprecated Action object, and can be used in the same way.
    */
   def Action: ActionBuilder[Request, AnyContent] = controllerComponents.actionBuilder
-}
 
 /**
  * An abstract implementation of [[BaseController]] to make it slightly easier to use.
  */
-abstract class AbstractController(protected val controllerComponents: ControllerComponents) extends BaseController
+abstract class AbstractController(protected val controllerComponents: ControllerComponents)
+    extends BaseController
 
 /**
  * A variation of [[BaseController]] that gets its components via method injection.
  */
-trait InjectedController extends BaseController {
+trait InjectedController extends BaseController:
   private var _components: ControllerComponents = scala.compiletime.uninitialized
 
-  protected override def controllerComponents: ControllerComponents = {
+  protected override def controllerComponents: ControllerComponents =
     if _components == null then fallbackControllerComponents else _components
-  }
 
   /**
    * Call this method to set the [[ControllerComponents]] instance.
    */
   @Inject
-  def setControllerComponents(components: ControllerComponents): Unit = {
+  def setControllerComponents(components: ControllerComponents): Unit =
     _components = components
-  }
 
   /**
    * Defines fallback components to use in case setControllerComponents has not been called.
    */
-  protected def fallbackControllerComponents: ControllerComponents = {
+  protected def fallbackControllerComponents: ControllerComponents =
     throw new NoSuchElementException(
       "ControllerComponents not set! Call setControllerComponents or create the instance with dependency injection."
     )
-  }
-}
 
 /**
  * The base controller components dependencies that most controllers rely on.
  */
-trait ControllerComponents {
+trait ControllerComponents:
   def actionBuilder: ActionBuilder[Request, AnyContent]
   def parsers: PlayBodyParsers
   def fileMimeTypes: FileMimeTypes
   def executionContext: scala.concurrent.ExecutionContext
-}
 
 case class DefaultControllerComponents @Inject() (
     actionBuilder: DefaultActionBuilder,

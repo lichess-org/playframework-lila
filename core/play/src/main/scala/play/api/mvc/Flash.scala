@@ -16,7 +16,7 @@ import play.api.libs.crypto.CookieSignerProvider
  *
  * Flash data are encoded into an HTTP cookie, and can only contain simple `String` values.
  */
-case class Flash(data: Map[String, String] = Map.empty[String, String]) {
+case class Flash(data: Map[String, String] = Map.empty[String, String]):
 
   /**
    * Optionally returns the flash value associated with a key.
@@ -26,7 +26,8 @@ case class Flash(data: Map[String, String] = Map.empty[String, String]) {
   /**
    * Retrieves the flash value associated with the given key.
    *
-   * @throws NoSuchElementException if no value exists for the key.
+   * @throws NoSuchElementException
+   *   if no value exists for the key.
    */
   def apply(key: String): String = data(key)
 
@@ -43,23 +44,24 @@ case class Flash(data: Map[String, String] = Map.empty[String, String]) {
    * flash + ("username" -> "bob")
    * }}}
    *
-   * @param kv the key-value pair to add
-   * @return the modified flash
+   * @param kv
+   *   the key-value pair to add
+   * @return
+   *   the modified flash
    */
-  def +(kv: (String, String)): Flash = {
+  def +(kv: (String, String)): Flash =
     require(kv._2 != null, s"Flash value for ${kv._1} cannot be null")
     copy(data + kv)
-  }
 
   /**
    * Returns a new flash with elements added from the given `Iterable`.
    *
-   * @param kvs an `Iterable` containing key-value pairs to add.
+   * @param kvs
+   *   an `Iterable` containing key-value pairs to add.
    */
-  def ++(kvs: Iterable[(String, String)]): Flash = {
+  def ++(kvs: Iterable[(String, String)]): Flash =
     for (k, v) <- kvs do require(v != null, s"Flash value for $k cannot be null")
     copy(data ++ kvs)
-  }
 
   /**
    * Returns a new flash with the given key removed.
@@ -69,8 +71,10 @@ case class Flash(data: Map[String, String] = Map.empty[String, String]) {
    * flash - "username"
    * }}}
    *
-   * @param key the key to remove
-   * @return the modified flash
+   * @param key
+   *   the key to remove
+   * @return
+   *   the modified flash
    */
   def -(key: String): Flash = copy(data - key)
 
@@ -82,42 +86,41 @@ case class Flash(data: Map[String, String] = Map.empty[String, String]) {
    * flash -- Seq("username", "name")
    * }}}
    *
-   * @param keys the keys to remove
-   * @return the modified flash
+   * @param keys
+   *   the keys to remove
+   * @return
+   *   the modified flash
    */
   def --(keys: Iterable[String]): Flash = copy(data -- keys)
-}
 
 /**
  * Helper utilities to manage the Flash cookie.
  */
-trait FlashCookieBaker extends CookieBaker[Flash] with CookieDataCodec {
+trait FlashCookieBaker extends CookieBaker[Flash] with CookieDataCodec:
   def config: FlashConfiguration
 
   def COOKIE_NAME: String = config.cookieName
 
   lazy val emptyCookie = new Flash
 
-  override def path: String                      = config.path
-  override def secure: Boolean                   = config.secure
-  override def httpOnly: Boolean                 = config.httpOnly
-  override def domain: Option[String]            = config.domain
+  override def path: String = config.path
+  override def secure: Boolean = config.secure
+  override def httpOnly: Boolean = config.httpOnly
+  override def domain: Option[String] = config.domain
   override def sameSite: Option[Cookie.SameSite] = config.sameSite
 
   def deserialize(data: Map[String, String]): Flash = new Flash(data)
 
   def serialize(flash: Flash): Map[String, String] = flash.data
-}
 
 class LegacyFlashCookieBaker @Inject() (
     val config: FlashConfiguration,
     val secretConfiguration: SecretConfiguration,
     val cookieSigner: CookieSigner
 ) extends FlashCookieBaker
-    with UrlEncodedCookieDataCodec {
-  def this() = this(FlashConfiguration(), SecretConfiguration(), new CookieSignerProvider(SecretConfiguration()).get)
-}
+    with UrlEncodedCookieDataCodec:
+  def this() =
+    this(FlashConfiguration(), SecretConfiguration(), new CookieSignerProvider(SecretConfiguration()).get)
 
-object Flash {
+object Flash:
   val emptyCookie = new Flash
-}

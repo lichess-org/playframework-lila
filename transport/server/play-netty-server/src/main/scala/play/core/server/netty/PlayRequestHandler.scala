@@ -26,9 +26,8 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.control.Exception.catching
 
-private object PlayRequestHandler {
+private object PlayRequestHandler:
   private val logger: Logger = Logger(classOf[PlayRequestHandler])
-}
 
 private[play] class PlayRequestHandler(
     val server: NettyServer,
@@ -36,7 +35,7 @@ private[play] class PlayRequestHandler(
     app: Application,
     resultUtils: ServerResultUtils,
     modelConversion: NettyModelConversion
-) extends ChannelInboundHandlerAdapter {
+) extends ChannelInboundHandlerAdapter:
   import PlayRequestHandler.*
 
   // We keep track of whether there are requests in flight.  If there are, we don't respond to read
@@ -51,16 +50,16 @@ private[play] class PlayRequestHandler(
   /**
    * Handle the given request.
    */
-  def handle(channel: Channel, request: HttpRequest): Future[HttpResponse] = {
+  def handle(channel: Channel, request: HttpRequest): Future[HttpResponse] =
     logger.trace("Http request received by netty: " + request)
 
     import play.core.Execution.Implicits.trampoline
 
     val tryRequest: Try[RequestHeader] = modelConversion.convertRequest(channel, request)
 
-    def clientError(statusCode: Int, message: String): (RequestHeader, Handler) = {
+    def clientError(statusCode: Int, message: String): (RequestHeader, Handler) =
       val unparsedTarget = modelConversion.createUnparsedRequestTarget(request)
-      val requestHeader  = modelConversion.createRequestHeader(channel, request, unparsedTarget)
+      val requestHeader = modelConversion.createRequestHeader(channel, request, unparsedTarget)
       val result = app.errorHandler.onClientError(
         requestHeader.addAttr(HttpErrorHandler.Attrs.HttpErrorInfo, HttpErrorInfo("server-backend")),
         statusCode,
@@ -68,24 +67,20 @@ private[play] class PlayRequestHandler(
       )
       // If there's a problem in parsing the request, then we should close the connection, once done with it
       requestHeader -> Server.actionForResult(result.map(_.withHeaders(HeaderNames.CONNECTION -> "close")))
-    }
 
-    val (requestHeader, handler): (RequestHeader, Handler) = tryRequest match {
-      case Failure(exception: TooLongFrameException) => clientError(Status.REQUEST_URI_TOO_LONG, exception.getMessage)
-      case Failure(exception)                        => clientError(Status.BAD_REQUEST, exception.getMessage)
+    val (requestHeader, handler): (RequestHeader, Handler) = tryRequest match
+      case Failure(exception: TooLongFrameException) =>
+        clientError(Status.REQUEST_URI_TOO_LONG, exception.getMessage)
+      case Failure(exception) => clientError(Status.BAD_REQUEST, exception.getMessage)
       case Success(req) =>
-        if
-          req.headers
+        if req.headers
             .get(HeaderNames.CONTENT_LENGTH)
             .flatMap(clh => catching(classOf[NumberFormatException]).opt(clh.toLong))
             .exists(_ > maxContentLength)
-        then {
-          clientError(Status.REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large")
-        } else Server.getHandlerFor(req, app)
+        then clientError(Status.REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large")
+        else Server.getHandlerFor(req, app)
 
-    }
-
-    handler match {
+    handler match
       // execute normal action
       case action: EssentialAction => handleAction(action, requestHeader, request)
 
@@ -94,15 +89,13 @@ private[play] class PlayRequestHandler(
         val ex = new IllegalStateException(s"Netty server doesn't handle Handlers of this type: $h")
         logger.error(ex.getMessage, ex)
         throw ex
-    }
-  }
 
   // ----------------------------------------------------------------
   // Netty overrides
 
-  override def channelRead(ctx: ChannelHandlerContext, msg: Object): Unit = {
+  override def channelRead(ctx: ChannelHandlerContext, msg: Object): Unit =
     logger.trace(s"channelRead: ctx = $ctx, msg = $msg")
-    msg match {
+    msg match
       case req: HttpRequest =>
         requestsInFlight.incrementAndGet()
         // Do essentially the same thing that the mapAsync call in NettyFlowHandler is doing
@@ -112,24 +105,20 @@ private[play] class PlayRequestHandler(
         lastResponseSent = lastResponseSent.flatMap { _ =>
           // Need an explicit cast to Future[Unit] to help scalac out.
           val f: Future[Unit] = future.map { httpResponse =>
-            if requestsInFlight.decrementAndGet() == 0 then {
+            if requestsInFlight.decrementAndGet() == 0 then
               // Since we've now gone down to zero, we need to issue a
               // read, in case we ignored an earlier read complete
               ctx.read()
-            }
             ctx.writeAndFlush(httpResponse)
           }
 
-          f.recover {
-            case error: Exception =>
-              logger.error("Exception caught in channelRead future", error)
-              sendSimpleErrorResponse(ctx, HttpResponseStatus.SERVICE_UNAVAILABLE)
+          f.recover { case error: Exception =>
+            logger.error("Exception caught in channelRead future", error)
+            sendSimpleErrorResponse(ctx, HttpResponseStatus.SERVICE_UNAVAILABLE)
           }
         }
-    }
-  }
 
-  override def channelReadComplete(ctx: ChannelHandlerContext): Unit = {
+  override def channelReadComplete(ctx: ChannelHandlerContext): Unit =
     logger.trace(s"channelReadComplete: ctx = $ctx")
 
     // The normal response to read complete is to issue another read,
@@ -139,17 +128,14 @@ private[play] class PlayRequestHandler(
     // we don't get in the way of the request body reactive streams,
     // which will be using channel read complete and read to implement
     // their own back pressure
-    if requestsInFlight.get() == 0 then {
-      ctx.read()
-    } else {
+    if requestsInFlight.get() == 0 then ctx.read()
+    else
       // otherwise forward it, so that any handler publishers downstream
       // can handle it
       ctx.fireChannelReadComplete()
-    }
-  }
 
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    cause match {
+  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit =
+    cause match
       // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
       // sending/receiving the response.
       case e: IOException =>
@@ -166,24 +152,19 @@ private[play] class PlayRequestHandler(
       case e =>
         logger.error("Exception caught in Netty", e)
         ctx.channel().close()
-    }
-  }
 
-  override def channelActive(ctx: ChannelHandlerContext): Unit = {
+  override def channelActive(ctx: ChannelHandlerContext): Unit =
     // AUTO_READ is off, so need to do the first read explicitly.
     // this method is called when the channel is registered with the event loop,
     // so ctx.read is automatically safe here w/o needing an isRegistered().
     ctx.read()
-  }
 
-  override def userEventTriggered(ctx: ChannelHandlerContext, evt: scala.Any): Unit = {
-    evt match {
+  override def userEventTriggered(ctx: ChannelHandlerContext, evt: scala.Any): Unit =
+    evt match
       case idle: IdleStateEvent if ctx.channel().isOpen =>
         logger.trace(s"Closing connection due to idle timeout")
         ctx.close()
       case _ => super.userEventTriggered(ctx, evt)
-    }
-  }
 
   // ----------------------------------------------------------------
   // Private methods
@@ -194,8 +175,8 @@ private[play] class PlayRequestHandler(
   private def handleAction(
       action: EssentialAction,
       requestHeader: RequestHeader,
-      request: HttpRequest,
-  ): Future[HttpResponse] = {
+      request: HttpRequest
+  ): Future[HttpResponse] =
     implicit val mat: Materializer = app.materializer
     import play.core.Execution.Implicits.trampoline
 
@@ -206,45 +187,38 @@ private[play] class PlayRequestHandler(
       actionResult <- actionFuture
         .flatMap { acc =>
           val body = modelConversion.convertRequestBody(request)
-          body match {
-            case None         => acc.run()
+          body match
+            case None => acc.run()
             case Some(source) => acc.run(source)
-          }
         }
-        .recoverWith {
-          case error =>
-            logger.error("Cannot invoke the action", error)
-            app.errorHandler.onServerError(requestHeader, error)
+        .recoverWith { case error =>
+          logger.error("Cannot invoke the action", error)
+          app.errorHandler.onServerError(requestHeader, error)
         }
       // Clean and validate the action's result
-      validatedResult <- {
+      validatedResult <-
         val cleanedResult = resultUtils.prepareCookies(requestHeader, actionResult)
         resultUtils.validateResult(requestHeader, cleanedResult, app.errorHandler)
-      }
       // Convert the result to a Netty HttpResponse
       convertedResult <- modelConversion
         .convertResult(validatedResult, requestHeader, request.protocolVersion(), app.errorHandler)
     yield convertedResult
-  }
 
   /**
    * Get the error handler for the application.
    */
   private def errorHandler(tryApp: Try[Application]): HttpErrorHandler =
-    tryApp match {
+    tryApp match
       case Success(app) => app.errorHandler
-      case Failure(_)   => DefaultHttpErrorHandler
-    }
+      case Failure(_) => DefaultHttpErrorHandler
 
   /**
    * Sends a simple response with no body, then closes the connection.
    */
-  private def sendSimpleErrorResponse(ctx: ChannelHandlerContext, status: HttpResponseStatus): ChannelFuture = {
+  private def sendSimpleErrorResponse(ctx: ChannelHandlerContext, status: HttpResponseStatus): ChannelFuture =
     val response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status)
     response.headers().set(HttpHeaderNames.CONNECTION, "close")
     response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "0")
     val f = ctx.channel().write(response)
     f.addListener(ChannelFutureListener.CLOSE)
     f
-  }
-}

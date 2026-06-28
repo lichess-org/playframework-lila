@@ -12,7 +12,7 @@ import play.api.*
 /**
  * Provides information about a Play Application running inside a Play server.
  */
-trait ApplicationProvider {
+trait ApplicationProvider:
 
   /**
    * Get the application. In dev mode this lazily loads the application.
@@ -20,14 +20,11 @@ trait ApplicationProvider {
    * NOTE: This should be called once per request. Calling multiple times may result in multiple compilations.
    */
   def get: Try[Application]
-}
 
-object ApplicationProvider {
+object ApplicationProvider:
 
   /**
    * Creates an ApplicationProvider that wraps an Application instance.
    */
-  def apply(application: Application) = new ApplicationProvider {
+  def apply(application: Application) = new ApplicationProvider:
     val get: Try[Application] = Success(application)
-  }
-}

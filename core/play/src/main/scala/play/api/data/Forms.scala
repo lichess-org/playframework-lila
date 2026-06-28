@@ -33,8 +33,10 @@ object Forms {
    * Form("email" -> of[String])
    * }}}
    *
-   * @tparam T the mapping type
-   * @return a mapping for a simple field
+   * @tparam T
+   *   the mapping type
+   * @return
+   *   a mapping for a simple field
    */
   def of[T](using binder: Formatter[T]): FieldMapping[T] = FieldMapping[T]()(using binder)
 
@@ -50,10 +52,16 @@ object Forms {
    * )
    * }}}
    *
-   * @tparam R the mapped type
-   * @param apply A function able to create a value of R from a value of A1 (If R is case class you can use its own apply function)
-   * @param unapply A function able to create A1 from a value of R (If R is a case class you can use its own unapply function)
-   * @return a mapping for type `R`
+   * @tparam R
+   *   the mapped type
+   * @param apply
+   *   A function able to create a value of R from a value of A1 (If R is case class you can use its own apply
+   *   function)
+   * @param unapply
+   *   A function able to create A1 from a value of R (If R is a case class you can use its own unapply
+   *   function)
+   * @return
+   *   a mapping for type `R`
    */
   // format: off
   def mapping[R, A1](a1: (String, Mapping[A1]))(apply: Function1[A1, R])(unapply: Function1[R, Option[(A1)]]): Mapping[R] = {
@@ -157,7 +165,8 @@ object Forms {
    * )
    * }}}
    *
-   * @return a mapping for a type A1
+   * @return
+   *   a mapping for a type A1
    */
   def single[A1](a1: (String, Mapping[A1])): Mapping[A1] = mapping(a1)((a1: A1) => a1)((t: A1) => Some(t))
 
@@ -174,7 +183,8 @@ object Forms {
    * )
    * }}}
    *
-   * @return a mapping for a tuple `(A,B)`
+   * @return
+   *   a mapping for a tuple `(A,B)`
    */
   // format: off
   def tuple[A1, A2](a1: (String, Mapping[A1]), a2: (String, Mapping[A2])): Mapping[(A1, A2)] = mapping(a1, a2)((a1: A1, a2: A2) => (a1, a2))((t: (A1, A2)) => Some(t))
@@ -247,9 +257,8 @@ object Forms {
   /**
    * Constructs a simple mapping for required text field.
    *
-   * Note that all field are always required to be present in the form unless
-   * there are marked as optional explicitly. But a nonEmptyText defines text
-   * field that must not be empty, even if present in the form.
+   * Note that all field are always required to be present in the form unless there are marked as optional
+   * explicitly. But a nonEmptyText defines text field that must not be empty, even if present in the form.
    *
    * Example:
    * {{{
@@ -266,14 +275,15 @@ object Forms {
    * Form("username" -> text(minLength=3))
    * }}}
    *
-   * @param minLength minimum text length
-   * @param maxLength maximum text length
+   * @param minLength
+   *   minimum text length
+   * @param maxLength
+   *   maximum text length
    */
-  def text(minLength: Int = 0, maxLength: Int = Int.MaxValue): Mapping[String] = (minLength, maxLength) match {
+  def text(minLength: Int = 0, maxLength: Int = Int.MaxValue): Mapping[String] = (minLength, maxLength) match
     case (min, Int.MaxValue) => text.verifying(Constraints.minLength(min))
-    case (0, max)            => text.verifying(Constraints.maxLength(max))
-    case (min, max)          => text.verifying(Constraints.minLength(min), Constraints.maxLength(max))
-  }
+    case (0, max) => text.verifying(Constraints.maxLength(max))
+    case (min, max) => text.verifying(Constraints.minLength(min), Constraints.maxLength(max))
 
   /**
    * Constructs a simple mapping for required text field.
@@ -283,8 +293,10 @@ object Forms {
    * Form("username" -> nonEmptyText(minLength=3))
    * }}}
    *
-   * @param minLength Text min length.
-   * @param maxLength Text max length.
+   * @param minLength
+   *   Text min length.
+   * @param maxLength
+   *   Text max length.
    */
   def nonEmptyText(minLength: Int = 0, maxLength: Int = Int.MaxValue): Mapping[String] =
     text(minLength, maxLength).verifying(Constraints.nonEmpty)
@@ -337,9 +349,12 @@ object Forms {
    * Form("size" -> number(min=0, max=100))
    * }}}
    *
-   * @param min minimum value
-   * @param max maximum value
-   * @param strict should it be a strict comparison
+   * @param min
+   *   minimum value
+   * @param max
+   *   maximum value
+   * @param strict
+   *   should it be a strict comparison
    */
   def number(min: Int = Int.MinValue, max: Int = Int.MaxValue, strict: Boolean = false): Mapping[Int] =
     numberMapping[Int](Int.MinValue, Int.MaxValue, min, max, strict)
@@ -352,11 +367,18 @@ object Forms {
    * Form("size" -> longNumber(min=0, max=100))
    * }}}
    *
-   * @param min minimum value
-   * @param max maximum value
-   * @param strict should it be a strict comparison
+   * @param min
+   *   minimum value
+   * @param max
+   *   maximum value
+   * @param strict
+   *   should it be a strict comparison
    */
-  def longNumber(min: Long = Long.MinValue, max: Long = Long.MaxValue, strict: Boolean = false): Mapping[Long] =
+  def longNumber(
+      min: Long = Long.MinValue,
+      max: Long = Long.MaxValue,
+      strict: Boolean = false
+  ): Mapping[Long] =
     numberMapping[Long](Long.MinValue, Long.MaxValue, min, max, strict)
 
   /**
@@ -367,11 +389,18 @@ object Forms {
    * Form("size" -> shortNumber(min=0, max=100))
    * }}}
    *
-   * @param min minimum value
-   * @param max maximum value
-   * @param strict should it be a strict comparison
+   * @param min
+   *   minimum value
+   * @param max
+   *   maximum value
+   * @param strict
+   *   should it be a strict comparison
    */
-  def shortNumber(min: Short = Short.MinValue, max: Short = Short.MaxValue, strict: Boolean = false): Mapping[Short] =
+  def shortNumber(
+      min: Short = Short.MinValue,
+      max: Short = Short.MaxValue,
+      strict: Boolean = false
+  ): Mapping[Short] =
     numberMapping[Short](Short.MinValue, Short.MaxValue, min, max, strict)
 
   /**
@@ -382,11 +411,18 @@ object Forms {
    * Form("size" -> byteNumber(min=0, max=100))
    * }}}
    *
-   * @param min minimum value
-   * @param max maximum value
-   * @param strict should it be a strict comparison
+   * @param min
+   *   minimum value
+   * @param max
+   *   maximum value
+   * @param strict
+   *   should it be a strict comparison
    */
-  def byteNumber(min: Byte = Byte.MinValue, max: Byte = Byte.MaxValue, strict: Boolean = false): Mapping[Byte] =
+  def byteNumber(
+      min: Byte = Byte.MinValue,
+      max: Byte = Byte.MaxValue,
+      strict: Boolean = false
+  ): Mapping[Byte] =
     numberMapping[Byte](Byte.MinValue, Byte.MaxValue, min, max, strict)
 
   @inline private def numberMapping[N: Numeric: Formatter](
@@ -395,18 +431,12 @@ object Forms {
       min: N,
       max: N,
       strict: Boolean
-  ): Mapping[N] = {
+  ): Mapping[N] =
     val number = of[N]
-    if min == typeMin && max == typeMax then {
-      number
-    } else if min == typeMin then {
-      number.verifying(Constraints.max(max, strict))
-    } else if max == typeMax then {
-      number.verifying(Constraints.min(min, strict))
-    } else {
-      number.verifying(Constraints.min(min, strict), Constraints.max(max, strict))
-    }
-  }
+    if min == typeMin && max == typeMax then number
+    else if min == typeMin then number.verifying(Constraints.max(max, strict))
+    else if max == typeMax then number.verifying(Constraints.min(min, strict))
+    else number.verifying(Constraints.min(min, strict), Constraints.max(max, strict))
 
   /**
    * Constructs a simple mapping for a BigDecimal field.
@@ -425,8 +455,10 @@ object Forms {
    * {{{
    * Form("montant" -> bigDecimal(10, 2))
    * }}}
-   * @param precision The maximum total number of digits (including decimals)
-   * @param scale The maximum number of decimals
+   * @param precision
+   *   The maximum total number of digits (including decimals)
+   * @param scale
+   *   The maximum number of decimals
    */
   def bigDecimal(precision: Int, scale: Int): Mapping[BigDecimal] =
     of[BigDecimal].as(bigDecimalFormat(Some((precision, scale))))
@@ -452,10 +484,10 @@ object Forms {
   val uuid: Mapping[java.util.UUID] = of[java.util.UUID]
 
   /**
-   * Define a fixed value in a mapping.
-   * This mapping will not participate to the binding.
+   * Define a fixed value in a mapping. This mapping will not participate to the binding.
    *
-   * @param value As we ignore this parameter in binding/unbinding we have to provide a default value.
+   * @param value
+   *   As we ignore this parameter in binding/unbinding we have to provide a default value.
    */
   def ignored[A](value: A): Mapping[A] = of(using ignoredFormat(value))
 
@@ -468,7 +500,8 @@ object Forms {
    * )
    * }}}
    *
-   * @param mapping The mapping to make optional.
+   * @param mapping
+   *   The mapping to make optional.
    */
   def optional[A](mapping: Mapping[A]): Mapping[Option[A]] = OptionalMapping(mapping)
 
@@ -481,8 +514,10 @@ object Forms {
    * )
    * }}}
    *
-   * @param mapping The mapping to make optional.
-   * @param value The default value when mapping and the field is not present.
+   * @param mapping
+   *   The mapping to make optional.
+   * @param value
+   *   The default value when mapping and the field is not present.
    */
   def default[A](mapping: Mapping[A], value: A): Mapping[A] =
     OptionalMapping(mapping).transform(_.getOrElse(value), Some(_))
@@ -495,7 +530,8 @@ object Forms {
    * )
    * }}}
    *
-   * @param mapping The mapping to make repeated.
+   * @param mapping
+   *   The mapping to make repeated.
    */
   def list[A](mapping: Mapping[A]): Mapping[List[A]] = RepeatedMapping(mapping)
 
@@ -507,7 +543,8 @@ object Forms {
    * )
    * }}}
    *
-   * @param mapping The mapping to make repeated.
+   * @param mapping
+   *   The mapping to make repeated.
    */
   def seq[A](mapping: Mapping[A]): Mapping[Seq[A]] = RepeatedMapping(mapping).transform(_.toSeq, _.toList)
 
@@ -519,7 +556,8 @@ object Forms {
    * )
    * }}}
    *
-   * @param mapping The mapping to make repeated.
+   * @param mapping
+   *   The mapping to make repeated.
    */
   def set[A](mapping: Mapping[A]): Mapping[Set[A]] = RepeatedMapping(mapping).transform(_.toSet, _.toList)
 
@@ -531,7 +569,8 @@ object Forms {
    * )
    * }}}
    *
-   * @param mapping The mapping to make repeated.
+   * @param mapping
+   *   The mapping to make repeated.
    */
   def indexedSeq[A](mapping: Mapping[A]): Mapping[IndexedSeq[A]] =
     RepeatedMapping(mapping).transform(_.toIndexedSeq, _.toList)
@@ -544,9 +583,11 @@ object Forms {
    * )
    * }}}
    *
-   * @param mapping The mapping to make repeated.
+   * @param mapping
+   *   The mapping to make repeated.
    */
-  def vector[A](mapping: Mapping[A]): Mapping[Vector[A]] = RepeatedMapping(mapping).transform(_.toVector, _.toList)
+  def vector[A](mapping: Mapping[A]): Mapping[Vector[A]] =
+    RepeatedMapping(mapping).transform(_.toVector, _.toList)
 
   /**
    * Constructs a simple mapping for a date field.
@@ -556,10 +597,15 @@ object Forms {
    *   Form("birthdate" -> date("dd-MM-yyyy"))
    * }}}
    *
-   * @param pattern the date pattern, as defined in `java.text.SimpleDateFormat`
-   * @param timeZone the `java.util.TimeZone` to use for parsing and formatting
+   * @param pattern
+   *   the date pattern, as defined in `java.text.SimpleDateFormat`
+   * @param timeZone
+   *   the `java.util.TimeZone` to use for parsing and formatting
    */
-  def date(pattern: String, timeZone: java.util.TimeZone = java.util.TimeZone.getDefault): Mapping[java.util.Date] =
+  def date(
+      pattern: String,
+      timeZone: java.util.TimeZone = java.util.TimeZone.getDefault
+  ): Mapping[java.util.Date] =
     of[java.util.Date].as(dateFormat(pattern, timeZone))
 
   /**
@@ -580,7 +626,8 @@ object Forms {
    *   Form("birthdate" -> sqlDate("dd-MM-yyyy"))
    * }}}
    *
-   * @param pattern the date pattern, as defined in `java.text.SimpleDateFormat`
+   * @param pattern
+   *   the date pattern, as defined in `java.text.SimpleDateFormat`
    */
   def sqlDate(pattern: String): Mapping[java.sql.Date] = of[java.sql.Date].as(sqlDateFormat(pattern))
 
@@ -602,8 +649,10 @@ object Forms {
    *   Form("birthdate" -> sqlTimestamp("dd-MM-yyyy hh:mm:ss"))
    * }}}
    *
-   * @param pattern the date pattern, as defined in `java.text.SimpleDateFormat`
-   * @param timeZone the `java.util.TimeZone` to use for parsing and formatting
+   * @param pattern
+   *   the date pattern, as defined in `java.text.SimpleDateFormat`
+   * @param timeZone
+   *   the `java.util.TimeZone` to use for parsing and formatting
    */
   def sqlTimestamp(
       pattern: String,
@@ -613,7 +662,8 @@ object Forms {
   /**
    * Constructs a simple mapping for an e-mail field.
    *
-   * @see http://www.w3.org/TR/html5/forms.html#e-mail-state-(type=email)
+   * @see
+   *   http://www.w3.org/TR/html5/forms.html#e-mail-state-(type=email)
    *
    * For example:
    * {{{
@@ -650,9 +700,11 @@ object Forms {
    * Form("birthdate" -> localDate("dd-MM-yyyy"))
    * }}}
    *
-   * @param pattern the date pattern, as defined in `java.time.format.DateTimeFormatter`
+   * @param pattern
+   *   the date pattern, as defined in `java.time.format.DateTimeFormatter`
    */
-  def localDate(pattern: String): Mapping[java.time.LocalDate] = of[java.time.LocalDate].as(localDateFormat(pattern))
+  def localDate(pattern: String): Mapping[java.time.LocalDate] =
+    of[java.time.LocalDate].as(localDateFormat(pattern))
 
   /**
    * Constructs a simple mapping for a date field (mapped as `java.time.LocalDateTime type`).
@@ -672,7 +724,8 @@ object Forms {
    * Form("dateTime" -> localDateTime("dd-MM-yyyy HH:mm:ss"))
    * }}}
    *
-   * @param pattern the date pattern, as defined in `java.time.format.DateTimeFormatter`
+   * @param pattern
+   *   the date pattern, as defined in `java.time.format.DateTimeFormatter`
    */
   def localDateTime(pattern: String): Mapping[java.time.LocalDateTime] =
     of[java.time.LocalDateTime].as(localDateTimeFormat(pattern))
@@ -695,9 +748,11 @@ object Forms {
    * Form("time" -> localTime("HH:mm:ss"))
    * }}}
    *
-   * @param pattern the date pattern, as defined in `java.time.format.DateTimeFormatter`
+   * @param pattern
+   *   the date pattern, as defined in `java.time.format.DateTimeFormatter`
    */
-  def localTime(pattern: String): Mapping[java.time.LocalTime] = of[java.time.LocalTime].as(localTimeFormat(pattern))
+  def localTime(pattern: String): Mapping[java.time.LocalTime] =
+    of[java.time.LocalTime].as(localTimeFormat(pattern))
 
   def checked(msg: String): Mapping[Boolean] = boolean.verifying(msg, _ == true)
 }

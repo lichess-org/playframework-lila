@@ -8,7 +8,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.ref.Reference
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{ Files as JFiles }
+import java.nio.file.Files as JFiles
 import java.nio.file.*
 import java.time.Clock
 import java.time.Instant
@@ -35,43 +35,49 @@ import scala.util.Try
 /**
  * FileSystem utilities.
  */
-object Files {
+object Files:
   lazy val logger = LoggerFactory.getLogger("play.api.libs.Files")
 
   /**
-   * Logic for creating a temporary file. Users should try to clean up the
-   * file themselves, but this TemporaryFileCreator implementation may also
-   * try to clean up any leaked files, e.g. when the Application or JVM stops.
+   * Logic for creating a temporary file. Users should try to clean up the file themselves, but this
+   * TemporaryFileCreator implementation may also try to clean up any leaked files, e.g. when the Application
+   * or JVM stops.
    */
-  trait TemporaryFileCreator {
+  trait TemporaryFileCreator:
 
     /**
      * Creates a temporary file.
      *
-     * @param prefix the prefix of the file.
-     * @param suffix the suffix of the file
-     * @return the newly created temporary file.
+     * @param prefix
+     *   the prefix of the file.
+     * @param suffix
+     *   the suffix of the file
+     * @return
+     *   the newly created temporary file.
      */
     def create(prefix: String = "", suffix: String = ""): TemporaryFile
 
     /**
      * Creates a temporary file from an already existing file.
      *
-     * @param path the existing temp file path
-     * @return a Temporary file wrapping the existing file.
+     * @param path
+     *   the existing temp file path
+     * @return
+     *   a Temporary file wrapping the existing file.
      */
     def create(path: Path): TemporaryFile
 
     /**
      * Deletes the temporary file.
      *
-     * @param file the temporary file to be deleted.
-     * @return the boolean value of the FS delete operation, or an throwable.
+     * @param file
+     *   the temporary file to be deleted.
+     * @return
+     *   the boolean value of the FS delete operation, or an throwable.
      */
     def delete(file: TemporaryFile): Try[Boolean]
-  }
 
-  trait TemporaryFile {
+  trait TemporaryFile:
     def path: Path
 
     @deprecated("Use path rather than file", "2.6.0")
@@ -83,8 +89,10 @@ object Files {
      * Copy the file to the specified path destination and, if the destination exists, decide if replace it
      * based on the `replace` parameter.
      *
-     * @param to the destination file.
-     * @param replace if it should replace an existing file.
+     * @param to
+     *   the destination file.
+     * @param replace
+     *   if it should replace an existing file.
      */
     def copyTo(to: java.io.File, replace: Boolean = false): Path = copyTo(to.toPath, replace)
 
@@ -92,76 +100,80 @@ object Files {
      * Copy the file to the specified path destination and, if the destination exists, decide if replace it
      * based on the `replace` parameter.
      *
-     * @param to the path destination.
-     * @param replace if it should replace an existing file.
+     * @param to
+     *   the path destination.
+     * @param replace
+     *   if it should replace an existing file.
      */
-    def copyTo(to: Path, replace: Boolean): Path = {
+    def copyTo(to: Path, replace: Boolean): Path =
       val destination =
         try
           if replace then JFiles.copy(path, to, StandardCopyOption.REPLACE_EXISTING)
           else if !to.toFile.exists() then JFiles.copy(path, to)
           else to
-        catch {
-          case _: FileAlreadyExistsException => to
-        }
+        catch case _: FileAlreadyExistsException => to
 
       destination
-    }
 
     /**
-     * Move the file to the specified destination [[java.io.File]]. In some cases, the source and destination file
-     * may point to the same `inode`. See the documentation for [[java.nio.file.Files.move()]] to see more details.
+     * Move the file to the specified destination [[java.io.File]]. In some cases, the source and destination
+     * file may point to the same `inode`. See the documentation for [[java.nio.file.Files.move()]] to see
+     * more details.
      *
-     * @param to the path to the destination file
-     * @param replace true if an existing file should be replaced, false otherwise.
-     * @deprecated Since 2.8.0. Renamed to [[moveTo()]].
+     * @param to
+     *   the path to the destination file
+     * @param replace
+     *   true if an existing file should be replaced, false otherwise.
+     * @deprecated
+     *   Since 2.8.0. Renamed to [[moveTo()]].
      */
     @deprecated("Renamed to moveTo", "2.8.0")
-    def moveFileTo(to: java.io.File, replace: Boolean = false): Path = {
+    def moveFileTo(to: java.io.File, replace: Boolean = false): Path =
       moveFileTo(to.toPath, replace)
-    }
 
     /**
      * Move the file using a [[java.nio.file.Path]].
      *
-     * @param to the path to the destination file
-     * @param replace true if an existing file should be replaced, false otherwise.
-     * @deprecated Since 2.8.0. Renamed to [[moveTo()]].
+     * @param to
+     *   the path to the destination file
+     * @param replace
+     *   true if an existing file should be replaced, false otherwise.
+     * @deprecated
+     *   Since 2.8.0. Renamed to [[moveTo()]].
      */
     @deprecated("Renamed to moveTo", "2.8.0")
     def moveFileTo(to: Path, replace: Boolean): Path = moveTo(to, replace)
 
     /**
-     * Move the file to the specified destination [[java.io.File]]. In some cases, the source and destination file
-     * may point to the same `inode`. See the documentation for [[java.nio.file.Files.move()]] to see more details.
+     * Move the file to the specified destination [[java.io.File]]. In some cases, the source and destination
+     * file may point to the same `inode`. See the documentation for [[java.nio.file.Files.move()]] to see
+     * more details.
      *
-     * @param to the path to the destination file
-     * @param replace true if an existing file should be replaced, false otherwise.
+     * @param to
+     *   the path to the destination file
+     * @param replace
+     *   true if an existing file should be replaced, false otherwise.
      */
-    def moveTo(to: java.io.File, replace: Boolean = false): Path = {
+    def moveTo(to: java.io.File, replace: Boolean = false): Path =
       moveTo(to.toPath, replace)
-    }
 
     /**
      * Move the file using a [[java.nio.file.Path]].
      *
-     * @param to the path to the destination file
-     * @param replace true if an existing file should be replaced, false otherwise.
+     * @param to
+     *   the path to the destination file
+     * @param replace
+     *   true if an existing file should be replaced, false otherwise.
      */
-    def moveTo(to: Path, replace: Boolean): Path = {
+    def moveTo(to: Path, replace: Boolean): Path =
       val destination =
-        try {
-          if replace then
-            JFiles.move(path, to, StandardCopyOption.REPLACE_EXISTING)
-          else if !to.toFile.exists() then
-            JFiles.move(path, to)
+        try
+          if replace then JFiles.move(path, to, StandardCopyOption.REPLACE_EXISTING)
+          else if !to.toFile.exists() then JFiles.move(path, to)
           else to
-        } catch {
-          case ex: FileAlreadyExistsException => to
-        }
+        catch case ex: FileAlreadyExistsException => to
 
       destination
-    }
 
     /**
      * Attempts to move source to target atomically and falls back to a non-atomic move if it fails.
@@ -169,8 +181,10 @@ object Files {
      * This always tries to replace existent files. Since it is platform dependent if atomic moves replaces
      * existent files or not, considering that it will always replaces, makes the API more predictable.
      *
-     * @param to the path to the destination file
-     * @deprecated Since 2.8.0. Renamed to [[atomicMoveWithFallback()]].
+     * @param to
+     *   the path to the destination file
+     * @deprecated
+     *   Since 2.8.0. Renamed to [[atomicMoveWithFallback()]].
      */
     @deprecated("Renamed to atomicMoveWithFallback", "2.8.0")
     def atomicMoveFileWithFallback(to: File): Path = atomicMoveFileWithFallback(to.toPath)
@@ -181,8 +195,10 @@ object Files {
      * This always tries to replace existent files. Since it is platform dependent if atomic moves replaces
      * existent files or not, considering that it will always replaces, makes the API more predictable.
      *
-     * @param to the path to the destination file
-     * @deprecated Since 2.8.0. Renamed to [[atomicMoveWithFallback()]].
+     * @param to
+     *   the path to the destination file
+     * @deprecated
+     *   Since 2.8.0. Renamed to [[atomicMoveWithFallback()]].
      */
     // see https://github.com/apache/kafka/blob/d345d53/clients/src/main/java/org/apache/kafka/common/utils/Utils.java#L608-L626
     @deprecated("Renamed to atomicMoveWithFallback", "2.8.0")
@@ -194,7 +210,8 @@ object Files {
      * This always tries to replace existent files. Since it is platform dependent if atomic moves replaces
      * existent files or not, considering that it will always replaces, makes the API more predictable.
      *
-     * @param to the path to the destination file
+     * @param to
+     *   the path to the destination file
      */
     def atomicMoveWithFallback(to: File): Path = atomicMoveWithFallback(to.toPath)
 
@@ -204,45 +221,41 @@ object Files {
      * This always tries to replace existent files. Since it is platform dependent if atomic moves replaces
      * existent files or not, considering that it will always replaces, makes the API more predictable.
      *
-     * @param to the path to the destination file
+     * @param to
+     *   the path to the destination file
      */
     // see https://github.com/apache/kafka/blob/d345d53/clients/src/main/java/org/apache/kafka/common/utils/Utils.java#L608-L626
-    def atomicMoveWithFallback(to: Path): Path = {
+    def atomicMoveWithFallback(to: Path): Path =
       val destination =
-        try {
-          JFiles.move(path, to, StandardCopyOption.ATOMIC_MOVE)
-        } catch {
+        try JFiles.move(path, to, StandardCopyOption.ATOMIC_MOVE)
+        catch
           case outer: IOException =>
-            try {
+            try
               val p = JFiles.move(path, to, StandardCopyOption.REPLACE_EXISTING)
               logger.debug(
                 s"Non-atomic move of $path to $to succeeded after atomic move failed due to ${outer.getMessage}"
               )
               p
-            } catch {
+            catch
               case inner: IOException =>
                 inner.addSuppressed(outer)
                 throw inner
-            }
-        }
 
       destination
-    }
-  }
 
   /**
-   * Creates temporary folders inside a single temporary folder. deleting all files on a
-   * successful application stop.  Note that this will not clean up the filesystem if the
-   * application / JVM terminates abnormally.
+   * Creates temporary folders inside a single temporary folder. deleting all files on a successful
+   * application stop. Note that this will not clean up the filesystem if the application / JVM terminates
+   * abnormally.
    */
   @Singleton
   class DefaultTemporaryFileCreator @Inject() (
       applicationLifecycle: ApplicationLifecycle,
       temporaryFileReaper: TemporaryFileReaper,
       conf: Configuration
-  ) extends TemporaryFileCreator {
+  ) extends TemporaryFileCreator:
     private val logger = play.api.Logger(this.getClass)
-    private val frq    = new FinalizableReferenceQueue()
+    private val frq = new FinalizableReferenceQueue()
 
     // Much of the PhantomReference implementation is taken from
     // the Google Guava documentation example
@@ -252,99 +265,85 @@ object Files {
     private val references = Sets.newConcurrentHashSet[Reference[TemporaryFile]]()
 
     private val TempDirectoryPrefix = "playtemp"
-    private lazy val playTempFolder: Path = {
+    private lazy val playTempFolder: Path =
       val dir = Paths.get(conf.get[String]("play.temporaryFile.dir"))
       JFiles.createDirectories(dir) // make sure dir exists, otherwise createTempDirectory fails
       val tmpFolder = JFiles.createTempDirectory(dir, TempDirectoryPrefix)
       temporaryFileReaper.updateTempFolder(tmpFolder)
       tmpFolder
-    }
 
-    override def create(prefix: String, suffix: String): TemporaryFile = {
+    override def create(prefix: String, suffix: String): TemporaryFile =
       JFiles.createDirectories(playTempFolder)
       val tempFile = JFiles.createTempFile(playTempFolder, prefix, suffix)
       createReference(new DefaultTemporaryFile(tempFile, this))
-    }
 
-    override def create(path: Path): TemporaryFile = {
+    override def create(path: Path): TemporaryFile =
       createReference(new DefaultTemporaryFile(path, this))
-    }
 
-    private def createReference(tempFile: TemporaryFile) = {
+    private def createReference(tempFile: TemporaryFile) =
       val path = tempFile.path
       val reference =
-        new FinalizablePhantomReference[TemporaryFile](tempFile, frq) {
-          override def finalizeReferent(): Unit = {
+        new FinalizablePhantomReference[TemporaryFile](tempFile, frq):
+          override def finalizeReferent(): Unit =
             references.remove(this)
             deletePath(path)
-          }
-        }
       references.add(reference)
       tempFile
-    }
 
-    override def delete(tempFile: TemporaryFile): Try[Boolean] = {
+    override def delete(tempFile: TemporaryFile): Try[Boolean] =
       deletePath(tempFile.path)
-    }
 
-    private def deletePath(path: Path): Try[Boolean] = {
+    private def deletePath(path: Path): Try[Boolean] =
       logger.debug(s"deletePath: deleting = $path")
-      Try(JFiles.deleteIfExists(path)).recoverWith {
-        case e: Exception =>
-          logger.error(s"Cannot delete $path", e)
-          Failure(e)
+      Try(JFiles.deleteIfExists(path)).recoverWith { case e: Exception =>
+        logger.error(s"Cannot delete $path", e)
+        Failure(e)
       }
-    }
 
     /**
-     * A temporary file hold a reference to a real path, and will delete
-     * it when the reference is garbage collected.
+     * A temporary file hold a reference to a real path, and will delete it when the reference is garbage
+     * collected.
      */
     class DefaultTemporaryFile private[DefaultTemporaryFileCreator] (
         val path: Path,
         val temporaryFileCreator: TemporaryFileCreator
-    ) extends TemporaryFile {
+    ) extends TemporaryFile:
       def file: File = path.toFile
-    }
 
     /**
      * Application stop hook which deletes the temporary folder recursively (including subfolders).
      */
     applicationLifecycle.addStopHook { () =>
       Future.successful {
-        if JFiles.isDirectory(playTempFolder) then {
+        if JFiles.isDirectory(playTempFolder) then
           JFiles.walkFileTree(
             playTempFolder,
-            new SimpleFileVisitor[Path] {
-              override def visitFile(path: Path, attrs: BasicFileAttributes): FileVisitResult = {
+            new SimpleFileVisitor[Path]:
+              override def visitFile(path: Path, attrs: BasicFileAttributes): FileVisitResult =
                 logger.debug(s"stopHook: Removing leftover temporary file $path from $playTempFolder")
                 deletePath(path)
                 FileVisitResult.CONTINUE
-              }
 
-              override def postVisitDirectory(path: Path, exc: IOException): FileVisitResult = {
+              override def postVisitDirectory(path: Path, exc: IOException): FileVisitResult =
                 deletePath(path)
                 FileVisitResult.CONTINUE
-              }
-            }
           )
-        }
         frq.close()
       }
     }
-  }
 
-  trait TemporaryFileReaper {
+  trait TemporaryFileReaper:
     def updateTempFolder(folder: Path): Unit
-  }
 
   @Singleton
-  class DefaultTemporaryFileReaper @Inject() (actorSystem: ActorSystem, config: TemporaryFileReaperConfiguration)
-      extends TemporaryFileReaper {
-    private val logger                           = play.api.Logger(this.getClass)
-    private val blockingDispatcherName           = "play.akka.blockingIoDispatcher"
-    private val blockingExecutionContext         = actorSystem.dispatchers.lookup(blockingDispatcherName)
-    private var playTempFolder: Option[Path]     = None
+  class DefaultTemporaryFileReaper @Inject() (
+      actorSystem: ActorSystem,
+      config: TemporaryFileReaperConfiguration
+  ) extends TemporaryFileReaper:
+    private val logger = play.api.Logger(this.getClass)
+    private val blockingDispatcherName = "play.akka.blockingIoDispatcher"
+    private val blockingExecutionContext = actorSystem.dispatchers.lookup(blockingDispatcherName)
+    private var playTempFolder: Option[Path] = None
     private var cancellable: Option[Cancellable] = None
 
     // Use an overridable clock here so we can swap it out for testing.
@@ -353,13 +352,12 @@ object Files {
     // Check that the reaper got a successful reference to the scheduler task
     def enabled: Boolean = cancellable.nonEmpty
 
-    override def updateTempFolder(folder: Path): Unit = {
+    override def updateTempFolder(folder: Path): Unit =
       playTempFolder = Option(folder)
-    }
 
     def secondsAgo: Instant = clock.instant().minusSeconds(config.olderThan.toSeconds)
 
-    def reap(): Future[Seq[Path]] = {
+    def reap(): Future[Seq[Path]] =
       logger.debug(s"reap: reaping old files from $playTempFolder")
       Future {
         playTempFolder
@@ -368,61 +366,59 @@ object Files {
 
             val directoryStream: stream.Stream[Path] = JFiles.list(f)
 
-            try {
+            try
               val reaped = directoryStream
-                .filter(p => {
+                .filter(p =>
                   val lastModifiedTime = JFiles.getLastModifiedTime(p).toInstant
                   lastModifiedTime.isBefore(secondsAgo)
-                })
+                )
                 .toScala(List)
 
               reaped.foreach(delete)
               reaped
-            } finally {
-              directoryStream.close()
-            }
+            finally directoryStream.close()
           }
           .getOrElse(Seq.empty)
       }(using blockingExecutionContext)
-    }
 
-    def delete(path: Path): Unit = {
+    def delete(path: Path): Unit =
       logger.debug(s"delete: deleting $path")
       try JFiles.deleteIfExists(path)
-      catch {
+      catch
         case e: Exception =>
           logger.error(s"Cannot delete $path", e)
-      }
-    }
 
-    private[play] def disable(): Unit = {
+    private[play] def disable(): Unit =
       cancellable.foreach(_.cancel())
-    }
 
-    if config.enabled then {
+    if config.enabled then
       import config.*
-      playTempFolder match {
+      playTempFolder match
         case Some(folder) =>
           logger.debug(s"Reaper enabled on $folder, starting in $initialDelay with $interval intervals")
         case None =>
           logger.debug(
             s"Reaper enabled but no temp folder has been created yet, starting in $initialDelay with $interval intervals"
           )
-      }
 
       cancellable = Some(
-        actorSystem.scheduler.scheduleAtFixedRate(initialDelay, interval) { () => reap() }(using actorSystem.dispatcher)
+        actorSystem.scheduler.scheduleAtFixedRate(initialDelay, interval) { () => reap() }(using
+          actorSystem.dispatcher
+        )
       )
-    }
-  }
 
   /**
    * Configuration for the TemporaryFileReaper.
    *
-   * @param enabled true if the reaper is enabled, false otherwise.  Default is false.
-   * @param olderThan the period after which the file is considered old. Default 5 minutes.
-   * @param initialDelay the initial delay after application start when the reaper first run.  Default 5 minutes.
-   * @param interval the duration after the initial run during which the reaper will scan for files it can remove.  Default 5 minutes.
+   * @param enabled
+   *   true if the reaper is enabled, false otherwise. Default is false.
+   * @param olderThan
+   *   the period after which the file is considered old. Default 5 minutes.
+   * @param initialDelay
+   *   the initial delay after application start when the reaper first run. Default 5 minutes.
+   * @param interval
+   *   the duration after the initial run during which the reaper will scan for files it can remove. Default 5
+   *   minutes.
    */
   case class TemporaryFileReaperConfiguration(
       enabled: Boolean = false,
@@ -431,24 +427,21 @@ object Files {
       interval: FiniteDuration = 5.minutes
   )
 
-  object TemporaryFileReaperConfiguration {
-    def fromConfiguration(config: Configuration): TemporaryFileReaperConfiguration = {
-      def duration(key: String): FiniteDuration = {
-        Duration(config.get[String](key)) match {
+  object TemporaryFileReaperConfiguration:
+    def fromConfiguration(config: Configuration): TemporaryFileReaperConfiguration =
+      def duration(key: String): FiniteDuration =
+        Duration(config.get[String](key)) match
           case d: FiniteDuration if d.isFinite =>
             d
           case _ =>
             throw new IllegalStateException(s"Only finite durations are allowed for $key")
-        }
-      }
 
-      val enabled      = config.get[Boolean]("play.temporaryFile.reaper.enabled")
-      val olderThan    = duration("play.temporaryFile.reaper.olderThan")
+      val enabled = config.get[Boolean]("play.temporaryFile.reaper.enabled")
+      val olderThan = duration("play.temporaryFile.reaper.olderThan")
       val initialDelay = duration("play.temporaryFile.reaper.initialDelay")
-      val interval     = duration("play.temporaryFile.reaper.interval")
+      val interval = duration("play.temporaryFile.reaper.interval")
 
       TemporaryFileReaperConfiguration(enabled, olderThan, initialDelay, interval)
-    }
 
     /**
      * For calling from Java.
@@ -461,49 +454,41 @@ object Files {
       "2.6.14"
     )
     class TemporaryFileReaperConfigurationProvider @Inject() (configuration: Configuration)
-        extends Provider[TemporaryFileReaperConfiguration] {
+        extends Provider[TemporaryFileReaperConfiguration]:
       lazy val get: TemporaryFileReaperConfiguration = fromConfiguration(configuration)
-    }
-  }
 
   @Singleton
   class TemporaryFileReaperConfigurationProvider @Inject() (configuration: Configuration)
-      extends Provider[TemporaryFileReaperConfiguration] {
-    lazy val get: TemporaryFileReaperConfiguration = TemporaryFileReaperConfiguration.fromConfiguration(configuration)
-  }
+      extends Provider[TemporaryFileReaperConfiguration]:
+    lazy val get: TemporaryFileReaperConfiguration =
+      TemporaryFileReaperConfiguration.fromConfiguration(configuration)
 
   /**
    * Creates temporary folders using java.nio.file.Files.createTempFile.
    *
-   * Files created by this method will not be cleaned up with the application
-   * or JVM stops.
+   * Files created by this method will not be cleaned up with the application or JVM stops.
    */
-  object SingletonTemporaryFileCreator extends TemporaryFileCreator {
-    override def create(prefix: String, suffix: String): TemporaryFile = {
+  object SingletonTemporaryFileCreator extends TemporaryFileCreator:
+    override def create(prefix: String, suffix: String): TemporaryFile =
       val file = JFiles.createTempFile(prefix, suffix)
       new SingletonTemporaryFile(file, this)
-    }
 
-    override def create(path: Path): TemporaryFile = {
+    override def create(path: Path): TemporaryFile =
       new SingletonTemporaryFile(path, this)
-    }
 
-    override def delete(tempFile: TemporaryFile): Try[Boolean] = {
+    override def delete(tempFile: TemporaryFile): Try[Boolean] =
       Try(JFiles.deleteIfExists(tempFile.path))
-    }
 
     class SingletonTemporaryFile private[SingletonTemporaryFileCreator] (
         val path: Path,
         val temporaryFileCreator: TemporaryFileCreator
-    ) extends TemporaryFile {
+    ) extends TemporaryFile:
       def file: File = path.toFile
-    }
-  }
 
   /**
    * Utilities to manage temporary files.
    */
-  object TemporaryFile {
+  object TemporaryFile:
 
     /**
      * Implicitly converts a [[TemporaryFile]] to a plain old [[java.io.File]].
@@ -523,14 +508,15 @@ object Files {
      * val tempFile = TemporaryFile(prefix = "uploaded")
      * }}}
      *
-     * @param creator the temporary file creator
-     * @param prefix The prefix used for the temporary file name.
-     * @param suffix The suffix used for the temporary file name.
-     * @return A temporary file instance.
+     * @param creator
+     *   the temporary file creator
+     * @param prefix
+     *   The prefix used for the temporary file name.
+     * @param suffix
+     *   The suffix used for the temporary file name.
+     * @return
+     *   A temporary file instance.
      */
     @deprecated("Use temporaryFileCreator.create", "2.6.0")
-    def apply(creator: TemporaryFileCreator, prefix: String = "", suffix: String = ""): TemporaryFile = {
+    def apply(creator: TemporaryFileCreator, prefix: String = "", suffix: String = ""): TemporaryFile =
       creator.create(prefix, suffix)
-    }
-  }
-}
