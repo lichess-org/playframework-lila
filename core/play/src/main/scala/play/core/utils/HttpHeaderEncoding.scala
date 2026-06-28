@@ -65,8 +65,8 @@ private[play] object HttpHeaderParameterEncoding:
   /**
    * Render a parameter name and value, handling character set issues as recommended in RFC5987.
    *
-   * Examples: [[ render("filename", "foo.txt") ==> "filename=foo.txt" render("filename", "naïve.txt") ==>
-   * "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt" ]]
+   * Examples:
+   * [[render("filename", "foo.txt") ==> "filename=foo.txt" render("filename", "naïve.txt") ==> "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt"]]
    */
   def encode(name: String, value: String): String =
     val builder = new JStringBuilder
@@ -76,8 +76,8 @@ private[play] object HttpHeaderParameterEncoding:
   /**
    * Render a parameter name and value, handling character set issues as recommended in RFC5987.
    *
-   * Examples: [[ render("filename", "foo.txt") ==> "filename=foo.txt" render("filename", "naïve.txt") ==>
-   * "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt" ]]
+   * Examples:
+   * [[render("filename", "foo.txt") ==> "filename=foo.txt" render("filename", "naïve.txt") ==> "filename=na_ve.txt; filename*=utf8''na%C3%AFve.txt"]]
    */
   def encodeToBuilder(name: String, value: String, builder: JStringBuilder): Unit =
     // This flag gets set if we encounter extended characters when rendering the
